@@ -1,0 +1,7 @@
+# requirements.txt
+Django
+djangorestframework
+djangorestframework-simplejwt
+python-decouple # لإدارة الإعدادات
+django-cors-headers  # للتواصل مع Frontend
+django-reversion
