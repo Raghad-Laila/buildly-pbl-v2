@@ -12,15 +12,6 @@ Traditional programming education often lacks practical depth. Buildly addresses
 - Smart feedback: Instant evaluation and guidance to improve coding skills.
 - User roles: Separate interfaces and permissions for learners and instructors.
 
-## 🚀 Key Features
-
-- Structured learning paths with increasing complexity
-- Realistic coding projects with clear deliverables
-- Instructor dashboard for managing content and tracking progress
-- Learner dashboard with personalized progress tracking
-- Built-in code editor with execution and error feedback
-- Authentication and role-based access control
-
 ## 🚀 Tech Stack
 
 | Layer      | Technology              |
@@ -30,27 +21,22 @@ Traditional programming education often lacks practical depth. Buildly addresses
 | Database   | SQLite (via Django ORM) |
 | Versioning | Git & GitHub            |
 
-## 📁 Project Structure
-
-buildly/
-├── frontend/ # React-based user interface
-├── backend/ # Django backend with APIs and logic
-├── docs/ # Project documentation and reports
-│ └── PBL.docx
-├── README.md
-└── .gitignore
-
 ## 🚀 How to Run Locally
 
-### 1. Run Backend (Django)
+### 1. Docker build
 
-- cd backend
+- cd docker\python-runner
+- docker build -t python-runner-image .
+
+### 2. Run Backend (Django)
+
+- cd backendPBL\projectBPL
 - python -m venv venv
 - source venv/bin/activate # or venv\Scripts\activate on Windows
 - pip install -r requirements.txt
 - python manage.py runserver
 
-### 2. Run Frontend (React)
+### 3. Run Frontend (React)
 
 - cd frontend
 - npm install
