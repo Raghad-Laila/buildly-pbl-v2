@@ -135,40 +135,126 @@ class LoginSerializer(serializers.Serializer):
 
 # **سيريالايزر جديد لعرض وتحديث ملف المستخدم**
 class ProfileSerializer(serializers.ModelSerializer):
-    # **خصائص ديناميكية بناءً على نوع المستخدم**
     enrolled_courses_count = serializers.SerializerMethodField()
     enrolled_courses_titles = serializers.SerializerMethodField()
-    
+    profile_picture_url = serializers.SerializerMethodField()
+    full_name = serializers.SerializerMethodField()
+
     class Meta:
         model = CustomUser
-        fields = ('id', 'email', 'user_type', 'date_joined', 'last_login', 'enrolled_courses_count', 'enrolled_courses_titles', 'is_rated', 'level')  
-        read_only_fields = ('id', 'user_type', 'date_joined', 'last_login')
-    
-    # التحقق من تحديث البريد الإلكتروني
+        fields = (
+            'id',
+            'email',
+            'first_name',
+            'last_name',
+            'full_name',
+            'profile_picture',
+            'profile_picture_url',
+            'user_type',
+            'date_joined',
+            'last_login',
+            'enrolled_courses_count',
+            'enrolled_courses_titles',
+            'is_rated',
+            'level',
+        )
+        read_only_fields = (
+            'id',
+            'user_type',
+            'date_joined',
+            'last_login',
+            'profile_picture_url',
+            'full_name',
+        )
+        extra_kwargs = {
+            'profile_picture': {'write_only': True, 'required': False, 'allow_null': True},
+        }
+
+    def get_profile_picture_url(self, obj):
+        if not obj.profile_picture:
+            return None
+
+        request = self.context.get('request')
+        if request:
+            return request.build_absolute_uri(obj.profile_picture.url)
+        return obj.profile_picture.url
+
+    def get_full_name(self, obj):
+        full_name = f'{obj.first_name or ""} {obj.last_name or ""}'.strip()
+        return full_name or obj.email
+
     def validate_email(self, value):
         user = self.context['request'].user
         if CustomUser.objects.exclude(pk=user.pk).filter(email=value).exists():
-            raise serializers.ValidationError(("البريد الإلكتروني موجود مسبقاً"))
+            raise serializers.ValidationError(('البريد الإلكتروني موجود مسبقاً'))
         return value
-    
-    # **دالة ديناميكية: الحصول على عدد المسارات (للمتعلمين فقط)**
+
+    def validate_profile_picture(self, value):
+        if value is None:
+            return value
+
+        if value.size > 5 * 1024 * 1024:
+            raise serializers.ValidationError('حجم الصورة يجب أن لا يتجاوز 5 ميغابايت')
+
+        valid_types = ['image/jpeg', 'image/png', 'image/webp', 'image/gif']
+        if getattr(value, 'content_type', None) not in valid_types:
+            raise serializers.ValidationError('نوع الصورة غير مدعوم. استخدم JPG أو PNG أو WEBP أو GIF')
+
+        return value
+
+    def update(self, instance, validated_data):
+        new_picture = validated_data.get('profile_picture', serializers.empty)
+
+        if new_picture is not serializers.empty and instance.profile_picture:
+            instance.profile_picture.delete(save=False)
+
+        return super().update(instance, validated_data)
+
     def get_enrolled_courses_count(self, obj):
         if obj.is_learner:
             return obj.get_enrolled_courses_count()
-        return None  # إرجاع None للمشرفين
-    
-    # **دالة ديناميكية: الحصول على قائمة المسارات (للمتعلمين فقط)**
+        return None
+
     def get_enrolled_courses_titles(self, obj):
         if obj.is_learner:
             return obj.get_enrolled_courses_list()
-        return None  # إرجاع None للمشرفين
-    
-    # **تجاوز طريقة العرض: حذف الحقول الفارغة**
+        return None
+
     def to_representation(self, instance):
         representation = super().to_representation(instance)
-        # إزالة الحقول ذات القيمة None (خاصة للمشرفين)
+        representation['user_type'] = instance.get_user_type_display()
         if representation.get('enrolled_courses_count') is None:
             representation.pop('enrolled_courses_count', None)
         if representation.get('enrolled_courses_titles') is None:
             representation.pop('enrolled_courses_titles', None)
         return representation
+
+
+class ChangePasswordSerializer(serializers.Serializer):
+    current_password = serializers.CharField(write_only=True, required=True)
+    new_password = serializers.CharField(
+        write_only=True,
+        required=True,
+        validators=[validate_password],
+        min_length=8,
+    )
+    new_password2 = serializers.CharField(write_only=True, required=True)
+
+    def validate_current_password(self, value):
+        user = self.context['request'].user
+        if not user.check_password(value):
+            raise serializers.ValidationError('كلمة المرور الحالية غير صحيحة')
+        return value
+
+    def validate(self, attrs):
+        if attrs['new_password'] != attrs['new_password2']:
+            raise serializers.ValidationError(
+                {'new_password': 'كلمات المرور الجديدة غير متطابقة'}
+            )
+        return attrs
+
+    def save(self, **kwargs):
+        user = self.context['request'].user
+        user.set_password(self.validated_data['new_password'])
+        user.save()
+        return user

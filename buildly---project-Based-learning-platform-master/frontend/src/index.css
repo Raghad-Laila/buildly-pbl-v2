@@ -103,6 +103,15 @@ code {
   background-color: var(--border-color);
 }
 
+.btn-warning {
+  background-color: #f59e0b;
+  color: #111827;
+}
+
+.btn-warning:hover {
+  background-color: #d97706;
+}
+
 .btn-danger {
   background-color: var(--error-color);
   color: white;

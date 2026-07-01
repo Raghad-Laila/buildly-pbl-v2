@@ -56,13 +56,23 @@ const Navbar = () => {
                 <Link to="/projects" className="nav-link">المشاريع</Link>
               </>
             )}
-            <Link to="/profile" className="nav-link">الملف الشخصي</Link>
-            <div className="user-info">
-              <span className="user-email">{user?.email}</span>
-              <button onClick={handleLogout} className="btn btn-secondary">
-                تسجيل الخروج
-              </button>
-            </div>
+            <Link to="/profile" className="nav-link profile-nav-link">
+              {user?.profile_picture_url ? (
+                <img
+                  src={user.profile_picture_url}
+                  alt="الملف الشخصي"
+                  className="nav-avatar"
+                />
+              ) : (
+                <span className="nav-avatar nav-avatar-fallback">
+                  {(user?.first_name || user?.email || '?').charAt(0).toUpperCase()}
+                </span>
+              )}
+              <span className="user-email">{user?.first_name || user?.email}</span>
+            </Link>
+            <button onClick={handleLogout} className="btn btn-secondary">
+              تسجيل الخروج
+            </button>
           </div>
           
           <button

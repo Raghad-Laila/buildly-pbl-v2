@@ -78,6 +78,23 @@ export const accountAPI = {
   updateProfile: (data) =>
     api.patch('/account/profile/', data),
 
+  uploadAvatar: (file) => {
+    const formData = new FormData()
+    formData.append('profile_picture', file)
+
+    return api.patch('/account/profile/', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    })
+  },
+
+  deleteAvatar: () =>
+    api.delete('/account/profile/avatar/'),
+
+  changePassword: (data) =>
+    api.post('/account/profile/change-password/', data),
+
   getLearnerDashboard: () =>
     api.get('/account/learner/dashboard/'),
 
@@ -110,6 +127,15 @@ export const coursesAPI = {
 
   confirmDelete: (id) =>
     api.get(`/courses/${id}/confirm-delete/`),
+
+  confirmArchive: (id) =>
+    api.get(`/courses/${id}/confirm-archive/`),
+
+  archive: (id) =>
+    api.post(`/courses/${id}/archive/`),
+
+  listArchived: () =>
+    api.get('/courses/archived/'),
 
   join: (id) =>
     api.post(`/courses/${id}/join/`),

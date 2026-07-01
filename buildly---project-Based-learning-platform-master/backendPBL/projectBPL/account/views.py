@@ -1,6 +1,7 @@
 from rest_framework import generics, permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.token_blacklist.models import BlacklistedToken
 from django.contrib.auth import logout
@@ -9,9 +10,15 @@ from .serializers import (
     RegisterLearnerSerializer, 
     RegisterAdminSerializer, 
     LoginSerializer, 
-    ProfileSerializer
+    ProfileSerializer,
+    ChangePasswordSerializer,
 )
 from .models import CustomUser
+
+
+def build_user_response(user, request=None):
+    serializer = ProfileSerializer(user, context={'request': request})
+    return serializer.data
 
 class RegisterLearnerView(generics.CreateAPIView):
     """إنشاء حساب متعلم"""
@@ -24,20 +31,8 @@ class RegisterLearnerView(generics.CreateAPIView):
         serializer.is_valid(raise_exception=True)
         user = serializer.save()
         
-        # إنشاء توكنات JWT
         refresh = RefreshToken.for_user(user)
-        
-        # تحضير بيانات المستخدم حسب النوع
-        user_data = {
-            'id': user.id,
-            'email': user.email,
-            'user_type': user.get_user_type_display(),
-        }
-        
-        # إضافة بيانات المسارات فقط للمتعلمين
-        if user.is_learner:
-            user_data['enrolled_courses_count'] = user.get_enrolled_courses_count()
-            user_data['enrolled_courses_titles'] = user.get_enrolled_courses_list()
+        user_data = build_user_response(user, request)
         
         return Response({
             'message': _('تم إنشاء حساب المتعلم بنجاح'),
@@ -59,16 +54,11 @@ class RegisterAdminView(generics.CreateAPIView):
         serializer.is_valid(raise_exception=True)
         user = serializer.save()
         
-        # إنشاء توكنات JWT
         refresh = RefreshToken.for_user(user)
         
         return Response({
             'message': _('تم إنشاء حساب المشرف بنجاح'),
-            'user': {
-                'id': user.id,
-                'email': user.email,
-                'user_type': user.get_user_type_display()
-            },
+            'user': build_user_response(user, request),
             'tokens': {
                 'refresh': str(refresh),
                 'access': str(refresh.access_token),
@@ -84,24 +74,11 @@ class LoginView(APIView):
         serializer.is_valid(raise_exception=True)
         user = serializer.validated_data['user']
         
-        # إنشاء توكنات JWT
         refresh = RefreshToken.for_user(user)
-        
-        # تحضير بيانات المستخدم حسب النوع
-        user_data = {
-            'id': user.id,
-            'email': user.email,
-            'user_type': user.get_user_type_display(),
-        }
-        
-        # إضافة بيانات المسارات فقط للمتعلمين
-        if user.is_learner:
-            user_data['enrolled_courses_count'] = user.get_enrolled_courses_count()
-            user_data['enrolled_courses_titles'] = user.get_enrolled_courses_list()
         
         return Response({
             'message': _('تم تسجيل الدخول بنجاح'),
-            'user': user_data,
+            'user': build_user_response(user, request),
             'tokens': {
                 'refresh': str(refresh),
                 'access': str(refresh.access_token),
@@ -142,9 +119,15 @@ class ProfileView(generics.RetrieveUpdateAPIView):
     """عرض وتعديل الملف الشخصي"""
     serializer_class = ProfileSerializer
     permission_classes = [permissions.IsAuthenticated]
+    parser_classes = [MultiPartParser, FormParser, JSONParser]
     
     def get_object(self):
         return self.request.user
+    
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context['request'] = self.request
+        return context
     
     def retrieve(self, request, *args, **kwargs):
         instance = self.get_object()
@@ -159,14 +142,12 @@ class ProfileView(generics.RetrieveUpdateAPIView):
             }
         }
         
-        # **إضافة بيانات إضافية للمتعلمين فقط**
         if instance.is_learner:
             response_data['enrollment_info'] = {
                 'enrolled_courses_count': instance.get_enrolled_courses_count(),
                 'enrolled_courses_titles': instance.get_enrolled_courses_list(),
                 'note': _('المسارات التعليمية المنضم لها')
             }
-        
         
         return Response(response_data)
     
@@ -180,6 +161,41 @@ class ProfileView(generics.RetrieveUpdateAPIView):
         return Response({
             'message': _('تم تحديث الملف الشخصي بنجاح'),
             'user': serializer.data
+        })
+
+
+class ProfileAvatarDeleteView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def delete(self, request):
+        user = request.user
+
+        if user.profile_picture:
+            user.profile_picture.delete(save=False)
+            user.profile_picture = None
+            user.save()
+
+        serializer = ProfileSerializer(user, context={'request': request})
+
+        return Response({
+            'message': _('تم حذف الصورة الشخصية بنجاح'),
+            'user': serializer.data,
+        })
+
+
+class ChangePasswordView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request):
+        serializer = ChangePasswordSerializer(
+            data=request.data,
+            context={'request': request},
+        )
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+
+        return Response({
+            'message': _('تم تغيير كلمة المرور بنجاح'),
         })
     
 

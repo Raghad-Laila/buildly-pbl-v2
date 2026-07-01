@@ -17,10 +17,9 @@ from .views import (
     SaveTaskSubmissionView,
     UpdateProjectView,
     DeleteProjectView,
-    ConfirmDeleteProjectView,  # ⭐ إضافة الاستيراد
+    ConfirmDeleteProjectView,
     StartProjectView,
     UploadStarterFileView,
-    
 )
 
 app_name = 'projects'

@@ -5,7 +5,7 @@ from rest_framework.views import APIView
 from rest_framework.exceptions import PermissionDenied, ValidationError
 from django.utils.translation import gettext_lazy as _
 from django.db import transaction
-from .models import Course
+from .models import Course, CourseArchive
 from .serializers import (
     CourseCreateSerializer, CourseListSerializer, 
     CourseUpdateSerializer, CourseDetailSerializer,
@@ -26,6 +26,34 @@ class IsLearnerUser(permissions.BasePermission):
             request.user.is_authenticated and 
             request.user.user_type == 'learner'
         )
+
+
+def build_course_archive_snapshot(course):
+    from projects.models import Project
+
+    projects = Project.objects.filter(course=course).values(
+        'id', 'title', 'language', 'level', 'is_active', 'estimated_time'
+    )
+
+    return {
+        'course': {
+            'id': course.id,
+            'title': course.title,
+            'description': course.description,
+            'level': course.level,
+            'level_display': course.get_level_display(),
+            'category': course.category,
+            'category_display': course.get_category_display(),
+            'estimated_duration': course.estimated_duration,
+            'projects_count': course.get_actual_projects_count(),
+            'is_public': course.is_public,
+            'instructor_email': course.instructor.email,
+            'created_at': course.created_at.isoformat() if course.created_at else None,
+            'updated_at': course.updated_at.isoformat() if course.updated_at else None,
+        },
+        'enrolled_learners': course.get_enrolled_emails(),
+        'projects': list(projects),
+    }
 
 # ======= CreateCourseView =============
 class CreateCourseView(generics.CreateAPIView):
@@ -85,14 +113,14 @@ class CreateCourseView(generics.CreateAPIView):
 # ======= UpdateCourseView =============
 class UpdateCourseView(generics.UpdateAPIView):
 
-    queryset = Course.objects.filter(is_active=True)
+    queryset = Course.objects.filter(is_active=True, is_archived=False)
     serializer_class = CourseUpdateSerializer
     permission_classes = [permissions.IsAuthenticated, IsAdminUser]
     lookup_field = 'id'
 
     def get_object(self):
         try:
-            return Course.objects.get(id=self.kwargs['id'], is_active=True)
+            return Course.objects.get(id=self.kwargs['id'], is_active=True, is_archived=False)
         except Course.DoesNotExist:
             raise ValidationError(_('المسار غير موجود'))
 
@@ -165,12 +193,12 @@ class RetrieveCourseView(generics.RetrieveAPIView):
     lookup_field = 'id'
     
     def get_queryset(self):
-        return Course.objects.filter(is_active=True)
+        return Course.objects.filter(is_active=True, is_archived=False)
     
     def get_object(self):
         id = self.kwargs.get('id')
         try:
-            return Course.objects.get(id=id, is_active=True)
+            return Course.objects.get(id=id, is_active=True, is_archived=False)
         except Course.DoesNotExist:
             raise ValidationError(_('المسار المطلوب غير موجود'))
     
@@ -197,14 +225,14 @@ class RetrieveCourseView(generics.RetrieveAPIView):
 # ======= DeleteCourseView =============
 class DeleteCourseView(generics.DestroyAPIView):
     
-    queryset = Course.objects.filter(is_active=True)
+    queryset = Course.objects.filter(is_active=True, is_archived=False)
     permission_classes = [permissions.IsAuthenticated, IsAdminUser]
     lookup_field = 'id'
     
     def get_object(self):
         id = self.kwargs.get('id')
         try:
-            return Course.objects.get(id=id, is_active=True)
+            return Course.objects.get(id=id, is_active=True, is_archived=False)
         except Course.DoesNotExist:
             raise ValidationError(_('المسار المطلوب غير موجود'))
     
@@ -256,7 +284,7 @@ class ConfirmDeleteCourseView(APIView):
     
     def get(self, request, id):
         try:
-            course = Course.objects.get(id=id, is_active=True)
+            course = Course.objects.get(id=id, is_active=True, is_archived=False)
             
             confirmation_data = {
                 'id': course.id,
@@ -290,6 +318,154 @@ class ConfirmDeleteCourseView(APIView):
                 'error': _('المسار المطلوب غير موجود')
             }, status=status.HTTP_404_NOT_FOUND)
 
+# ======= ConfirmArchiveCourseView =============
+class ConfirmArchiveCourseView(APIView):
+
+    permission_classes = [permissions.IsAuthenticated, IsAdminUser]
+
+    def get(self, request, id):
+        try:
+            course = Course.objects.get(id=id, is_active=True, is_archived=False)
+
+            return Response({
+                'success': True,
+                'message': _('بيانات المسار للتأكيد قبل الأرشفة'),
+                'course': {
+                    'id': course.id,
+                    'title': course.title,
+                    'description': course.description,
+                    'level': course.get_level_display(),
+                    'category': course.get_category_display(),
+                    'projects_count': course.get_actual_projects_count(),
+                    'enrolled_students_count': course.get_enrolled_students_count(),
+                    'instructor_email': course.instructor.email,
+                    'confirmation_message': _('هل أنت متأكد من أرشفة هذا المسار؟'),
+                    'warning_message': _('سيتم نقل بيانات المسار إلى سجل الأرشيف وإخفاؤه من الواجهة النشطة.'),
+                },
+                'confirmation_required': True,
+            })
+
+        except Course.DoesNotExist:
+            return Response({
+                'success': False,
+                'message': _('المسار غير موجود أو مؤرشف مسبقاً'),
+            }, status=status.HTTP_404_NOT_FOUND)
+
+
+# ======= ArchiveCourseView =============
+class ArchiveCourseView(APIView):
+
+    permission_classes = [permissions.IsAuthenticated, IsAdminUser]
+
+    @transaction.atomic
+    def post(self, request, id):
+        try:
+            course = Course.objects.get(id=id, is_active=True, is_archived=False)
+            snapshot = build_course_archive_snapshot(course)
+
+            archive_record = CourseArchive.objects.create(
+                course=course,
+                archived_by=request.user,
+                course_data=snapshot,
+            )
+
+            course.is_archived = True
+            course.is_active = False
+            course.save(update_fields=['is_archived', 'is_active', 'updated_at'])
+
+            return Response({
+                'success': True,
+                'message': _('تمت أرشفة المسار بنجاح'),
+                'archive': {
+                    'id': archive_record.id,
+                    'archived_at': archive_record.archived_at,
+                    'course_id': course.id,
+                    'course_title': course.title,
+                    'archived_by': request.user.email,
+                },
+            }, status=status.HTTP_200_OK)
+
+        except Course.DoesNotExist:
+            return Response({
+                'success': False,
+                'message': _('المسار غير موجود أو مؤرشف مسبقاً'),
+            }, status=status.HTTP_404_NOT_FOUND)
+
+        except Exception as e:
+            return Response({
+                'success': False,
+                'message': _('حدث خطأ أثناء أرشفة المسار'),
+                'error': str(e),
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+def serialize_archived_course_record(archive_record):
+    course_snapshot = archive_record.course_data.get('course', {})
+    enrolled_learners = archive_record.course_data.get('enrolled_learners', [])
+
+    return {
+        'archive_id': archive_record.id,
+        'course_id': archive_record.course_id,
+        'title': course_snapshot.get('title') or archive_record.course.title,
+        'description': course_snapshot.get('description', ''),
+        'level_display': course_snapshot.get('level_display', ''),
+        'category_display': course_snapshot.get('category_display', ''),
+        'estimated_duration': course_snapshot.get('estimated_duration', 0),
+        'projects_count': course_snapshot.get('projects_count', 0),
+        'enrolled_students_count': len(enrolled_learners),
+        'archived_at': archive_record.archived_at,
+        'archived_by': archive_record.archived_by.email if archive_record.archived_by else None,
+    }
+
+
+# ======= ListArchivedCoursesView =============
+class ListArchivedCoursesView(APIView):
+
+    permission_classes = [permissions.IsAuthenticated, IsAdminUser]
+
+    def get(self, request):
+        archived_courses = []
+        courses = (
+            Course.objects
+            .filter(is_archived=True)
+            .order_by('-updated_at')
+        )
+
+        for course in courses:
+            latest_archive = (
+                course.archive_records
+                .select_related('archived_by')
+                .order_by('-archived_at')
+                .first()
+            )
+
+            if latest_archive:
+                archived_courses.append(
+                    serialize_archived_course_record(latest_archive)
+                )
+            else:
+                archived_courses.append({
+                    'archive_id': None,
+                    'course_id': course.id,
+                    'title': course.title,
+                    'description': course.description,
+                    'level_display': course.get_level_display(),
+                    'category_display': course.get_category_display(),
+                    'estimated_duration': course.estimated_duration,
+                    'projects_count': course.get_actual_projects_count(),
+                    'enrolled_students_count': course.get_enrolled_students_count(),
+                    'archived_at': course.updated_at,
+                    'archived_by': None,
+                })
+
+        return Response({
+            'success': True,
+            'message': _('المسارات المؤرشفة'),
+            'count': len(archived_courses),
+            'archived_courses': archived_courses,
+        })
+
+
 # ======= ListCoursesView =============
 class ListCoursesView(generics.ListAPIView):
     
@@ -300,9 +476,13 @@ class ListCoursesView(generics.ListAPIView):
         user = self.request.user
         
         if user.is_admin:
-            return Course.objects.filter(is_active=True).order_by('-created_at')
+            return Course.objects.filter(is_active=True, is_archived=False).order_by('-created_at')
         else:
-            return Course.objects.filter(is_active=True, is_public=True).order_by('-created_at')
+            return Course.objects.filter(
+                is_active=True,
+                is_archived=False,
+                is_public=True,
+            ).order_by('-created_at')
     
     def list(self, request, *args, **kwargs):
         queryset = self.get_queryset()
@@ -332,14 +512,14 @@ class CourseDetailView(generics.RetrieveAPIView):
         user = self.request.user
         
         if user.is_admin:
-            return Course.objects.filter(is_active=True)
+            return Course.objects.filter(is_active=True, is_archived=False)
         else:
-            return Course.objects.filter(is_active=True, is_public=True)
+            return Course.objects.filter(is_active=True, is_archived=False, is_public=True)
     
     def get_object(self):
         id = self.kwargs.get('id')
         try:
-            course = Course.objects.get(id=id, is_active=True)
+            course = Course.objects.get(id=id, is_active=True, is_archived=False)
             return course
             
         except Course.DoesNotExist:
@@ -387,7 +567,7 @@ class JoinCourseView(APIView):
     def post(self, request, id):
         try:
             try:
-                course = Course.objects.get(id=id, is_active=True)
+                course = Course.objects.get(id=id, is_active=True, is_archived=False)
             except Course.DoesNotExist:
                 return Response({
                     'success': False,
@@ -466,7 +646,8 @@ class UserEnrolledCoursesView(generics.ListAPIView):
         user = self.request.user
         return Course.objects.filter(
             enrolled_learners=user,
-            is_active=True
+            is_active=True,
+            is_archived=False,
         ).order_by('-created_at')
     
     def list(self, request, *args, **kwargs):
@@ -492,7 +673,7 @@ class CheckEnrollmentView(APIView):
     
     def get(self, request, id):
         try:
-            course = Course.objects.get(id=id, is_active=True)
+            course = Course.objects.get(id=id, is_active=True, is_archived=False)
             
             is_enrolled = course.is_student_enrolled(request.user)
             

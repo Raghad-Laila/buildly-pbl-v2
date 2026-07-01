@@ -426,3 +426,50 @@
   font-weight: 600;
   color: #9a3412;
 }
+
+.archived-courses-card {
+  grid-column: 1 / -1;
+}
+
+.archive-count-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 32px;
+  height: 32px;
+  padding: 0 10px;
+  border-radius: 999px;
+  background: #ffedd5;
+  color: #c2410c;
+  font-weight: 700;
+  font-size: 14px;
+}
+
+.archived-section-note {
+  margin: 0 0 16px;
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+
+.archived-list-item {
+  cursor: default;
+}
+
+.archived-list-item:hover {
+  transform: none;
+}
+
+.badge-archive {
+  background: #ffedd5;
+  color: #c2410c;
+}
+
+.archived-item-stats {
+  align-items: flex-end;
+  text-align: left;
+}
+
+.archived-date {
+  font-size: 12px;
+  color: var(--text-light);
+}

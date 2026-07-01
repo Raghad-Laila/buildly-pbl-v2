@@ -7,6 +7,8 @@ from .views import (
     LoginView,
     LogoutView,
     ProfileView,
+    ProfileAvatarDeleteView,
+    ChangePasswordView,
     SubmitQuizView
 )
 from .views_dashboard import (
@@ -20,7 +22,9 @@ urlpatterns = [
     path('login/', LoginView.as_view(), name='login'),
     path('logout/', LogoutView.as_view(), name='logout'),
     path('token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
-    path('profile/', ProfileView.as_view(), name='profile'),  
+    path('profile/', ProfileView.as_view(), name='profile'),
+    path('profile/avatar/', ProfileAvatarDeleteView.as_view(), name='profile-avatar-delete'),
+    path('profile/change-password/', ChangePasswordView.as_view(), name='change-password'),
     path('quiz/submit/', SubmitQuizView.as_view(), name='submit-quiz'),
 
 

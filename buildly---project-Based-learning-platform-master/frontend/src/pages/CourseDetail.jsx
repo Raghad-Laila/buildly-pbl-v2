@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { coursesAPI } from '../services/api'
+import ArchiveCourseModal from '../components/ArchiveCourseModal'
 import './Courses.css'
 
 const CourseDetail = () => {
@@ -13,6 +14,7 @@ const CourseDetail = () => {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [joining, setJoining] = useState(false)
+  const [showArchiveModal, setShowArchiveModal] = useState(false)
 
   useEffect(() => {
     fetchCourseDetails()
@@ -97,12 +99,26 @@ const CourseDetail = () => {
             <Link to={`/courses/${id}/edit`} className="btn btn-secondary">
               تعديل
             </Link>
+            <button
+              onClick={() => setShowArchiveModal(true)}
+              className="btn btn-warning"
+            >
+              أرشفة المسار
+            </button>
             <button onClick={handleDelete} className="btn btn-danger">
               حذف
             </button>
           </div>
         )}
       </div>
+
+      {showArchiveModal && course && (
+        <ArchiveCourseModal
+          course={course}
+          onClose={() => setShowArchiveModal(false)}
+          onSuccess={() => navigate('/courses')}
+        />
+      )}
 
       <div className="detail-grid">
         <div className="detail-main">

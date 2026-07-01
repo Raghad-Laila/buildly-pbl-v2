@@ -86,6 +86,11 @@ class Course(models.Model):
         verbose_name='نشط',
         help_text='هل هذا المسار نشط أم معطل؟'
     )
+    is_archived = models.BooleanField(
+        default=False,
+        verbose_name='مؤرشف',
+        help_text='هل تم أرشفة هذا المسار؟'
+    )
     
     class Meta:
         verbose_name = _('مسار تعليمي')
@@ -228,3 +233,38 @@ class Course(models.Model):
             return False, "العنوان مستخدم مسبقاً"
         
         return True, "عنوان جديد - مسموح"
+
+
+class CourseArchive(models.Model):
+    """سجل أرشفة المسارات"""
+
+    course = models.ForeignKey(
+        Course,
+        on_delete=models.CASCADE,
+        related_name='archive_records',
+        verbose_name='المسار',
+    )
+    archived_by = models.ForeignKey(
+        CustomUser,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='archived_courses',
+        verbose_name='أرشفه بواسطة',
+    )
+    archived_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name='تاريخ الأرشفة',
+    )
+    course_data = models.JSONField(
+        verbose_name='بيانات المسار المحفوظة',
+    )
+
+    class Meta:
+        verbose_name = _('أرشيف مسار')
+        verbose_name_plural = _('أرشيف المسارات')
+        ordering = ['-archived_at']
+
+    def __str__(self):
+        title = self.course_data.get('course', {}).get('title', self.course_id)
+        return f"أرشيف: {title}"

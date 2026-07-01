@@ -62,6 +62,13 @@ class CustomUser(AbstractUser):
         blank=True,
         verbose_name='مستوى المستخدم'
     )
+
+    profile_picture = models.ImageField(
+        upload_to='profile_pictures/',
+        null=True,
+        blank=True,
+        verbose_name='الصورة الشخصية',
+    )
     
     # **حقل جديد: المسارات التعليمية المنضم لها المتعلم (فقط للمتعلمين)**
     enrolled_courses_titles = models.JSONField(

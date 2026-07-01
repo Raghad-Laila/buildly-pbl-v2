@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { coursesAPI, accountAPI } from '../services/api'
+import ArchiveCourseModal from '../components/ArchiveCourseModal'
 import './Courses.css'
 import QuizComponent from './QuizComponent'
 
@@ -12,6 +13,7 @@ const CoursesList = () => {
   const [error, setError] = useState('')
   const [showQuiz, setShowQuiz] = useState(false)
   const [answers, setAnswers] = useState({})
+  const [archiveCourse, setArchiveCourse] = useState(null)
 
   useEffect(() => {
     checkUser()
@@ -56,6 +58,10 @@ const CoursesList = () => {
     }
   }
 
+  const handleArchiveClose = () => {
+    setArchiveCourse(null)
+  }
+
   const submitQuiz = async (level) => {
     try {
 
@@ -92,6 +98,14 @@ const CoursesList = () => {
 
   return (
     <div className="container">
+      {archiveCourse && (
+        <ArchiveCourseModal
+          course={archiveCourse}
+          onClose={handleArchiveClose}
+          onSuccess={fetchCourses}
+        />
+      )}
+
       <div className="page-header">
         <h1>المسارات التعليمية</h1>
         {isAdmin && (
@@ -150,6 +164,12 @@ const CoursesList = () => {
                     >
                       تعديل
                     </Link>
+                    <button
+                      onClick={() => setArchiveCourse(course)}
+                      className="btn btn-warning"
+                    >
+                      أرشفة
+                    </button>
                     <button
                       onClick={() => handleDelete(course.id)}
                       className="btn btn-danger"

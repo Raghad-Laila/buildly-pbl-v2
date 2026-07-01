@@ -34,7 +34,27 @@ Traditional programming education often lacks practical depth. Buildly addresses
 - python -m venv venv
 - source venv/bin/activate # or venv\Scripts\activate on Windows
 - pip install -r requirements.txt
-- python manage.py runserver
+- python manage.py migrate
+
+**Windows (recommended):** use the helper script so only one server runs on port 8000:
+
+```powershell
+.\scripts\start-server.ps1
+```
+
+To stop all servers on port 8000:
+
+```powershell
+.\scripts\stop-server.ps1
+```
+
+**Manual start:**
+
+```bash
+python manage.py runserver
+```
+
+> Avoid running multiple `runserver` instances at the same time, and do not use `--noreload` during development.
 
 ### 3. Run Frontend (React)
 

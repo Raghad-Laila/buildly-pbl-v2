@@ -12,6 +12,7 @@ const AdminDashboard = () => {
   })
   const [recentCourses, setRecentCourses] = useState([])
   const [recentProjects, setRecentProjects] = useState([])
+  const [archivedCourses, setArchivedCourses] = useState([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -21,13 +22,15 @@ const AdminDashboard = () => {
   const fetchDashboardData = async () => {
     try {
       setLoading(true)
-      const [coursesRes, projectsRes] = await Promise.all([
+      const [coursesRes, projectsRes, archivedRes] = await Promise.all([
         coursesAPI.list(),
         projectsAPI.list(),
+        coursesAPI.listArchived().catch(() => ({ data: { archived_courses: [] } })),
       ])
 
       const courses = coursesRes.data.courses || []
       const projects = projectsRes.data.projects || []
+      const archived = archivedRes.data.archived_courses || []
 
       setStats({
         totalCourses: courses.length,
@@ -38,11 +41,23 @@ const AdminDashboard = () => {
 
       setRecentCourses(courses.slice(0, 5))
       setRecentProjects(projects.slice(0, 5))
+      setArchivedCourses(archived)
     } catch (err) {
       console.error('Error fetching dashboard data:', err)
     } finally {
       setLoading(false)
     }
+  }
+
+  const formatArchiveDate = (value) => {
+    if (!value) return '—'
+    return new Date(value).toLocaleString('ar-SY', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    })
   }
 
   if (loading) {
@@ -99,6 +114,15 @@ const AdminDashboard = () => {
           <div className="stat-content">
             <h3>{stats.totalLearners}</h3>
             <p>إجمالي المتعلمين</p>
+          </div>
+        </div>
+        <div className="stat-card">
+          <div className="stat-icon" style={{ background: '#ffedd5' }}>
+            <span style={{ color: '#ea580c' }}>🗄️</span>
+          </div>
+          <div className="stat-content">
+            <h3>{archivedCourses.length}</h3>
+            <p>المسارات المؤرشفة</p>
           </div>
         </div>
       </div>
@@ -196,6 +220,46 @@ const AdminDashboard = () => {
               ))
             ) : (
               <p className="empty-state">لا توجد مشاريع</p>
+            )}
+          </div>
+        </div>
+
+        {/* المسارات المؤرشفة */}
+        <div className="dashboard-card archived-courses-card">
+          <div className="card-header">
+            <h2>المسارات المؤرشفة</h2>
+            <span className="archive-count-badge">{archivedCourses.length}</span>
+          </div>
+          <p className="archived-section-note">
+            قائمة ديناميكية من قاعدة البيانات — تتحدّث تلقائياً بعد كل أرشفة.
+          </p>
+          <div className="items-list">
+            {archivedCourses.length > 0 ? (
+              archivedCourses.map((course) => (
+                <div key={course.course_id} className="list-item archived-list-item">
+                  <div className="item-info">
+                    <h4>{course.title}</h4>
+                    <p>{course.description?.substring(0, 80)}...</p>
+                    <div className="item-meta">
+                      <span className="badge">{course.level_display}</span>
+                      <span className="badge">{course.category_display}</span>
+                      <span className="badge badge-archive">مؤرشف</span>
+                    </div>
+                  </div>
+                  <div className="item-stats archived-item-stats">
+                    <span>{course.projects_count || 0} مشروع</span>
+                    <span>{course.enrolled_students_count || 0} متعلم</span>
+                    <span className="archived-date">
+                      أرشفه: {course.archived_by || '—'}
+                    </span>
+                    <span className="archived-date">
+                      {formatArchiveDate(course.archived_at)}
+                    </span>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <p className="empty-state">لا توجد مسارات مؤرشفة حالياً</p>
             )}
           </div>
         </div>
