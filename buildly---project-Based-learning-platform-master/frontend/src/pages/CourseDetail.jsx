@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
-import { coursesAPI } from '../services/api'
+import { coursesAPI, accountAPI } from '../services/api'
 import ArchiveCourseModal from '../components/ArchiveCourseModal'
+import FavoriteButton from '../components/FavoriteButton'
 import './Courses.css'
 
 const CourseDetail = () => {
@@ -15,13 +16,25 @@ const CourseDetail = () => {
   const [error, setError] = useState('')
   const [joining, setJoining] = useState(false)
   const [showArchiveModal, setShowArchiveModal] = useState(false)
+  const [isFavorite, setIsFavorite] = useState(false)
 
   useEffect(() => {
     fetchCourseDetails()
+    fetchFavoriteStatus()
     if (isLearner) {
       checkEnrollment()
     }
   }, [id, isLearner])
+
+  const fetchFavoriteStatus = async () => {
+    try {
+      const response = await accountAPI.getFavorites()
+      const favoriteIds = response.data.favorite_course_ids || []
+      setIsFavorite(favoriteIds.includes(Number(id)))
+    } catch (err) {
+      console.error('Error fetching favorite status:', err)
+    }
+  }
 
   const fetchCourseDetails = async () => {
     try {
@@ -94,8 +107,15 @@ const CourseDetail = () => {
           </Link>
           <h1>{course.title}</h1>
         </div>
-        {isAdmin && (
-          <div className="header-actions">
+        <div className="header-actions">
+          <FavoriteButton
+            itemType="course"
+            objectId={Number(id)}
+            initialFavorite={isFavorite}
+            onToggle={(nextValue) => setIsFavorite(nextValue)}
+          />
+          {isAdmin && (
+            <>
             <Link to={`/courses/${id}/edit`} className="btn btn-secondary">
               تعديل
             </Link>
@@ -108,8 +128,9 @@ const CourseDetail = () => {
             <button onClick={handleDelete} className="btn btn-danger">
               حذف
             </button>
-          </div>
-        )}
+            </>
+          )}
+        </div>
       </div>
 
       {showArchiveModal && course && (

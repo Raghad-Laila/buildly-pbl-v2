@@ -1,40 +1,75 @@
 import React, { useState, useEffect } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
-import { projectsAPI } from '../services/api'
+import { projectsAPI, accountAPI } from '../services/api'
+import FavoriteButton from '../components/FavoriteButton'
 import './Projects.css'
 
 const ProjectsList = () => {
-  const { isAdmin } = useAuth()
+  const { isAdmin, isLearner } = useAuth()
   const [searchParams] = useSearchParams()
   const courseId = searchParams.get('course_id')
   const [projects, setProjects] = useState([])
-  const [loading, setLoading] = useState(true)
+  const [initialLoading, setInitialLoading] = useState(true)
+  const [searching, setSearching] = useState(false)
   const [error, setError] = useState('')
   const [progress, setProgress] = useState({})
   const [levelFilter, setLevelFilter] = useState('all')
+  const [searchQuery, setSearchQuery] = useState('')
+  const [debouncedSearch, setDebouncedSearch] = useState('')
+  const [favoriteProjectIds, setFavoriteProjectIds] = useState(new Set())
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(searchQuery.trim())
+    }, 350)
+
+    return () => clearTimeout(timer)
+  }, [searchQuery])
 
   useEffect(() => {
     fetchProjects()
-  }, [courseId])
+  }, [courseId, debouncedSearch])
 
   const fetchProjects = async () => {
-    try {
-      setLoading(true)
+    const isFirstLoad = initialLoading
 
-      const [projectsRes, progressRes] = await Promise.all([
-        projectsAPI.list(courseId),
-        projectsAPI.getProgress()
+    try {
+      if (isFirstLoad) {
+        setInitialLoading(true)
+      } else {
+        setSearching(true)
+      }
+
+      const [projectsRes, progressRes, favoritesRes] = await Promise.all([
+        projectsAPI.list(courseId, debouncedSearch),
+        projectsAPI.getProgress(),
+        accountAPI.getFavorites().catch(() => ({ data: { favorite_project_ids: [] } })),
       ])
 
       setProjects(projectsRes.data.projects || [])
       setProgress(progressRes.data || {})
+      setFavoriteProjectIds(new Set(favoritesRes.data.favorite_project_ids || []))
+      setError('')
     } catch (err) {
       setError('فشل تحميل المشاريع')
       console.error(err)
     } finally {
-      setLoading(false)
+      setInitialLoading(false)
+      setSearching(false)
     }
+  }
+
+  const handleFavoriteToggle = (isFavorite, _itemType, objectId) => {
+    setFavoriteProjectIds((prev) => {
+      const next = new Set(prev)
+      if (isFavorite) {
+        next.add(objectId)
+      } else {
+        next.delete(objectId)
+      }
+      return next
+    })
   }
 
   const handleDelete = async (id) => {
@@ -92,7 +127,12 @@ const ProjectsList = () => {
     groupedProjects[status].push(project)
   })
 
-  const ProjectSection = ({ title, projects, isAdmin, handleDelete }) => {
+  const totalVisibleProjects =
+    groupedProjects.not_started.length +
+    groupedProjects.in_progress.length +
+    groupedProjects.completed.length
+
+  const ProjectSection = ({ title, projects, isAdmin, handleDelete, showStatus = false }) => {
     if (!projects.length) return null
 
     return (
@@ -100,13 +140,30 @@ const ProjectsList = () => {
         <h2 className="section-title">{title}</h2>
 
         <div className="projects-grid">
-          {projects.map((project) => (
+          {projects.map((project) => {
+            const status = getProjectStatus(project.project_id)
+
+            return (
             <div key={project.project_id} className="project-card">
 
               <div className="project-header">
-                <h3>{project.title}</h3>
+                <div className="project-header-top">
+                  <h3>{project.title}</h3>
+                  <FavoriteButton
+                    itemType="project"
+                    objectId={project.project_id}
+                    initialFavorite={favoriteProjectIds.has(project.project_id)}
+                    onToggle={handleFavoriteToggle}
+                    label="مفضلة"
+                  />
+                </div>
 
                 <div className="project-badges">
+                  {showStatus && (
+                    <span className={`badge status-badge ${getStatusClass(status)}`}>
+                      {getStatusLabel(status)}
+                    </span>
+                  )}
                   <span className="badge badge-info">{project.level_display}</span>
                   <span className="badge badge-warning">{project.language_display}</span>
                 </div>
@@ -145,13 +202,16 @@ const ProjectsList = () => {
               </div>
 
             </div>
-          ))}
+            )
+          })}
         </div>
       </div>
     )
   }
 
-  if (loading) {
+  const isSearchActive = Boolean(debouncedSearch)
+
+  if (initialLoading) {
     return (
       <div className="loading">
         <div className="spinner"></div>
@@ -167,9 +227,46 @@ const ProjectsList = () => {
     <div className="container">
 
       <div className="container">
-        <div className="page-header">
-          <h1>المشاريع التعليمية</h1>
-          <div className="filters-bar">
+        <div className="page-header projects-page-header">
+          <div>
+            <h1>المشاريع التعليمية</h1>
+            {isLearner && debouncedSearch && (
+              <p className="projects-search-summary">
+                {searching
+                  ? 'جاري البحث...'
+                  : totalVisibleProjects > 0
+                    ? `تم العثور على ${totalVisibleProjects} مشروع`
+                    : 'لا توجد نتائج مطابقة'}
+              </p>
+            )}
+          </div>
+
+          <div className="projects-toolbar">
+            {isLearner && (
+              <div className="projects-search-box">
+                <span className="projects-search-icon" aria-hidden="true">🔍</span>
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="projects-search-input"
+                  placeholder="ابحث باسم المشروع..."
+                  aria-label="بحث باسم المشروع"
+                  autoComplete="off"
+                />
+                {searchQuery && (
+                  <button
+                    type="button"
+                    className="projects-search-clear"
+                    onClick={() => setSearchQuery('')}
+                    aria-label="مسح البحث"
+                  >
+                    ×
+                  </button>
+                )}
+              </div>
+            )}
+
             <select
               value={levelFilter}
               onChange={(e) => setLevelFilter(e.target.value)}
@@ -182,6 +279,7 @@ const ProjectsList = () => {
               <option value="expert">خبير</option>
             </select>
           </div>
+
           {isAdmin && (
             <Link to="/projects/create" className="btn btn-primary">
               إضافة مشروع جديد
@@ -191,32 +289,50 @@ const ProjectsList = () => {
 
         {projects.length === 0 ? (
           <div className="empty-state">
-            <p>لا توجد مشاريع متاحة</p>
+            <p>
+              {debouncedSearch
+                ? `لا توجد مشاريع مطابقة لـ "${debouncedSearch}"`
+                : 'لا توجد مشاريع متاحة'}
+            </p>
+          </div>
+        ) : totalVisibleProjects === 0 ? (
+          <div className="empty-state">
+            <p>لا توجد مشاريع مطابقة للمستوى المحدد</p>
           </div>
         ) : (
           <div className="projects-sections">
+            {isSearchActive ? (
+              <ProjectSection
+                title={`🔍 نتائج البحث (${totalVisibleProjects})`}
+                projects={filteredProjects}
+                isAdmin={isAdmin}
+                handleDelete={handleDelete}
+                showStatus
+              />
+            ) : (
+              <>
+                <ProjectSection
+                  title="🆕 لم يبدأ"
+                  projects={groupedProjects.not_started}
+                  isAdmin={isAdmin}
+                  handleDelete={handleDelete}
+                />
 
-            <ProjectSection
-              title="🆕 لم يبدأ"
-              projects={groupedProjects.not_started}
-              isAdmin={isAdmin}
-              handleDelete={handleDelete}
-            />
+                <ProjectSection
+                  title="🔄 قيد التنفيذ"
+                  projects={groupedProjects.in_progress}
+                  isAdmin={isAdmin}
+                  handleDelete={handleDelete}
+                />
 
-            <ProjectSection
-              title="🔄 قيد التنفيذ"
-              projects={groupedProjects.in_progress}
-              isAdmin={isAdmin}
-              handleDelete={handleDelete}
-            />
-
-            <ProjectSection
-              title="✅ مكتمل"
-              projects={groupedProjects.completed}
-              isAdmin={isAdmin}
-              handleDelete={handleDelete}
-            />
-
+                <ProjectSection
+                  title="✅ مكتمل"
+                  projects={groupedProjects.completed}
+                  isAdmin={isAdmin}
+                  handleDelete={handleDelete}
+                />
+              </>
+            )}
           </div>
         )}
       </div>

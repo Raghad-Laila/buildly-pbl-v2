@@ -1,4 +1,5 @@
 from django.contrib import admin
-from .models import CustomUser , CustomUserManager
-# Register your models here.
+from .models import CustomUser, UserFavorite
+
 admin.site.register(CustomUser)
+admin.site.register(UserFavorite)

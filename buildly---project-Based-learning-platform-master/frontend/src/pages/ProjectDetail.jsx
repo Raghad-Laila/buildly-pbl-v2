@@ -1,14 +1,17 @@
 import React, { useState, useEffect } from 'react'
 import { useParams, useNavigate, Link, useLocation } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
-import { projectsAPI } from '../services/api'
+import { projectsAPI, accountAPI } from '../services/api'
+import FavoriteButton from '../components/FavoriteButton'
+import ShareAchievementModal from '../components/ShareAchievementModal'
+import '../components/ShareAchievementModal.css'
 import './Projects.css'
 
 const ProjectDetail = () => {
   const { id } = useParams()
   const navigate = useNavigate()
   const location = useLocation()
-  const { isAdmin, isLearner } = useAuth()
+  const { isAdmin, isLearner, user } = useAuth()
   const [project, setProject] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -18,13 +21,26 @@ const ProjectDetail = () => {
   const [filterGraded, setFilterGraded] = useState('all')
   const [versions, setVersions] = useState([]);
   const [showVersions, setShowVersions] = useState(false);
+  const [isFavorite, setIsFavorite] = useState(false);
+  const [showShareModal, setShowShareModal] = useState(false);
 
   useEffect(() => {
     fetchProjectDetails()
+    fetchFavoriteStatus()
     if (isAdmin) {
       fetchSubmissions();
     }
   }, [id, isAdmin])
+
+  const fetchFavoriteStatus = async () => {
+    try {
+      const response = await accountAPI.getFavorites()
+      const favoriteIds = response.data.favorite_project_ids || []
+      setIsFavorite(favoriteIds.includes(Number(id)))
+    } catch (err) {
+      console.error('Error fetching favorite status:', err)
+    }
+  }
 
   const fetchProjectDetails = async () => {
     try {
@@ -131,8 +147,36 @@ const ProjectDetail = () => {
     return <div className="alert alert-error">{error || 'المشروع غير موجود'}</div>
   }
 
+  const isProjectCompleted = isLearner && progress?.status === 'completed'
+  const learnerName = [user?.first_name, user?.last_name].filter(Boolean).join(' ').trim()
+
   return (
     <div className="container">
+      {showShareModal && isProjectCompleted && (
+        <ShareAchievementModal
+          project={project}
+          progress={progress}
+          learnerName={learnerName}
+          onClose={() => setShowShareModal(false)}
+        />
+      )}
+
+      {isProjectCompleted && (
+        <div className="achievement-complete-banner">
+          <div className="achievement-complete-content">
+            <h2>🎉 مبروك! أكملت هذا المشروع</h2>
+            <p>يمكنك الآن مشاركة إنجازك مع أصدقائك على منصات التواصل الاجتماعي.</p>
+          </div>
+          <button
+            type="button"
+            className="btn btn-share-achievement"
+            onClick={() => setShowShareModal(true)}
+          >
+            مشاركة الإنجاز
+          </button>
+        </div>
+      )}
+
       <div className="page-header">
         <div>
           <Link to="/projects" className="back-link">
@@ -140,16 +184,24 @@ const ProjectDetail = () => {
           </Link>
           <h1>{project.title}</h1>
         </div>
-        {isAdmin && (
-          <div className="header-actions">
-            <Link to={`/projects/${id}/edit`} className="btn btn-secondary">
-              تعديل
-            </Link>
-            <button onClick={handleDelete} className="btn btn-danger">
-              حذف
-            </button>
-          </div>
-        )}
+        <div className="header-actions">
+          <FavoriteButton
+            itemType="project"
+            objectId={Number(id)}
+            initialFavorite={isFavorite}
+            onToggle={(nextValue) => setIsFavorite(nextValue)}
+          />
+          {isAdmin && (
+            <>
+              <Link to={`/projects/${id}/edit`} className="btn btn-secondary">
+                تعديل
+              </Link>
+              <button onClick={handleDelete} className="btn btn-danger">
+                حذف
+              </button>
+            </>
+          )}
+        </div>
       </div>
 
       <div className="detail-grid">
@@ -334,13 +386,24 @@ const ProjectDetail = () => {
                 <button
                   onClick={handleStart}
                   className="btn btn-primary"
-                  disabled={starting || progress?.status === 'completed'}
-                  style={{ width: '100%' }}
+                  disabled={starting}
+                  style={{ width: '100%', marginBottom: isProjectCompleted ? '12px' : 0 }}
                 >
                   {starting ? 'جاري البدء...' :
                     progress?.status === 'completed' ? 'مراجعة المشروع' :
                       progress ? 'مواصلة العمل' : 'بدء المشروع'}
                 </button>
+
+                {isProjectCompleted && (
+                  <button
+                    type="button"
+                    className="btn btn-share-achievement"
+                    style={{ width: '100%' }}
+                    onClick={() => setShowShareModal(true)}
+                  >
+                    مشاركة الإنجاز
+                  </button>
+                )}
               </div>
             </>
           )}

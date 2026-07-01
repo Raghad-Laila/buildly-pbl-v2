@@ -52,6 +52,32 @@
   box-shadow: var(--shadow-md);
 }
 
+.course-header-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.course-header-top h3 {
+  margin-bottom: 0;
+  flex: 1;
+}
+
+.project-header-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.project-header-top h3 {
+  margin-bottom: 0;
+  flex: 1;
+}
+
 .course-header {
   margin-bottom: 16px;
 }

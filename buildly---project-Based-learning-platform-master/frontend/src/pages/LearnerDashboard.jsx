@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { accountAPI } from '../services/api'
+import FavoritesDashboardSection from '../components/FavoritesDashboardSection'
 import './Dashboard.css'
 
 const LearnerDashboard = () => {
@@ -183,7 +184,7 @@ const LearnerDashboard = () => {
           <div className="card-header">
             <h2>النشاطات الحديثة</h2>
           </div>
-          <div className="activity-list">
+            <div className="activity-list">
             {recent_activity?.length > 0 ? (
               recent_activity.map((activity) => (
                 <div key={activity.id} className="activity-item">
@@ -193,16 +194,24 @@ const LearnerDashboard = () => {
                     <span>{activity.project}</span>
                   </div>
                   <span className="activity-time">
-                    {new Date(activity.timestamp).toLocaleDateString('ar-SA')}
+                    {new Date(activity.timestamp).toLocaleString('ar-SY', {
+                      year: 'numeric',
+                      month: 'short',
+                      day: 'numeric',
+                      hour: '2-digit',
+                      minute: '2-digit',
+                    })}
                   </span>
                 </div>
               ))
             ) : (
-              <p className="empty-state">لا توجد نشاطات</p>
+              <p className="empty-state">لا توجد نشاطات مسجلة بعد — ابدأ مشروعاً ليظهر نشاطك هنا</p>
             )}
           </div>
         </div>
       </div>
+
+      <FavoritesDashboardSection />
 
       {/* المشاريع المقترحة */}
       {suggested_projects?.length > 0 && (

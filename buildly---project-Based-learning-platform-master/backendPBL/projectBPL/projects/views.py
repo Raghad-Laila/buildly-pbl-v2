@@ -126,6 +126,13 @@ class ListProjectsView(generics.ListAPIView):
     serializer_class = ProjectListSerializer
     permission_classes = [permissions.IsAuthenticated]
     
+    def apply_search_filter(self, queryset):
+        search = self.request.query_params.get('search', '').strip()
+        if not search:
+            return queryset
+
+        return queryset.filter(title__icontains=search)
+
     def get_queryset(self):
         user = self.request.user
         
@@ -134,37 +141,43 @@ class ListProjectsView(generics.ListAPIView):
         
         if course_id:
             try:
-                # ⭐ تغيير: البحث باستخدام id بدلاً من pathid
                 course = Course.objects.get(id=course_id)
                 
                 if user.is_admin:
-                    return Project.objects.filter(course=course, is_active=True)
+                    queryset = Project.objects.filter(course=course, is_active=True)
+                elif course.is_public and course.is_active and not course.is_archived:
+                    queryset = Project.objects.filter(course=course, is_active=True)
                 else:
-                    if course.is_public and course.is_active:
-                        return Project.objects.filter(course=course, is_active=True)
-                    else:
-                        return Project.objects.none()
+                    return Project.objects.none()
+
+                return self.apply_search_filter(queryset)
                         
             except Course.DoesNotExist:
                 return Project.objects.none()
         
         # بدون فلترة
         if user.is_admin:
-            return Project.objects.filter(is_active=True).order_by('course', 'order')
+            queryset = Project.objects.filter(is_active=True).order_by('course', 'order')
         else:
-            return Project.objects.filter(
+            queryset = Project.objects.filter(
                 course__is_public=True,
                 course__is_active=True,
+                course__is_archived=False,
                 is_active=True
             ).order_by('course', 'order')
+
+        return self.apply_search_filter(queryset)
     
     def list(self, request, *args, **kwargs):
         queryset = self.get_queryset()
         
         if not queryset.exists():
+            search = request.query_params.get('search', '').strip()
             return Response({
-                'message': _('لا توجد مشاريع متاحة'),
-                'projects': []
+                'message': _('لا توجد مشاريع مطابقة لبحثك') if search else _('لا توجد مشاريع متاحة'),
+                'projects': [],
+                'count': 0,
+                'search': search,
             })
         
         serializer = self.get_serializer(queryset, many=True)
@@ -172,6 +185,7 @@ class ListProjectsView(generics.ListAPIView):
         return Response({
             'message': _('تم جلب المشاريع بنجاح'),
             'count': queryset.count(),
+            'search': request.query_params.get('search', '').strip(),
             'projects': serializer.data
         })
 

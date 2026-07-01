@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
-import { coursesAPI, projectsAPI } from '../services/api'
+import { coursesAPI, projectsAPI, accountAPI } from '../services/api'
+import FavoritesDashboardSection from '../components/FavoritesDashboardSection'
 import './Dashboard.css'
 
 const AdminDashboard = () => {
@@ -13,6 +14,7 @@ const AdminDashboard = () => {
   const [recentCourses, setRecentCourses] = useState([])
   const [recentProjects, setRecentProjects] = useState([])
   const [archivedCourses, setArchivedCourses] = useState([])
+  const [favoritesCount, setFavoritesCount] = useState(0)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -22,10 +24,11 @@ const AdminDashboard = () => {
   const fetchDashboardData = async () => {
     try {
       setLoading(true)
-      const [coursesRes, projectsRes, archivedRes] = await Promise.all([
+      const [coursesRes, projectsRes, archivedRes, favoritesRes] = await Promise.all([
         coursesAPI.list(),
         projectsAPI.list(),
         coursesAPI.listArchived().catch(() => ({ data: { archived_courses: [] } })),
+        accountAPI.getFavorites().catch(() => ({ data: { count: 0 } })),
       ])
 
       const courses = coursesRes.data.courses || []
@@ -42,6 +45,7 @@ const AdminDashboard = () => {
       setRecentCourses(courses.slice(0, 5))
       setRecentProjects(projects.slice(0, 5))
       setArchivedCourses(archived)
+      setFavoritesCount(favoritesRes.data.count || 0)
     } catch (err) {
       console.error('Error fetching dashboard data:', err)
     } finally {
@@ -123,6 +127,16 @@ const AdminDashboard = () => {
           <div className="stat-content">
             <h3>{archivedCourses.length}</h3>
             <p>المسارات المؤرشفة</p>
+          </div>
+        </div>
+
+        <div className="stat-card">
+          <div className="stat-icon" style={{ background: '#fef3c7' }}>
+            <span style={{ color: '#d97706' }}>★</span>
+          </div>
+          <div className="stat-content">
+            <h3>{favoritesCount}</h3>
+            <p>المفضلة</p>
           </div>
         </div>
       </div>
@@ -263,6 +277,8 @@ const AdminDashboard = () => {
             )}
           </div>
         </div>
+
+        <FavoritesDashboardSection />
       </div>
     </div>
   )

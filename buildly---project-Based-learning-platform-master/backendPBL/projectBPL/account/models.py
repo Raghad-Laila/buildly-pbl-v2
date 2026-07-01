@@ -159,3 +159,42 @@ class CustomUser(AbstractUser):
     class Meta:
         verbose_name = _('مستخدم')
         verbose_name_plural = _('المستخدمين')
+
+
+class UserFavorite(models.Model):
+    """مفضلة المستخدم للمسارات والمشاريع"""
+
+    ITEM_TYPE_COURSE = 'course'
+    ITEM_TYPE_PROJECT = 'project'
+    ITEM_TYPE_CHOICES = (
+        (ITEM_TYPE_COURSE, _('مسار')),
+        (ITEM_TYPE_PROJECT, _('مشروع')),
+    )
+
+    user = models.ForeignKey(
+        CustomUser,
+        on_delete=models.CASCADE,
+        related_name='favorites',
+        verbose_name=_('المستخدم'),
+    )
+    item_type = models.CharField(
+        max_length=10,
+        choices=ITEM_TYPE_CHOICES,
+        verbose_name=_('نوع العنصر'),
+    )
+    object_id = models.PositiveIntegerField(verbose_name=_('معرف العنصر'))
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name=_('تاريخ الإضافة'))
+
+    class Meta:
+        verbose_name = _('مفضلة')
+        verbose_name_plural = _('المفضلة')
+        ordering = ['-created_at']
+        constraints = [
+            models.UniqueConstraint(
+                fields=['user', 'item_type', 'object_id'],
+                name='unique_user_favorite_item',
+            )
+        ]
+
+    def __str__(self):
+        return f'{self.user.email} - {self.item_type} #{self.object_id}'

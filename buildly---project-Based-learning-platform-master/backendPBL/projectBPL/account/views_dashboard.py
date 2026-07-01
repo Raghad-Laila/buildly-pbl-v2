@@ -5,10 +5,11 @@ from rest_framework.views import APIView
 from django.utils.translation import gettext_lazy as _
 from django.utils import timezone
 from datetime import timedelta
-from .models import CustomUser
+from .models import CustomUser, UserFavorite
 from .serializers import ProfileSerializer
-import json
-from projects.models import Project
+from progress.models import ProjectProgress
+from projects.models import Project, TaskSubmission
+from courses.models import Course
 
 class LearnerDashboardView(APIView):
     """لوحة تحكم المتعلم"""
@@ -172,37 +173,95 @@ class LearnerDashboardView(APIView):
         ]
     
     def get_recent_activity(self, user):
-        """النشاطات الحديثة"""
-        return [
-            {
-                'id': 1,
-                'action': 'بدأ مشروع جديد',
-                'project': 'تطوير تطبيق ويب متكامل',
-                'timestamp': (timezone.now() - timedelta(hours=1)).isoformat(),
-                'icon': '🚀',
-            },
-            {
-                'id': 2,
-                'action': 'تم تقديم مشروع',
-                'project': 'تحليل بيانات باستخدام Python',
-                'timestamp': (timezone.now() - timedelta(days=1)).isoformat(),
-                'icon': '📤',
-            },
-            {
-                'id': 3,
-                'action': 'حصل على درجة ممتازة',
-                'project': 'تصميم قاعدة بيانات',
-                'timestamp': (timezone.now() - timedelta(days=2)).isoformat(),
-                'icon': '🏆',
-            },
-            {
-                'id': 4,
-                'action': 'أضاف مشروع للمفضلة',
-                'project': 'تطوير الذكاء الاصطناعي',
-                'timestamp': (timezone.now() - timedelta(days=3)).isoformat(),
+        """النشاطات الحديثة من سجلات التقدم والمفضلة"""
+        activities = []
+
+        project_progress = (
+            ProjectProgress.objects
+            .filter(user=user)
+            .select_related('project')
+        )
+
+        for progress in project_progress:
+            project_title = progress.project.title
+
+            if progress.started_at:
+                activities.append({
+                    'id': f'start-{progress.id}',
+                    'action': 'بدء العمل على مشروع',
+                    'project': project_title,
+                    'timestamp': progress.started_at.isoformat(),
+                    'icon': '🚀',
+                    'project_id': progress.project_id,
+                    'type': 'project_started',
+                })
+
+            if progress.completed_at:
+                activities.append({
+                    'id': f'complete-{progress.id}',
+                    'action': 'إكمال مشروع',
+                    'project': project_title,
+                    'timestamp': progress.completed_at.isoformat(),
+                    'icon': '✅',
+                    'project_id': progress.project_id,
+                    'type': 'project_completed',
+                })
+
+            if progress.is_graded and progress.grade_stars is not None and progress.completed_at:
+                activities.append({
+                    'id': f'grade-{progress.id}',
+                    'action': f'استلام تقييم ({progress.grade_stars}★)',
+                    'project': project_title,
+                    'timestamp': progress.completed_at.isoformat(),
+                    'icon': '🏆',
+                    'project_id': progress.project_id,
+                    'type': 'project_graded',
+                })
+
+        task_submissions = (
+            TaskSubmission.objects
+            .filter(user=user, is_completed=True, completed_at__isnull=False)
+            .select_related('project', 'task')
+        )
+
+        for submission in task_submissions:
+            activities.append({
+                'id': f'task-{submission.id}',
+                'action': f'إكمال مهمة: {submission.task.title}',
+                'project': submission.project.title,
+                'timestamp': submission.completed_at.isoformat(),
+                'icon': '📝',
+                'project_id': submission.project_id,
+                'type': 'task_completed',
+            })
+
+        favorites = UserFavorite.objects.filter(user=user).order_by('-created_at')[:15]
+
+        for favorite in favorites:
+            if favorite.item_type == UserFavorite.ITEM_TYPE_PROJECT:
+                project = Project.objects.filter(id=favorite.object_id).first()
+                if not project:
+                    continue
+                title = project.title
+                item_label = 'مشروع'
+            else:
+                course = Course.objects.filter(id=favorite.object_id).first()
+                if not course:
+                    continue
+                title = course.title
+                item_label = 'مسار'
+
+            activities.append({
+                'id': f'favorite-{favorite.id}',
+                'action': f'إضافة {item_label} إلى المفضلة',
+                'project': title,
+                'timestamp': favorite.created_at.isoformat(),
                 'icon': '⭐',
-            },
-        ]
+                'type': 'favorite_added',
+            })
+
+        activities.sort(key=lambda item: item['timestamp'], reverse=True)
+        return activities[:10]
     
 
     def get_suggested_projects(self, user):

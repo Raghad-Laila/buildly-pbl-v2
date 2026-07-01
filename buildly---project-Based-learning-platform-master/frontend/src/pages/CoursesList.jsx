@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { coursesAPI, accountAPI } from '../services/api'
 import ArchiveCourseModal from '../components/ArchiveCourseModal'
+import FavoriteButton from '../components/FavoriteButton'
 import './Courses.css'
 import QuizComponent from './QuizComponent'
 
@@ -14,6 +15,7 @@ const CoursesList = () => {
   const [showQuiz, setShowQuiz] = useState(false)
   const [answers, setAnswers] = useState({})
   const [archiveCourse, setArchiveCourse] = useState(null)
+  const [favoriteCourseIds, setFavoriteCourseIds] = useState(new Set())
 
   useEffect(() => {
     checkUser()
@@ -23,8 +25,14 @@ const CoursesList = () => {
   const fetchCourses = async () => {
     try {
       setLoading(true)
-      const response = await coursesAPI.list()
-      setCourses(response.data.courses || [])
+      const [coursesRes, favoritesRes] = await Promise.all([
+        coursesAPI.list(),
+        accountAPI.getFavorites().catch(() => ({ data: { favorite_course_ids: [] } })),
+      ])
+
+      const courses = coursesRes.data.courses || []
+      setCourses(courses)
+      setFavoriteCourseIds(new Set(favoritesRes.data.favorite_course_ids || []))
     } catch (err) {
       setError('فشل تحميل المسارات')
       console.error(err)
@@ -56,6 +64,18 @@ const CoursesList = () => {
     } catch (err) {
       alert('فشل حذف المسار')
     }
+  }
+
+  const handleFavoriteToggle = (isFavorite, _itemType, objectId) => {
+    setFavoriteCourseIds((prev) => {
+      const next = new Set(prev)
+      if (isFavorite) {
+        next.add(objectId)
+      } else {
+        next.delete(objectId)
+      }
+      return next
+    })
   }
 
   const handleArchiveClose = () => {
@@ -129,7 +149,16 @@ const CoursesList = () => {
           {courses.map((course) => (
             <div key={course.id} className="course-card">
               <div className="course-header">
-                <h3>{course.title}</h3>
+                <div className="course-header-top">
+                  <h3>{course.title}</h3>
+                  <FavoriteButton
+                    itemType="course"
+                    objectId={course.id}
+                    initialFavorite={favoriteCourseIds.has(course.id)}
+                    onToggle={handleFavoriteToggle}
+                    label="مفضلة"
+                  />
+                </div>
                 <div className="course-badges">
                   <span className="badge badge-info">{course.level_display}</span>
                   <span className="badge badge-warning">{course.category_display}</span>

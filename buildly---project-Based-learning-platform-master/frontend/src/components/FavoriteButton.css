@@ -1,0 +1,81 @@
+.favorite-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  background: var(--bg-primary);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: 'Cairo', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.favorite-btn:hover {
+  border-color: #f59e0b;
+  color: #d97706;
+}
+
+.favorite-btn.is-favorite {
+  background: #fff7ed;
+  border-color: #fdba74;
+  color: #c2410c;
+}
+
+.favorite-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.favorite-icon {
+  font-size: 16px;
+  line-height: 1;
+}
+
+.favorite-card-btn {
+  padding: 6px 10px;
+}
+
+.favorite-card-btn .favorite-label {
+  display: none;
+}
+
+.favorites-section-note {
+  margin: 0 0 16px;
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+
+.favorites-count-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 32px;
+  height: 32px;
+  padding: 0 10px;
+  border-radius: 999px;
+  background: #fef3c7;
+  color: #b45309;
+  font-weight: 700;
+  font-size: 14px;
+}
+
+.favorites-card {
+  grid-column: 1 / -1;
+}
+
+.favorite-list-item {
+  cursor: default;
+}
+
+.favorite-list-item:hover {
+  transform: none;
+}
+
+.badge-favorite {
+  background: #fef3c7;
+  color: #b45309;
+}

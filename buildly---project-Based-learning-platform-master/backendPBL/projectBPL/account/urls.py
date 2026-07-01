@@ -15,6 +15,7 @@ from .views_dashboard import (
     LearnerDashboardView,
     LearnerProgressAPIView,
 )
+from .views_favorites import ListFavoritesView, ToggleFavoriteView
 
 urlpatterns = [
     path('register/learner/', RegisterLearnerView.as_view(), name='register-learner'),
@@ -33,4 +34,8 @@ urlpatterns = [
      # مسارات لوحة تحكم المتعلم
     path('learner/dashboard/', LearnerDashboardView.as_view(), name='learner-dashboard'),
     path('learner/progress/', LearnerProgressAPIView.as_view(), name='learner-progress'),
+
+    # المفضلة
+    path('favorites/', ListFavoritesView.as_view(), name='list-favorites'),
+    path('favorites/toggle/', ToggleFavoriteView.as_view(), name='toggle-favorite'),
     ]

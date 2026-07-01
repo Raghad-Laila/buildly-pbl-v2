@@ -103,6 +103,12 @@ export const accountAPI = {
 
   submitQuiz: (level) =>
     api.post("/account/quiz/submit/", { level }),
+
+  getFavorites: () =>
+    api.get('/account/favorites/'),
+
+  toggleFavorite: (data) =>
+    api.post('/account/favorites/toggle/', data),
 }
 
 // Courses APIs
@@ -149,8 +155,10 @@ export const coursesAPI = {
 
 // Projects APIs
 export const projectsAPI = {
-  list: (courseId = null) => {
-    const params = courseId ? { course_id: courseId } : {}
+  list: (courseId = null, search = '') => {
+    const params = {}
+    if (courseId) params.course_id = courseId
+    if (search?.trim()) params.search = search.trim()
     return api.get('/projects/', { params })
   },
 
