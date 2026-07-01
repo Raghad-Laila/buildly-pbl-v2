@@ -56,12 +56,14 @@ const Register = () => {
       )
 
       if (result.success) {
-        const userType = result.data.user.user_type
-        if (userType === 'مشرف' || userType === 'admin') {
-          navigate('/admin/dashboard')
-        } else {
-          navigate('/dashboard')
+        const email = encodeURIComponent(formData.email)
+        const cooldown = result.data.resend_available_in || 60
+
+        if (result.data.dev_otp) {
+          sessionStorage.setItem('dev_otp', result.data.dev_otp)
         }
+
+        navigate(`/verify-email?email=${email}&cooldown=${cooldown}`)
       } else {
         const errorMessage =
           result.error?.email?.[0] ||

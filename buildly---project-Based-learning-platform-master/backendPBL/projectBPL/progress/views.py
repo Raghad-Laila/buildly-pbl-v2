@@ -1,11 +1,14 @@
-from django.shortcuts import render
-from rest_framework.views import APIView
+from rest_framework import permissions, status
 from rest_framework.response import Response
-from rest_framework import permissions
+from rest_framework.views import APIView
 from projects.models import Project
 from progress.models import ProjectProgress
 from django.utils import timezone
 from rest_framework.generics import get_object_or_404
+from account.notifications import (
+    create_project_graded_notification,
+    create_project_submitted_notification,
+)
 
 class IsCourseInstructor(permissions.BasePermission):
     """التحقق من أن المستخدم هو مشرف (أي مشرف في النظام)"""
@@ -57,11 +60,17 @@ class CompleteProjectView(APIView):
             user=request.user, 
             project_id=project_id
         )
+
+        was_already_completed = progress.status == 'completed'
         
         progress.status = 'completed'
         progress.progress_percentage = 100
         progress.completed_at = timezone.now()
         progress.save()
+
+        if not was_already_completed:
+            project = get_object_or_404(Project, id=project_id)
+            create_project_submitted_notification(user=request.user, project=project)
         
         return Response({'status': 'project completed successfully'})
     
@@ -118,12 +127,18 @@ class AdminProjectReviewView(APIView):
         if not user_id or stars is None:
             return Response({'error': 'userId and stars are required'}, status=status.HTTP_400_BAD_REQUEST)
 
-        progress = get_object_or_404(ProjectProgress, project_id=project_id, user_id=user_id)
+        progress = get_object_or_404(
+            ProjectProgress.objects.select_related('user', 'project'),
+            project_id=project_id,
+            user_id=user_id,
+        )
 
         progress.grade_stars = stars
         progress.feedback = overall_feedback
         progress.is_graded = True
         progress.save()
+
+        create_project_graded_notification(user=progress.user, project=progress.project)
 
         return Response({
             'message': 'Final project review submitted successfully',

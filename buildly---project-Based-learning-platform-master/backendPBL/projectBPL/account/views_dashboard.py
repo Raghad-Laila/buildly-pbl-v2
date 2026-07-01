@@ -5,7 +5,8 @@ from rest_framework.views import APIView
 from django.utils.translation import gettext_lazy as _
 from django.utils import timezone
 from datetime import timedelta
-from .models import CustomUser, UserFavorite
+from .models import CustomUser, UserFavorite, Notification
+from .notifications import serialize_notification
 from .serializers import ProfileSerializer
 from progress.models import ProjectProgress
 from projects.models import Project, TaskSubmission
@@ -144,33 +145,9 @@ class LearnerDashboardView(APIView):
         }
     
     def get_recent_notifications(self, user):
-        """الإشعارات الحديثة"""
-        return [
-            {
-                'id': 1,
-                'title': 'تمت مراجعة مشروعك',
-                'message': 'تمت مراجعة مشروع تطوير واجهة المستخدم',
-                'type': 'review',
-                'timestamp': (timezone.now() - timedelta(hours=2)).isoformat(),
-                'read': False,
-            },
-            {
-                'id': 2,
-                'title': 'مشروع جديد متاح',
-                'message': 'تم إضافة مشروع جديد في مجال الذكاء الاصطناعي',
-                'type': 'new_project',
-                'timestamp': (timezone.now() - timedelta(days=1)).isoformat(),
-                'read': True,
-            },
-            {
-                'id': 3,
-                'title': 'موعد نهائي قريب',
-                'message': 'ينتهي تقديم مشروع تطوير تطبيق الجوال بعد 3 أيام',
-                'type': 'deadline',
-                'timestamp': (timezone.now() - timedelta(days=2)).isoformat(),
-                'read': False,
-            }
-        ]
+        """الإشعارات الحديثة من قاعدة البيانات"""
+        notifications = Notification.objects.filter(user=user).order_by('-created_at')[:10]
+        return [serialize_notification(item) for item in notifications]
     
     def get_recent_activity(self, user):
         """النشاطات الحديثة من سجلات التقدم والمفضلة"""

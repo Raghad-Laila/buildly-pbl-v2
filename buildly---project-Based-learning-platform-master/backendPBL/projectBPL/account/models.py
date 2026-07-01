@@ -69,6 +69,11 @@ class CustomUser(AbstractUser):
         blank=True,
         verbose_name='الصورة الشخصية',
     )
+
+    email_verified = models.BooleanField(
+        default=False,
+        verbose_name=_('تم التحقق من البريد الإلكتروني'),
+    )
     
     # **حقل جديد: المسارات التعليمية المنضم لها المتعلم (فقط للمتعلمين)**
     enrolled_courses_titles = models.JSONField(
@@ -198,3 +203,140 @@ class UserFavorite(models.Model):
 
     def __str__(self):
         return f'{self.user.email} - {self.item_type} #{self.object_id}'
+
+
+class Notification(models.Model):
+    """إشعارات داخل النظام للمستخدمين"""
+
+    TYPE_ACCOUNT_CREATED = 'account_created'
+    TYPE_PROJECT_STARTED = 'project_started'
+    TYPE_PROJECT_SUBMITTED = 'project_submitted'
+    TYPE_PROJECT_GRADED = 'project_graded'
+    TYPE_PASSWORD_RESET = 'password_reset'
+    TYPE_CHOICES = (
+        (TYPE_ACCOUNT_CREATED, _('إنشاء حساب')),
+        (TYPE_PROJECT_STARTED, _('بدء مشروع')),
+        (TYPE_PROJECT_SUBMITTED, _('استلام مشروع')),
+        (TYPE_PROJECT_GRADED, _('تقييم مشروع')),
+        (TYPE_PASSWORD_RESET, _('إعادة تعيين كلمة المرور')),
+    )
+
+    user = models.ForeignKey(
+        CustomUser,
+        on_delete=models.CASCADE,
+        related_name='notifications',
+        verbose_name=_('المستخدم'),
+    )
+    title = models.CharField(max_length=200, verbose_name=_('العنوان'))
+    message = models.TextField(verbose_name=_('الرسالة'))
+    notification_type = models.CharField(
+        max_length=30,
+        choices=TYPE_CHOICES,
+        default=TYPE_PROJECT_GRADED,
+        verbose_name=_('نوع الإشعار'),
+    )
+    is_read = models.BooleanField(default=False, verbose_name=_('مقروء'))
+    related_project_id = models.PositiveIntegerField(
+        null=True,
+        blank=True,
+        verbose_name=_('معرف المشروع المرتبط'),
+    )
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name=_('تاريخ الإنشاء'))
+
+    class Meta:
+        verbose_name = _('إشعار')
+        verbose_name_plural = _('الإشعارات')
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f'{self.user.email} - {self.title}'
+
+
+class EmailVerificationOTP(models.Model):
+    """رمز تحقق البريد الإلكتروني عند إنشاء الحساب"""
+
+    user = models.ForeignKey(
+        CustomUser,
+        on_delete=models.CASCADE,
+        related_name='email_otps',
+        verbose_name=_('المستخدم'),
+    )
+    code_hash = models.CharField(max_length=128, verbose_name=_('رمز التحقق المشفر'))
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name=_('تاريخ الإنشاء'))
+    expires_at = models.DateTimeField(verbose_name=_('تاريخ انتهاء الصلاحية'))
+    is_used = models.BooleanField(default=False, verbose_name=_('مستخدم'))
+
+    class Meta:
+        verbose_name = _('رمز تحقق البريد')
+        verbose_name_plural = _('رموز تحقق البريد')
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['user', 'is_used', 'created_at']),
+        ]
+
+    def __str__(self):
+        return f'{self.user.email} - OTP #{self.id}'
+
+    def is_expired(self):
+        from django.utils import timezone
+        return timezone.now() >= self.expires_at
+
+
+class PasswordResetOTP(models.Model):
+    """رمز تحقق إعادة تعيين كلمة المرور"""
+
+    user = models.ForeignKey(
+        CustomUser,
+        on_delete=models.CASCADE,
+        related_name='password_reset_otps',
+        verbose_name=_('المستخدم'),
+    )
+    code_hash = models.CharField(max_length=128, verbose_name=_('رمز التحقق المشفر'))
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name=_('تاريخ الإنشاء'))
+    expires_at = models.DateTimeField(verbose_name=_('تاريخ انتهاء الصلاحية'))
+    is_used = models.BooleanField(default=False, verbose_name=_('مستخدم'))
+
+    class Meta:
+        verbose_name = _('رمز إعادة تعيين كلمة المرور')
+        verbose_name_plural = _('رموز إعادة تعيين كلمة المرور')
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['user', 'is_used', 'created_at']),
+        ]
+
+    def __str__(self):
+        return f'{self.user.email} - reset OTP #{self.id}'
+
+    def is_expired(self):
+        from django.utils import timezone
+        return timezone.now() >= self.expires_at
+
+
+class PasswordResetSession(models.Model):
+    """جلسة آمنة لإعادة تعيين كلمة المرور بعد التحقق من OTP"""
+
+    user = models.ForeignKey(
+        CustomUser,
+        on_delete=models.CASCADE,
+        related_name='password_reset_sessions',
+        verbose_name=_('المستخدم'),
+    )
+    token_hash = models.CharField(max_length=128, verbose_name=_('رمز الجلسة المشفر'))
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name=_('تاريخ الإنشاء'))
+    expires_at = models.DateTimeField(verbose_name=_('تاريخ انتهاء الصلاحية'))
+    is_used = models.BooleanField(default=False, verbose_name=_('مستخدم'))
+
+    class Meta:
+        verbose_name = _('جلسة إعادة تعيين كلمة المرور')
+        verbose_name_plural = _('جلسات إعادة تعيين كلمة المرور')
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['user', 'is_used', 'expires_at']),
+        ]
+
+    def __str__(self):
+        return f'{self.user.email} - reset session #{self.id}'
+
+    def is_expired(self):
+        from django.utils import timezone
+        return timezone.now() >= self.expires_at

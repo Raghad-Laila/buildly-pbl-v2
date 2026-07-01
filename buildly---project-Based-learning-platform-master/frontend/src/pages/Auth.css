@@ -52,6 +52,75 @@
   color: var(--primary-dark);
 }
 
+.dev-otp-panel {
+  margin-bottom: 20px;
+  padding: 16px;
+  border-radius: 12px;
+  border: 1px dashed #f59e0b;
+  background: #fffbeb;
+  text-align: center;
+}
+
+.dev-otp-panel strong {
+  display: block;
+  color: #b45309;
+  margin-bottom: 8px;
+}
+
+.dev-otp-panel p {
+  margin: 0 0 10px;
+  color: #92400e;
+  font-size: 14px;
+}
+
+.dev-otp-code {
+  display: inline-block;
+  padding: 10px 18px;
+  border-radius: 8px;
+  background: #1f2937;
+  color: #fbbf24;
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: 6px;
+}
+
+.otp-input {
+  text-align: center;
+  font-size: 24px;
+  letter-spacing: 8px;
+  font-weight: 700;
+}
+
+.auth-link-button {
+  border: none;
+  background: none;
+  color: var(--primary-color);
+  font-weight: 600;
+  cursor: pointer;
+  margin-bottom: 12px;
+  padding: 0;
+}
+
+.auth-link-button:disabled {
+  color: var(--text-light);
+  cursor: not-allowed;
+}
+
+.alert-success {
+  background: #d1fae5;
+  color: #065f46;
+  border: 1px solid #a7f3d0;
+}
+
+.forgot-password-link {
+  margin-top: 8px;
+  text-align: left;
+}
+
+.forgot-password-link .auth-link {
+  font-size: 14px;
+}
+
 .password-input-wrapper {
   position: relative;
   display: flex;

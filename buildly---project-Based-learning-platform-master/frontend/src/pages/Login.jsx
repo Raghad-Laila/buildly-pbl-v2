@@ -46,6 +46,14 @@ const Login = () => {
           navigate('/dashboard')
         }
       } else {
+        if (result.error?.requires_verification) {
+          const email = encodeURIComponent(
+            result.error?.email || formData.email
+          )
+          navigate(`/verify-email?email=${email}&cooldown=60`)
+          return
+        }
+
         const errorMessage =
           result.error?.email?.[0] ||
           result.error?.password?.[0] ||
@@ -120,6 +128,11 @@ const Login = () => {
                   </svg>
                 )}
               </button>
+            </div>
+            <div className="forgot-password-link">
+              <Link to="/forgot-password" className="auth-link">
+                هل نسيت كلمة المرور؟
+              </Link>
             </div>
           </div>
 

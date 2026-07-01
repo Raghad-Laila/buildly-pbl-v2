@@ -1,9 +1,9 @@
 # accounts/serializers.py - النسخة المحدثة الكاملة
 from rest_framework import serializers
-from django.contrib.auth import authenticate
 from django.contrib.auth.password_validation import validate_password
 from django.core.validators import validate_email
 from django.core.exceptions import ValidationError
+from django.utils.translation import gettext_lazy as _
 from .models import CustomUser
 
 # **سيريالايزر جديد لتسجيل المتعلمين**
@@ -41,7 +41,11 @@ class RegisterLearnerSerializer(serializers.ModelSerializer):
         return attrs
     
     def create(self, validated_data):
-        user = CustomUser.objects.create_user(**validated_data)
+        user = CustomUser.objects.create_user(
+            is_active=False,
+            email_verified=False,
+            **validated_data,
+        )
         return user
 
 # **سيريالايزر جديد لتسجيل المشرفين**
@@ -91,7 +95,11 @@ class RegisterAdminSerializer(serializers.ModelSerializer):
         return attrs
     
     def create(self, validated_data):
-        user = CustomUser.objects.create_user(**validated_data)
+        user = CustomUser.objects.create_user(
+            is_active=False,
+            email_verified=False,
+            **validated_data,
+        )
         return user
 
 # **سيريالايزر جديد لتسجيل الدخول**
@@ -120,16 +128,26 @@ class LoginSerializer(serializers.Serializer):
                 {"email": ("البريد الإلكتروني غير صالح")}
             )
         
-        # المصادقة
-        user = authenticate(username=email, password=password)
-        if not user:
+        # المصادقة - التحقق اليدوي لدعم رسائل تفعيل الحساب
+        try:
+            user = CustomUser.objects.get(email=email)
+        except CustomUser.DoesNotExist:
             raise serializers.ValidationError(
                 ("بيانات الدخول غير صحيحة")
             )
-        if not user.is_active:
+
+        if not user.check_password(password):
             raise serializers.ValidationError(
-                ("الحساب غير مفعل")
+                ("بيانات الدخول غير صحيحة")
             )
+
+        if not user.is_active or not user.email_verified:
+            raise serializers.ValidationError({
+                'message': _('يجب تفعيل الحساب عبر رمز التحقق قبل تسجيل الدخول'),
+                'requires_verification': True,
+                'email': email,
+            })
+
         attrs['user'] = user
         return attrs
 
@@ -258,3 +276,93 @@ class ChangePasswordSerializer(serializers.Serializer):
         user.set_password(self.validated_data['new_password'])
         user.save()
         return user
+
+
+class VerifyEmailSerializer(serializers.Serializer):
+    email = serializers.EmailField(required=True)
+    code = serializers.CharField(required=True, min_length=6, max_length=6)
+
+    def validate_code(self, value):
+        if not value.isdigit():
+            raise serializers.ValidationError(_('رمز التحقق يجب أن يتكون من 6 أرقام'))
+        return value
+
+    def validate(self, attrs):
+        email = attrs['email']
+        try:
+            user = CustomUser.objects.get(email=email)
+        except CustomUser.DoesNotExist:
+            raise serializers.ValidationError({
+                'email': _('البريد الإلكتروني غير موجود'),
+            })
+
+        if user.email_verified and user.is_active:
+            raise serializers.ValidationError({
+                'email': _('الحساب مفعّل بالفعل'),
+            })
+
+        attrs['user'] = user
+        return attrs
+
+
+class ResendOTPSerializer(serializers.Serializer):
+    email = serializers.EmailField(required=True)
+
+    def validate_email(self, value):
+        try:
+            user = CustomUser.objects.get(email=value)
+        except CustomUser.DoesNotExist:
+            raise serializers.ValidationError(_('البريد الإلكتروني غير موجود'))
+
+        if user.email_verified and user.is_active:
+            raise serializers.ValidationError(_('الحساب مفعّل بالفعل'))
+
+        self.context['user'] = user
+        return value
+
+    def validate(self, attrs):
+        attrs['user'] = self.context['user']
+        return attrs
+
+
+class PasswordResetRequestSerializer(serializers.Serializer):
+    email = serializers.EmailField(required=True)
+
+
+class PasswordResetVerifyOTPSerializer(serializers.Serializer):
+    email = serializers.EmailField(required=True)
+    code = serializers.CharField(required=True, min_length=6, max_length=6)
+
+    def validate_code(self, value):
+        if not value.isdigit():
+            raise serializers.ValidationError(_('رمز التحقق يجب أن يتكون من 6 أرقام'))
+        return value
+
+    def validate(self, attrs):
+        try:
+            user = CustomUser.objects.get(email=attrs['email'])
+        except CustomUser.DoesNotExist:
+            raise serializers.ValidationError({
+                'email': _('البريد الإلكتروني غير موجود'),
+            })
+
+        attrs['user'] = user
+        return attrs
+
+
+class PasswordResetConfirmSerializer(serializers.Serializer):
+    reset_token = serializers.CharField(required=True)
+    new_password = serializers.CharField(
+        write_only=True,
+        required=True,
+        validators=[validate_password],
+        min_length=8,
+    )
+    new_password2 = serializers.CharField(write_only=True, required=True)
+
+    def validate(self, attrs):
+        if attrs['new_password'] != attrs['new_password2']:
+            raise serializers.ValidationError({
+                'new_password': _('كلمات المرور غير متطابقة'),
+            })
+        return attrs

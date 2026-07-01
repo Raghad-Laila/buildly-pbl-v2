@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { accountAPI } from '../services/api'
+import { formatNotificationTime, getNotificationPath } from '../utils/notificationUtils'
 import FavoritesDashboardSection from '../components/FavoritesDashboardSection'
 import './Dashboard.css'
 
 const LearnerDashboard = () => {
+  const navigate = useNavigate()
   const [dashboardData, setDashboardData] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -23,6 +25,75 @@ const LearnerDashboard = () => {
       console.error(err)
     } finally {
       setLoading(false)
+    }
+  }
+
+  const handleNotificationClick = async (notification) => {
+    try {
+      if (!notification.read) {
+        await accountAPI.markNotificationRead(notification.id)
+        setDashboardData((prev) => {
+          if (!prev) return prev
+          return {
+            ...prev,
+            notifications: prev.notifications.map((item) =>
+              item.id === notification.id ? { ...item, read: true } : item
+            ),
+          }
+        })
+      }
+    } catch (err) {
+      console.error('Failed to mark notification as read', err)
+    }
+
+    const path = getNotificationPath(notification)
+    if (path) {
+      navigate(path)
+    }
+  }
+
+  const handleMarkAllNotificationsRead = async () => {
+    try {
+      await accountAPI.markAllNotificationsRead()
+      setDashboardData((prev) => {
+        if (!prev) return prev
+        return {
+          ...prev,
+          notifications: prev.notifications.map((item) => ({ ...item, read: true })),
+        }
+      })
+    } catch (err) {
+      console.error('Failed to mark all notifications as read', err)
+    }
+  }
+
+  const handleDeleteNotification = async (notificationId) => {
+    try {
+      await accountAPI.deleteNotification(notificationId)
+      setDashboardData((prev) => {
+        if (!prev) return prev
+        return {
+          ...prev,
+          notifications: prev.notifications.filter((item) => item.id !== notificationId),
+        }
+      })
+    } catch (err) {
+      console.error('Failed to delete notification', err)
+    }
+  }
+
+  const handleDeleteAllNotifications = async () => {
+    try {
+      await accountAPI.deleteAllNotifications()
+      setDashboardData((prev) => {
+        if (!prev) return prev
+        return {
+          ...prev,
+          notifications: [],
+        }
+      })
+    } catch (err) {
+      console.error('Failed to delete all notifications', err)
     }
   }
 
@@ -158,19 +229,61 @@ const LearnerDashboard = () => {
         <div className="dashboard-card">
           <div className="card-header">
             <h2>الإشعارات</h2>
+            <div className="notification-card-actions">
+              {notifications?.some((item) => !item.read) && (
+                <span className="badge badge-info">
+                  {notifications.filter((item) => !item.read).length} غير مقروء
+                </span>
+              )}
+              {notifications?.length > 0 && (
+                <>
+                  {notifications.some((item) => !item.read) && (
+                    <button
+                      type="button"
+                      className="btn btn-secondary btn-sm"
+                      onClick={handleMarkAllNotificationsRead}
+                    >
+                      تحديد الكل كمقروء
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    className="btn btn-secondary btn-sm notification-delete-all-btn"
+                    onClick={handleDeleteAllNotifications}
+                  >
+                    حذف الكل
+                  </button>
+                </>
+              )}
+            </div>
           </div>
           <div className="notifications-list">
             {notifications?.length > 0 ? (
               notifications.map((notification) => (
                 <div
                   key={notification.id}
-                  className={`notification-item ${!notification.read ? 'unread' : ''}`}
+                  className={`notification-item-row ${!notification.read ? 'unread' : ''}`}
                 >
-                  <h4>{notification.title}</h4>
-                  <p>{notification.message}</p>
-                  <span className="notification-time">
-                    {new Date(notification.timestamp).toLocaleDateString('ar-SA')}
-                  </span>
+                  <button
+                    type="button"
+                    className="notification-item notification-item-button"
+                    onClick={() => handleNotificationClick(notification)}
+                  >
+                    <h4>{notification.title}</h4>
+                    <p>{notification.message}</p>
+                    <span className="notification-time">
+                      {formatNotificationTime(notification.timestamp)}
+                    </span>
+                  </button>
+                  <button
+                    type="button"
+                    className="notification-row-delete-btn"
+                    onClick={() => handleDeleteNotification(notification.id)}
+                    aria-label="حذف الإشعار"
+                    title="حذف الإشعار"
+                  >
+                    ×
+                  </button>
                 </div>
               ))
             ) : (

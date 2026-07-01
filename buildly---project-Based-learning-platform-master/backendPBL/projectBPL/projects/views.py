@@ -11,6 +11,7 @@ from .models import Project, ProjectStarterFile, ProjectTask, TaskSubmission
 from .serializers import ProjectCreateSerializer, ProjectListSerializer, ProjectDetailSerializer, ProjectTaskSerializer, ProjectUpdateSerializer, ProjectDeleteConfirmationSerializer, ProjectStarterFileSerializer, TaskSubmissionSerializer
 from courses.models import Course
 from progress.models import ProjectProgress
+from account.notifications import create_project_started_notification
 from rest_framework.parsers import MultiPartParser, FormParser
 from reversion.views import RevisionMixin
 import reversion
@@ -628,6 +629,8 @@ class StartProjectView(APIView):
                 progress.started_at = timezone.now()
                 progress.progress_percentage = 0
                 progress.save()
+
+                create_project_started_notification(user=request.user, project=project)
 
             elif progress.status == 'in_progress':
                 return Response({

@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
+import NotificationBell from './NotificationBell'
 import './Navbar.css'
 
 const Navbar = () => {
@@ -56,6 +57,7 @@ const Navbar = () => {
                 <Link to="/projects" className="nav-link">المشاريع</Link>
               </>
             )}
+            {!isAdmin && <NotificationBell />}
             <Link to="/profile" className="nav-link profile-nav-link">
               {user?.profile_picture_url ? (
                 <img

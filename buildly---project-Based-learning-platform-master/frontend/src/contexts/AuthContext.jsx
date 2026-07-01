@@ -37,17 +37,20 @@ export const AuthProvider = ({ children }) => {
     setLoading(false)
   }, [])
 
+  const loginWithTokens = (userData, tokens) => {
+    localStorage.setItem('access_token', tokens.access)
+    localStorage.setItem('refresh_token', tokens.refresh)
+    localStorage.setItem('user', JSON.stringify(userData))
+    setUser(userData)
+    setIsAuthenticated(true)
+  }
+
   const login = async (email, password) => {
     try {
       const response = await accountAPI.login(email, password)
       const { user: userData, tokens } = response.data
 
-      localStorage.setItem('access_token', tokens.access)
-      localStorage.setItem('refresh_token', tokens.refresh)
-      localStorage.setItem('user', JSON.stringify(userData))
-
-      setUser(userData)
-      setIsAuthenticated(true)
+      loginWithTokens(userData, tokens)
 
       return { success: true, data: response.data }
     } catch (error) {
@@ -66,14 +69,19 @@ export const AuthProvider = ({ children }) => {
           : accountAPI.registerLearner(email, password, password2)
 
       const response = await apiCall
+
+      if (response.data.requires_verification) {
+        if (response.data.dev_otp) {
+          sessionStorage.setItem('dev_otp', response.data.dev_otp)
+        } else {
+          sessionStorage.removeItem('dev_otp')
+        }
+
+        return { success: true, data: response.data }
+      }
+
       const { user: userData, tokens } = response.data
-
-      localStorage.setItem('access_token', tokens.access)
-      localStorage.setItem('refresh_token', tokens.refresh)
-      localStorage.setItem('user', JSON.stringify(userData))
-
-      setUser(userData)
-      setIsAuthenticated(true)
+      loginWithTokens(userData, tokens)
 
       return { success: true, data: response.data }
     } catch (error) {
@@ -112,6 +120,7 @@ export const AuthProvider = ({ children }) => {
     isAuthenticated,
     login,
     register,
+    loginWithTokens,
     logout,
     updateUser,
     isAdmin: user?.user_type === 'مشرف' || user?.user_type === 'admin',

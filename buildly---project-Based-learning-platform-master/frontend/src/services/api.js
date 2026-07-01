@@ -69,6 +69,24 @@ export const accountAPI = {
   registerAdmin: (email, password, password2) =>
     api.post('/account/register/admin/', { email, password, password2 }),
 
+  verifyEmail: (email, code) =>
+    api.post('/account/verify/confirm/', { email, code }),
+
+  resendOTP: (email) =>
+    api.post('/account/verify/resend/', { email }),
+
+  requestPasswordReset: (email) =>
+    api.post('/account/password-reset/request/', { email }),
+
+  resendPasswordResetOTP: (email) =>
+    api.post('/account/password-reset/resend/', { email }),
+
+  verifyPasswordResetOTP: (email, code) =>
+    api.post('/account/password-reset/verify-otp/', { email, code }),
+
+  confirmPasswordReset: (data) =>
+    api.post('/account/password-reset/confirm/', data),
+
   logout: (refreshToken) =>
     api.post('/account/logout/', { refresh_token: refreshToken }),
 
@@ -109,6 +127,24 @@ export const accountAPI = {
 
   toggleFavorite: (data) =>
     api.post('/account/favorites/toggle/', data),
+
+  getNotifications: () =>
+    api.get('/account/notifications/'),
+
+  getUnreadNotificationsCount: () =>
+    api.get('/account/notifications/unread-count/'),
+
+  markNotificationRead: (notificationId) =>
+    api.post(`/account/notifications/${notificationId}/read/`),
+
+  markAllNotificationsRead: () =>
+    api.post('/account/notifications/read-all/'),
+
+  deleteNotification: (notificationId) =>
+    api.delete(`/account/notifications/${notificationId}/`),
+
+  deleteAllNotifications: () =>
+    api.post('/account/notifications/delete-all/'),
 }
 
 // Courses APIs

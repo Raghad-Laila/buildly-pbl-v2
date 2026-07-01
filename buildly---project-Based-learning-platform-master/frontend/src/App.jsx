@@ -6,6 +6,10 @@ import Navbar from './components/Navbar'
 import Home from './pages/Home'
 import Login from './pages/Login'
 import Register from './pages/Register'
+import VerifyEmail from './pages/VerifyEmail'
+import ForgotPassword from './pages/ForgotPassword'
+import ResetPasswordVerify from './pages/ResetPasswordVerify'
+import ResetPassword from './pages/ResetPassword'
 import LearnerDashboard from './pages/LearnerDashboard'
 import AdminDashboard from './pages/AdminDashboard'
 import CoursesList from './pages/CoursesList'
@@ -33,6 +37,10 @@ function App() {
               <Route path="/" element={<Home />} />
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
+              <Route path="/verify-email" element={<VerifyEmail />} />
+              <Route path="/forgot-password" element={<ForgotPassword />} />
+              <Route path="/reset-password/verify" element={<ResetPasswordVerify />} />
+              <Route path="/reset-password" element={<ResetPassword />} />
 
               <Route
                 path="/dashboard"

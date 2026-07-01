@@ -1,0 +1,220 @@
+.notification-bell {
+  position: relative;
+}
+
+.notification-bell-button {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border: 1px solid var(--border-color);
+  border-radius: 50%;
+  background: var(--bg-secondary);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.notification-bell-button:hover {
+  border-color: var(--primary-color);
+  background: #f0f4ff;
+}
+
+.notification-bell-icon {
+  font-size: 18px;
+  line-height: 1;
+}
+
+.notification-badge {
+  position: absolute;
+  top: -4px;
+  left: -4px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: #ef4444;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 18px;
+  text-align: center;
+  box-shadow: 0 0 0 2px var(--bg-primary);
+}
+
+.notification-dropdown {
+  position: absolute;
+  top: calc(100% + 10px);
+  left: 0;
+  width: min(380px, calc(100vw - 32px));
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  box-shadow: var(--shadow-lg);
+  z-index: 1100;
+  overflow: hidden;
+}
+
+.notification-dropdown-header {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.notification-dropdown-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.notification-dropdown-header h3 {
+  margin: 0;
+  font-size: 16px;
+  color: var(--text-primary);
+}
+
+.notification-header-count {
+  font-size: 12px;
+  color: var(--primary-color);
+  font-weight: 600;
+  background: #eef2ff;
+  padding: 2px 8px;
+  border-radius: 999px;
+}
+
+.notification-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.notification-action-btn {
+  border: none;
+  background: none;
+  color: var(--primary-color);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0;
+}
+
+.notification-action-btn:hover {
+  text-decoration: underline;
+}
+
+.notification-action-danger {
+  color: #dc2626;
+}
+
+.notification-dropdown-body {
+  max-height: 380px;
+  overflow-y: auto;
+}
+
+.notification-dropdown-item {
+  display: flex;
+  align-items: stretch;
+  border-bottom: 1px solid var(--border-color);
+  transition: background 0.2s ease;
+}
+
+.notification-dropdown-item:last-child {
+  border-bottom: none;
+}
+
+.notification-dropdown-item:hover {
+  background: var(--bg-secondary);
+}
+
+.notification-dropdown-item.unread {
+  background: #f0f4ff;
+}
+
+.notification-dropdown-item.unread:hover {
+  background: #e8eeff;
+}
+
+.notification-item-content {
+  flex: 1;
+  display: block;
+  width: 100%;
+  text-align: right;
+  padding: 14px 12px 14px 16px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+}
+
+.notification-item-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.notification-item-header strong {
+  font-size: 14px;
+  color: var(--text-primary);
+}
+
+.notification-unread-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--primary-color);
+  flex-shrink: 0;
+}
+
+.notification-item-content p {
+  margin: 0 0 8px;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--text-secondary);
+}
+
+.notification-item-time {
+  font-size: 12px;
+  color: var(--text-light);
+}
+
+.notification-delete-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  flex-shrink: 0;
+  border: none;
+  border-right: 1px solid var(--border-color);
+  background: transparent;
+  color: var(--text-light);
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+  transition: color 0.2s ease, background 0.2s ease;
+}
+
+.notification-delete-btn:hover {
+  color: #dc2626;
+  background: #fef2f2;
+}
+
+.notification-empty {
+  margin: 0;
+  padding: 24px 16px;
+  text-align: center;
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+
+@media (max-width: 768px) {
+  .notification-dropdown {
+    left: auto;
+    right: 0;
+  }
+}

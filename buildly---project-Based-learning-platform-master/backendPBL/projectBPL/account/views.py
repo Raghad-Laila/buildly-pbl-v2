@@ -14,11 +14,24 @@ from .serializers import (
     ChangePasswordSerializer,
 )
 from .models import CustomUser
+from .notifications import create_password_reset_notification
+from .email_verification import RESEND_COOLDOWN_SECONDS, create_verification_otp
+from .otp_delivery import build_dev_otp_payload
 
 
 def build_user_response(user, request=None):
     serializer = ProfileSerializer(user, context={'request': request})
     return serializer.data
+
+def build_registration_response(user, otp_code):
+    response_data = {
+        'message': _('تم إنشاء الحساب. يرجى إدخال رمز التحقق لتفعيل الحساب.'),
+        'email': user.email,
+        'requires_verification': True,
+        'resend_available_in': RESEND_COOLDOWN_SECONDS,
+        **build_dev_otp_payload(otp_code),
+    }
+    return response_data
 
 class RegisterLearnerView(generics.CreateAPIView):
     """إنشاء حساب متعلم"""
@@ -30,18 +43,13 @@ class RegisterLearnerView(generics.CreateAPIView):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         user = serializer.save()
-        
-        refresh = RefreshToken.for_user(user)
-        user_data = build_user_response(user, request)
-        
-        return Response({
-            'message': _('تم إنشاء حساب المتعلم بنجاح'),
-            'user': user_data,
-            'tokens': {
-                'refresh': str(refresh),
-                'access': str(refresh.access_token),
-            }
-        }, status=status.HTTP_201_CREATED)
+
+        otp_code = create_verification_otp(user)
+
+        return Response(
+            build_registration_response(user, otp_code),
+            status=status.HTTP_201_CREATED,
+        )
 
 class RegisterAdminView(generics.CreateAPIView):
     """إنشاء حساب مشرف"""
@@ -53,17 +61,13 @@ class RegisterAdminView(generics.CreateAPIView):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         user = serializer.save()
-        
-        refresh = RefreshToken.for_user(user)
-        
-        return Response({
-            'message': _('تم إنشاء حساب المشرف بنجاح'),
-            'user': build_user_response(user, request),
-            'tokens': {
-                'refresh': str(refresh),
-                'access': str(refresh.access_token),
-            }
-        }, status=status.HTTP_201_CREATED)
+
+        otp_code = create_verification_otp(user)
+
+        return Response(
+            build_registration_response(user, otp_code),
+            status=status.HTTP_201_CREATED,
+        )
 
 class LoginView(APIView):
     """تسجيل الدخول"""
@@ -193,6 +197,8 @@ class ChangePasswordView(APIView):
         )
         serializer.is_valid(raise_exception=True)
         serializer.save()
+
+        create_password_reset_notification(user=request.user)
 
         return Response({
             'message': _('تم تغيير كلمة المرور بنجاح'),
