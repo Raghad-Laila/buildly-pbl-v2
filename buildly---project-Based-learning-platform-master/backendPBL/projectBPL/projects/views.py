@@ -747,6 +747,17 @@ class ExecuteCodeView(APIView):
         if not code:
             return Response({"error": "No code provided"}, status=400)
 
+        frontend_languages = {'html', 'css', 'javascript', 'typescript', 'react'}
+        if language in frontend_languages:
+            return Response({
+                "error": "لغات الفرونت إند تُنفَّذ من المتصفح مباشرة. حدّث الصفحة وحاول مرة أخرى."
+            }, status=400)
+
+        if language != "python":
+            return Response({
+                "error": f"تنفيذ لغة '{language}' غير مدعوم على السيرفر حالياً. يدعم السيرفر Python فقط."
+            }, status=400)
+
         try:
             with tempfile.TemporaryDirectory() as tmpdir:
                 file_path = os.path.join(tmpdir, "main.py")

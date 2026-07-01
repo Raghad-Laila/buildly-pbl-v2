@@ -21,7 +21,11 @@ class Project(models.Model):
     # لغات البرمجة
     PROGRAMMING_LANGUAGE_CHOICES = (
         ('python', 'Python'),
+        ('html', 'HTML'),
+        ('css', 'CSS'),
         ('javascript', 'JavaScript'),
+        ('typescript', 'TypeScript'),
+        ('react', 'React'),
         ('java', 'Java'),
         ('csharp', 'C#'),
         ('cpp', 'C++'),
@@ -30,7 +34,6 @@ class Project(models.Model):
         ('go', 'Go'),
         ('swift', 'Swift'),
         ('kotlin', 'Kotlin'),
-        ('typescript', 'TypeScript'),
         ('dart', 'Dart'),
         ('rust', 'Rust'),
         ('other', 'أخرى'),

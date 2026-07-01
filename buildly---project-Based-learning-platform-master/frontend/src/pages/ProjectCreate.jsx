@@ -289,7 +289,11 @@ const ProjectCreate = () => {
                 required
               >
                 <option value="python">Python</option>
+                <option value="html">HTML</option>
+                <option value="css">CSS</option>
                 <option value="javascript">JavaScript</option>
+                <option value="typescript">TypeScript</option>
+                <option value="react">React</option>
                 <option value="java">Java</option>
                 <option value="csharp">C#</option>
                 <option value="cpp">C++</option>
@@ -298,7 +302,6 @@ const ProjectCreate = () => {
                 <option value="go">Go</option>
                 <option value="swift">Swift</option>
                 <option value="kotlin">Kotlin</option>
-                <option value="typescript">TypeScript</option>
                 <option value="dart">Dart</option>
                 <option value="rust">Rust</option>
                 <option value="other">أخرى</option>

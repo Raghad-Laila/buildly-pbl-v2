@@ -1,7 +1,24 @@
 import React, { useEffect, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import Editor from '@monaco-editor/react'
+import MultiFileEditor from '../components/MultiFileEditor'
+import ExecutionPanel from '../components/ExecutionPanel'
 import { projectsAPI } from '../services/api'
+import {
+    getDefaultWorkspace,
+    parseWorkspace,
+    serializeWorkspace,
+    workspaceHasContent,
+} from '../utils/codeWorkspace'
+import { executeWorkspace, getKernelLabel } from '../utils/executionEngine'
+import {
+    appendStreamBlock,
+    createExecutionState,
+    finalizeStreamBlocks,
+    normalizeExecutionResult,
+} from '../utils/executionResult'
+import { getMonacoLanguage } from '../utils/frontendCodeRunner'
+import { resetJsKernel } from '../utils/jsKernel'
+import { resetPythonKernel } from '../utils/pythonKernel'
 import './ProjectWork.css'
 
 const ProjectWork = () => {
@@ -12,18 +29,17 @@ const ProjectWork = () => {
     const [tasks, setTasks] = useState([])
     const [currentIndex, setCurrentIndex] = useState(0)
 
-    const [code, setCode] = useState('')
+    const [workspace, setWorkspace] = useState(null)
     const [textAnswer, setTextAnswer] = useState('')
     const [showHint, setShowHint] = useState(false)
 
     const [loading, setLoading] = useState(true)
-    const [output, setOutput] = useState('')
+    const [execution, setExecution] = useState(createExecutionState())
     const [running, setRunning] = useState(false)
-    const [lastSaved, setLastSaved] = useState({ code: '', text: '' })
-    const [saving, setSaving] = useState(false)
 
-    const codeRef = useRef('')
+    const workspaceRef = useRef('')
     const textRef = useRef('')
+    const streamBlocksRef = useRef([])
 
     const isLastTask = currentIndex === tasks.length - 1
 
@@ -32,38 +48,49 @@ const ProjectWork = () => {
     }, [id])
 
     useEffect(() => {
-        if (!tasks.length) return
+        if (!tasks.length || !workspace) return
 
         const interval = setInterval(() => {
-            const currentTask = tasks[currentIndex]
-            if (currentTask) {
-                saveTask(false)
-            }
+            saveTask()
         }, 5000)
 
         return () => clearInterval(interval)
-    }, [tasks, currentIndex])
+    }, [tasks, currentIndex, workspace])
 
     useEffect(() => {
-        if (!tasks.length) return
+        if (!tasks.length || !project) return
         const task = tasks[currentIndex]
 
         const loadSubmission = async () => {
             try {
                 const res = await projectsAPI.getTaskSubmission(task.id)
                 if (task.task_type === 'code') {
-                    setCode(res.data.progress.answer || '')
+                    const ws = parseWorkspace(
+                        res.data.progress.answer || '',
+                        project.language
+                    )
+                    setWorkspace(ws)
+                    workspaceRef.current = serializeWorkspace(ws)
                 } else if (task.task_type === 'text') {
                     setTextAnswer(res.data.progress.answer || '')
+                    textRef.current = res.data.progress.answer || ''
                 }
-
             } catch (err) {
-
+                if (task.task_type === 'code') {
+                    const ws = getDefaultWorkspace(project.language)
+                    setWorkspace(ws)
+                    workspaceRef.current = serializeWorkspace(ws)
+                }
             }
         }
 
         loadSubmission()
-    }, [tasks, currentIndex])
+    }, [tasks, currentIndex, project])
+
+    const handleWorkspaceChange = (nextWorkspace) => {
+        setWorkspace(nextWorkspace)
+        workspaceRef.current = serializeWorkspace(nextWorkspace)
+    }
 
     const saveTask = async () => {
         const currentTask = tasks[currentIndex]
@@ -72,7 +99,7 @@ const ProjectWork = () => {
         try {
             const value =
                 currentTask.task_type === 'code'
-                    ? codeRef.current
+                    ? workspaceRef.current
                     : textRef.current
 
             if (!value.trim()) return
@@ -86,18 +113,102 @@ const ProjectWork = () => {
     }
 
     const runCode = async () => {
-        setRunning(true)
-        try {
-            const res = await projectsAPI.executeCode(code, project.language)
+        if (!workspace || running) return
 
-            setOutput(
-                res.data.stdout || res.data.stderr || 'No output'
-            )
+        setRunning(true)
+        streamBlocksRef.current = []
+
+        const kernelLabel = getKernelLabel(project.language, workspace)
+
+        setExecution({
+            ...createExecutionState('running'),
+            kernelMessage: 'جاري التنفيذ...',
+            blocks: [],
+        })
+
+        const start = performance.now()
+
+        const onStream = (type, chunk) => {
+            if (type === 'status') {
+                setExecution((prev) => ({
+                    ...prev,
+                    kernelMessage: chunk,
+                }))
+                return
+            }
+
+            if (type === 'stdout' || type === 'stderr') {
+                streamBlocksRef.current = appendStreamBlock(
+                    streamBlocksRef.current,
+                    type,
+                    chunk
+                )
+
+                setExecution((prev) => ({
+                    ...prev,
+                    status: 'running',
+                    blocks: [...streamBlocksRef.current],
+                }))
+            }
+        }
+
+        try {
+            const raw = await executeWorkspace(workspace, project.language, {
+                onStream,
+                runServerPython: async (code) => {
+                    const res = await projectsAPI.executeCode(code, project.language)
+                    const stderr = res.data.stderr || res.data.error || ''
+                    const stdout = res.data.stdout || ''
+
+                    return {
+                        stdout,
+                        stderr,
+                        returnValue: '',
+                        status: res.data.returncode === 0 && !stderr ? 'success' : 'error',
+                        kernelMessage: 'Docker Python',
+                        previewHtml: null,
+                        hasPreview: false,
+                    }
+                },
+            })
+
+            const normalized = normalizeExecutionResult(raw, performance.now() - start)
+            const streamed = finalizeStreamBlocks(streamBlocksRef.current)
+
+            setExecution({
+                ...normalized,
+                blocks: streamed.length ? streamed : normalized.blocks,
+                previewHtml: raw.previewHtml || null,
+                activeTab: raw.previewHtml ? 'preview' : 'console',
+                kernelMessage: raw.kernelMessage || kernelLabel,
+            })
         } catch (err) {
-            setOutput('Error running code')
+            setExecution({
+                ...createExecutionState('error'),
+                durationMs: Math.round(performance.now() - start),
+                kernelMessage: kernelLabel,
+                blocks: [
+                    {
+                        id: `error-${Date.now()}`,
+                        type: 'error',
+                        content: err.message || 'Error running code',
+                    },
+                ],
+            })
         } finally {
             setRunning(false)
         }
+    }
+
+    const clearExecution = () => {
+        setExecution(createExecutionState())
+        streamBlocksRef.current = []
+    }
+
+    const resetKernel = () => {
+        resetPythonKernel()
+        resetJsKernel()
+        clearExecution()
     }
 
     const fetchData = async () => {
@@ -122,7 +233,7 @@ const ProjectWork = () => {
         if (!task) return false
 
         if (task.task_type === 'code') {
-            return code.trim().length > 0
+            return workspace ? workspaceHasContent(workspace) : false
         }
 
         if (task.task_type === 'text') {
@@ -132,11 +243,17 @@ const ProjectWork = () => {
         return false
     }
 
-    const handlePrev = () => {
-        setCode('')
+    const resetTaskState = () => {
+        setWorkspace(null)
+        workspaceRef.current = ''
         setTextAnswer('')
+        textRef.current = ''
+        clearExecution()
         setShowHint(false)
+    }
 
+    const handlePrev = () => {
+        resetTaskState()
         setCurrentIndex((prev) => Math.max(prev - 1, 0))
     }
 
@@ -144,11 +261,7 @@ const ProjectWork = () => {
         if (!isTaskCompleted()) return
 
         await saveTask()
-
-        setCode('')
-        setTextAnswer('')
-        setShowHint(false)
-
+        resetTaskState()
         setCurrentIndex((prev) => Math.min(prev + 1, tasks.length - 1))
     }
 
@@ -168,18 +281,18 @@ const ProjectWork = () => {
 
     const progressPercentage = tasks.length > 0
         ? Math.round(((currentIndex + 1) / tasks.length) * 100)
-        : 0;
+        : 0
+
+    const showKernelReset =
+        project?.language === 'python' || project?.language === 'javascript'
 
     if (loading) return <div className="loading">Loading...</div>
     if (!project) return <div>Project not found</div>
 
     return (
         <div className="workspace">
-
-            {/* SIDEBAR */}
             <div className="sidebar">
                 <h3>{project.title}</h3>
-
                 <ul>
                     {tasks.map((t, i) => (
                         <li
@@ -192,9 +305,7 @@ const ProjectWork = () => {
                 </ul>
             </div>
 
-            {/* MAIN */}
             <div className="workmain">
-
                 <div className="progress-container">
                     <div className="progress-label">
                         <span>نسبة الإنجاز</span>
@@ -218,42 +329,49 @@ const ProjectWork = () => {
                 </div>
 
                 <div className="task-body">
-                    {task?.task_type === 'code' && (
-                        <div className="code-editor-container">
-                            <div className="monaco-wrapper">
-                                <Editor
-                                    height="400px"
-                                    language={project.language || "javascript"}
-                                    value={code}
-                                    onChange={(v) => {
-                                        codeRef.current = v || ''
-                                        setCode(v || '')
-                                    }}
-                                    theme="vs-dark"
-                                    options={{
-                                        minimap: { enabled: false },
-                                        fontSize: 14,
-                                        automaticLayout: true,
-                                        renderWhitespace: "all",
-                                        colorDecorators: true,
-                                        fixedOverflowWidgets: true,
-                                        suggestWidgetFixed: true
-                                    }}
-                                />
-                            </div>
-
-                            <div className="editor-actions">
-                                <button className="btn btn-success" onClick={runCode} disabled={running}>
-                                    {running ? '⏳ Running...' : '▶ تشغيل الكود'}
+                    {task?.task_type === 'code' && workspace && (
+                        <div className="deepnote-workspace">
+                            <div className="deepnote-toolbar">
+                                <button
+                                    className="btn btn-success deepnote-run-btn"
+                                    onClick={runCode}
+                                    disabled={running}
+                                >
+                                    {running ? (
+                                        <>
+                                            <span className="execution-spinner" />
+                                            جاري التشغيل...
+                                        </>
+                                    ) : (
+                                        <>▶ تشغيل</>
+                                    )}
                                 </button>
+                                <span className="deepnote-shortcut-hint">
+                                    <kbd>Ctrl</kbd> + <kbd>Enter</kbd>
+                                </span>
                             </div>
 
-                            {output && (
-                                <div className="output-section">
-                                    <small style={{ color: 'var(--text-secondary)', marginBottom: '5px', display: 'block' }}>Output:</small>
-                                    <pre className="output-box">{output}</pre>
+                            <div className="deepnote-split">
+                                <div className="deepnote-editor-pane">
+                                    <MultiFileEditor
+                                        workspace={workspace}
+                                        onChange={handleWorkspaceChange}
+                                        onRun={runCode}
+                                        editorHeight="470px"
+                                        defaultMonacoLanguage={getMonacoLanguage(project.language)}
+                                    />
                                 </div>
-                            )}
+
+                                <div className="deepnote-output-pane">
+                                    <ExecutionPanel
+                                        execution={execution}
+                                        kernelLabel={getKernelLabel(project.language, workspace)}
+                                        onClear={clearExecution}
+                                        onResetKernel={resetKernel}
+                                        showResetKernel={showKernelReset}
+                                    />
+                                </div>
+                            </div>
                         </div>
                     )}
 
@@ -269,7 +387,6 @@ const ProjectWork = () => {
                         />
                     )}
 
-                    {/* HINT */}
                     <div className="hint-section">
                         <button
                             className="btn btn-secondary"
@@ -284,12 +401,9 @@ const ProjectWork = () => {
                             </div>
                         )}
                     </div>
-
                 </div>
 
-                {/* ACTIONS */}
                 <div className="quiz-actions">
-
                     <button
                         className="btn btn-secondary"
                         onClick={handlePrev}
@@ -315,9 +429,7 @@ const ProjectWork = () => {
                             التالي
                         </button>
                     )}
-
                 </div>
-
             </div>
         </div>
     )

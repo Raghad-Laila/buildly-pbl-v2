@@ -1,7 +1,9 @@
 import React, { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import Editor from '@monaco-editor/react'
+import MultiFileEditor from '../components/MultiFileEditor'
 import { projectsAPI } from '../services/api'
+import { parseWorkspace } from '../utils/codeWorkspace'
+import { getMonacoLanguage } from '../utils/frontendCodeRunner'
 import './ProjectWork.css'
 
 const ProjectReview = () => {
@@ -14,6 +16,7 @@ const ProjectReview = () => {
     const [loading, setLoading] = useState(true)
 
     const [studentAnswer, setStudentAnswer] = useState('')
+    const [studentWorkspace, setStudentWorkspace] = useState(null)
     const [taskFeedback, setTaskFeedback] = useState('')
     const [overallStars, setOverallStars] = useState(0)
     const [overallFeedback, setOverallFeedback] = useState('')
@@ -37,7 +40,9 @@ const ProjectReview = () => {
 
             const currentTask = tasksRes.data[currentIndex]
             const submissionRes = await projectsAPI.getStudentTaskSubmission(currentTask.id, userId)
-            setStudentAnswer(submissionRes.data.answer || '')
+            const answer = submissionRes.data.answer || ''
+            setStudentAnswer(answer)
+            setStudentWorkspace(parseWorkspace(answer, projRes.data.project.language))
             setTaskFeedback(submissionRes.data.admin_feedback || '')
 
             setLoading(false)
@@ -100,13 +105,16 @@ const ProjectReview = () => {
                 <div className="task-body">
                     <h4>إجابة الطالب:</h4>
                     {currentTask?.task_type === 'code' ? (
-                        <Editor
-                            height="300px"
-                            language={project.language}
-                            value={studentAnswer}
-                            theme="vs-dark"
-                            options={{ readOnly: true, minimap: { enabled: false } }}
-                        />
+                        studentWorkspace ? (
+                            <MultiFileEditor
+                                workspace={studentWorkspace}
+                                onChange={() => {}}
+                                readOnly
+                                defaultMonacoLanguage={getMonacoLanguage(project.language)}
+                            />
+                        ) : (
+                            <div className="student-text-box">{studentAnswer}</div>
+                        )
                     ) : (
                         <div className="student-text-box">{studentAnswer}</div>
                     )}

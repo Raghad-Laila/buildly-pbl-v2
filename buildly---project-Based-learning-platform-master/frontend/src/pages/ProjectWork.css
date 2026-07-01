@@ -139,10 +139,140 @@
 }
 
 .monaco-wrapper {
-  border-radius: 8px;
+  border-radius: 0 0 8px 8px;
   border: 1px solid var(--border-color);
+  border-top: none;
   direction: ltr !important;
   position: relative; 
+}
+
+.multi-file-editor {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
+.editor-tabs-bar {
+  display: flex;
+  align-items: stretch;
+  background: #1e1e1e;
+  border: 1px solid var(--border-color);
+  border-radius: 8px 8px 0 0;
+  overflow: hidden;
+  direction: ltr;
+}
+
+.editor-tabs-list {
+  display: flex;
+  flex: 1;
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+
+.editor-tab {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 10px;
+  min-width: 120px;
+  max-width: 200px;
+  height: 38px;
+  background: #2d2d2d;
+  border-right: 1px solid #1a1a1a;
+  color: #cccccc;
+  cursor: pointer;
+  user-select: none;
+  flex-shrink: 0;
+  transition: background 0.15s;
+}
+
+.editor-tab:hover {
+  background: #383838;
+}
+
+.editor-tab.active {
+  background: #1e1e1e;
+  color: #ffffff;
+  border-top: 2px solid #22c55e;
+}
+
+.editor-tab-name {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 13px;
+  font-family: 'Fira Code', monospace;
+}
+
+.editor-tab-actions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+
+.editor-tab:hover .editor-tab-actions,
+.editor-tab.active .editor-tab-actions {
+  opacity: 1;
+}
+
+.editor-tab-action {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  color: #aaaaaa;
+  cursor: pointer;
+  font-size: 14px;
+  line-height: 1;
+}
+
+.editor-tab-action:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+}
+
+.editor-tab-close:hover {
+  background: rgba(220, 38, 38, 0.3);
+  color: #fca5a5;
+}
+
+.editor-tab-rename-input {
+  width: 100%;
+  padding: 2px 4px;
+  border: 1px solid #22c55e;
+  border-radius: 4px;
+  background: #1e1e1e;
+  color: #ffffff;
+  font-size: 13px;
+  font-family: 'Fira Code', monospace;
+  outline: none;
+}
+
+.editor-tab-add {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  min-width: 38px;
+  border: none;
+  border-left: 1px solid #1a1a1a;
+  background: #2d2d2d;
+  color: #22c55e;
+  font-size: 20px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.editor-tab-add:hover {
+  background: #383838;
 }
 
 .editor-actions {
@@ -181,4 +311,331 @@
     height: 100%;
     background: linear-gradient(90deg, #22c55e, #10b981);
     transition: width 0.4s ease-out; 
+}
+
+.preview-section {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.preview-frame {
+  width: 100%;
+  min-height: 280px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+/* Deepnote-style execution layout */
+.deepnote-workspace {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+}
+
+.deepnote-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  background: #1e1e1e;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  direction: ltr;
+}
+
+.deepnote-run-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 120px;
+  justify-content: center;
+}
+
+.deepnote-shortcut-hint {
+  color: #9ca3af;
+  font-size: 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.deepnote-shortcut-hint kbd {
+  background: #2d2d2d;
+  border: 1px solid #4b5563;
+  border-radius: 4px;
+  padding: 2px 6px;
+  font-size: 11px;
+  color: #e5e7eb;
+}
+
+.deepnote-split {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  min-height: 520px;
+}
+
+.deepnote-editor-pane,
+.deepnote-output-pane {
+  min-height: 520px;
+  display: flex;
+  flex-direction: column;
+}
+
+.deepnote-editor-pane .multi-file-editor {
+  flex: 1;
+  min-height: 520px;
+}
+
+.deepnote-editor-pane .monaco-wrapper {
+  flex: 1;
+  min-height: 470px;
+}
+
+/* Execution panel */
+.execution-panel {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 520px;
+  background: #111827;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  overflow: hidden;
+  direction: ltr;
+}
+
+.execution-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 12px;
+  background: #1f2937;
+  border-bottom: 1px solid #374151;
+  flex-wrap: wrap;
+}
+
+.execution-panel-tabs {
+  display: flex;
+  gap: 4px;
+}
+
+.execution-tab {
+  padding: 6px 12px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: #9ca3af;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.execution-tab.active {
+  background: #374151;
+  color: #f9fafb;
+}
+
+.execution-panel-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: #9ca3af;
+}
+
+.execution-kernel-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #6b7280;
+}
+
+.execution-kernel-dot.status-running {
+  background: #f59e0b;
+  animation: pulse-dot 1s infinite;
+}
+
+.execution-kernel-dot.status-success {
+  background: #22c55e;
+}
+
+.execution-kernel-dot.status-error {
+  background: #ef4444;
+}
+
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+.execution-duration {
+  color: #6b7280;
+}
+
+.execution-status-badge {
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.execution-status-badge.status-success {
+  background: rgba(34, 197, 94, 0.15);
+  color: #4ade80;
+}
+
+.execution-status-badge.status-error {
+  background: rgba(239, 68, 68, 0.15);
+  color: #f87171;
+}
+
+.execution-status-badge.status-running {
+  background: rgba(245, 158, 11, 0.15);
+  color: #fbbf24;
+}
+
+.execution-panel-toolbar {
+  display: flex;
+  gap: 8px;
+  padding: 8px 12px;
+  border-bottom: 1px solid #374151;
+}
+
+.execution-tool-btn {
+  padding: 4px 10px;
+  border: 1px solid #4b5563;
+  border-radius: 6px;
+  background: #1f2937;
+  color: #d1d5db;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.execution-tool-btn:hover {
+  background: #374151;
+}
+
+.execution-panel-body {
+  flex: 1;
+  overflow: auto;
+  padding: 12px;
+}
+
+.execution-running-banner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  margin-bottom: 12px;
+  background: rgba(245, 158, 11, 0.1);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  border-radius: 6px;
+  color: #fbbf24;
+  font-size: 13px;
+}
+
+.execution-spinner {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(251, 191, 36, 0.3);
+  border-top-color: #fbbf24;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.execution-blocks {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.execution-block {
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid #374151;
+}
+
+.execution-block-label {
+  padding: 4px 10px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.block-stdout .execution-block-label {
+  background: #1e3a2f;
+  color: #6ee7b7;
+}
+
+.block-stderr .execution-block-label,
+.block-error .execution-block-label {
+  background: #3f1d1d;
+  color: #fca5a5;
+}
+
+.block-result .execution-block-label {
+  background: #1e3a5f;
+  color: #93c5fd;
+}
+
+.block-info .execution-block-label {
+  background: #1f2937;
+  color: #9ca3af;
+}
+
+.execution-block-content {
+  margin: 0;
+  padding: 12px;
+  background: #0f172a;
+  color: #e2e8f0;
+  font-family: 'Fira Code', monospace;
+  font-size: 13px;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.execution-empty {
+  color: #6b7280;
+  font-size: 13px;
+  text-align: center;
+  padding: 40px 20px;
+  line-height: 1.6;
+}
+
+.execution-empty kbd {
+  background: #1f2937;
+  border: 1px solid #4b5563;
+  border-radius: 4px;
+  padding: 2px 6px;
+  font-size: 11px;
+}
+
+.execution-preview-frame {
+  width: 100%;
+  min-height: 440px;
+  border: none;
+  border-radius: 6px;
+  background: #ffffff;
+}
+
+@media (max-width: 1100px) {
+  .deepnote-split {
+    grid-template-columns: 1fr;
+  }
+
+  .deepnote-editor-pane,
+  .deepnote-output-pane,
+  .execution-panel {
+    min-height: 400px;
+  }
 }
