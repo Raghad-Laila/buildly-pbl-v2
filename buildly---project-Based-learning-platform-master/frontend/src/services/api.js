@@ -260,7 +260,25 @@ export const projectsAPI = {
   deleteTask: (taskId) =>
     api.delete(`/projects/tasks/${taskId}/delete/`),
 
-  getSubmissions: (projectId) => 
+  createTest: (data) =>
+    api.post('/projects/tests/create/', data),
+
+  getTests: (projectId) =>
+    api.get(`/projects/${projectId}/tests/`),
+
+  getTest: (testId) =>
+    api.get(`/projects/tests/${testId}/`),
+
+  updateTest: (testId, data) =>
+    api.put(`/projects/tests/${testId}/update/`, data),
+
+  deleteTest: (testId) =>
+    api.delete(`/projects/tests/${testId}/delete/`),
+
+  runTests: (projectId, code, language) =>
+    api.post(`/projects/${projectId}/tests/run/`, { code, language }),
+
+  getSubmissions: (projectId) =>
     api.get(`/progress/projects/${projectId}/submissions/`),
 
   saveTaskFeedback: (taskId, userId, data) => {

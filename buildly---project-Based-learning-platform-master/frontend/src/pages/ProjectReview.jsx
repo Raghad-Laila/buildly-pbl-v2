@@ -4,6 +4,7 @@ import MultiFileEditor from '../components/MultiFileEditor'
 import { projectsAPI } from '../services/api'
 import { parseWorkspace } from '../utils/codeWorkspace'
 import { getMonacoLanguage } from '../utils/frontendCodeRunner'
+import { getPrimaryProjectLanguage } from '../utils/projectLanguages'
 import './ProjectWork.css'
 
 const ProjectReview = () => {
@@ -42,7 +43,7 @@ const ProjectReview = () => {
             const submissionRes = await projectsAPI.getStudentTaskSubmission(currentTask.id, userId)
             const answer = submissionRes.data.answer || ''
             setStudentAnswer(answer)
-            setStudentWorkspace(parseWorkspace(answer, projRes.data.project.language))
+            setStudentWorkspace(parseWorkspace(answer, getPrimaryProjectLanguage(projRes.data.project)))
             setTaskFeedback(submissionRes.data.admin_feedback || '')
 
             setLoading(false)
@@ -110,7 +111,7 @@ const ProjectReview = () => {
                                 workspace={studentWorkspace}
                                 onChange={() => {}}
                                 readOnly
-                                defaultMonacoLanguage={getMonacoLanguage(project.language)}
+                                defaultMonacoLanguage={getMonacoLanguage(getPrimaryProjectLanguage(project))}
                             />
                         ) : (
                             <div className="student-text-box">{studentAnswer}</div>

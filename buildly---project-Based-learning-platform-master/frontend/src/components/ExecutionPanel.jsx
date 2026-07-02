@@ -106,6 +106,7 @@ const ExecutionPanel = ({
 
         {currentTab === 'preview' && execution?.previewHtml && (
           <iframe
+            key={execution.runId ?? execution.previewHtml.length}
             className="execution-preview-frame"
             title="Live preview"
             sandbox="allow-scripts"

@@ -20,6 +20,7 @@ import ProjectsList from './pages/ProjectsList'
 import ProjectDetail from './pages/ProjectDetail'
 import ProjectCreate from './pages/ProjectCreate'
 import ProjectEdit from './pages/ProjectEdit'
+import ProjectTestsManage from './pages/ProjectTestsManage'
 import Profile from './pages/Profile'
 import MyCourses from './pages/MyCourses'
 import './App.css'
@@ -137,6 +138,15 @@ function App() {
                 element={
                   <PrivateRoute requireAdmin>
                     <ProjectEdit />
+                  </PrivateRoute>
+                }
+              />
+
+              <Route
+                path="/projects/:id/tests"
+                element={
+                  <PrivateRoute requireAdmin>
+                    <ProjectTestsManage />
                   </PrivateRoute>
                 }
               />

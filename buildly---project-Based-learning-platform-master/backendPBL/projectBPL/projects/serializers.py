@@ -1,7 +1,8 @@
 # projects/serializers.py
 from rest_framework import serializers
 from django.utils.translation import gettext_lazy as _
-from .models import Project, ProjectStarterFile, ProjectTask, TaskSubmission
+from .models import Project, ProjectStarterFile, ProjectTask, TaskSubmission, Tests
+from .language_utils import normalize_project_languages
 from courses.models import Course
 
 
@@ -20,9 +21,8 @@ class ProjectCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Project
         fields = [
-            'course_id', 'title', 'description', 'requirements',
-            'objectives', 'resources', 'estimated_time',
-            'level', 'language', 'order'
+            'course_id', 'title', 'description', 'objectives',
+            'estimated_time', 'level', 'languages', 'language', 'order'
         ]
         extra_kwargs = {
             'title': {
@@ -55,14 +55,22 @@ class ProjectCreateSerializer(serializers.ModelSerializer):
                     'invalid_choice': _('المستوى المحدد غير صالح')
                 }
             },
-            'language': {
-                'required': True,
-                'error_messages': {
-                    'required': _('لغة البرمجة مطلوبة'),
-                    'invalid_choice': _('لغة البرمجة المحددة غير صالحة')
-                }
-            },
         }
+
+    languages = serializers.ListField(
+        child=serializers.ChoiceField(choices=Project.PROGRAMMING_LANGUAGE_CHOICES),
+        required=False,
+        allow_empty=False,
+    )
+
+    language = serializers.ChoiceField(
+        choices=Project.PROGRAMMING_LANGUAGE_CHOICES,
+        required=False,
+        write_only=True,
+    )
+
+    def validate(self, attrs):
+        return normalize_project_languages(attrs)
     
     def validate_course_id(self, value):
         """التحقق من وجود المسار فقط"""
@@ -169,18 +177,26 @@ class ProjectListSerializer(serializers.ModelSerializer):
     instructor_name = serializers.SerializerMethodField()
     level_display = serializers.CharField(source='get_level_display')
     language_display = serializers.CharField(source='get_language_display')
+    languages = serializers.SerializerMethodField()
+    languages_display = serializers.SerializerMethodField()
     total_course_projects = serializers.SerializerMethodField()
     
     class Meta:
         model = Project
         fields = [
             'project_id', 'course_id', 'course_title',
-            'title', 'description', 'requirements',
-            'objectives', 'resources', 'estimated_time',
+            'title', 'description', 'objectives', 'estimated_time',
             'level', 'level_display', 'language', 'language_display',
+            'languages', 'languages_display',
             'order', 'is_active', 'created_at', 'updated_at',
             'instructor_name', 'total_course_projects'
         ]
+
+    def get_languages(self, obj):
+        return obj.get_languages_list()
+
+    def get_languages_display(self, obj):
+        return obj.get_languages_display_list()
     
     def get_instructor_name(self, obj):
         """الحصول على اسم مشرف المسار"""
@@ -216,8 +232,8 @@ class ProjectUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Project
         fields = [
-            'title', 'description', 'requirements', 'objectives',
-            'resources', 'estimated_time', 'level', 'language', 'order'
+            'title', 'description', 'objectives',
+            'estimated_time', 'level', 'languages', 'language', 'order'
         ]
         extra_kwargs = {
             'title': {
@@ -250,14 +266,24 @@ class ProjectUpdateSerializer(serializers.ModelSerializer):
                     'invalid_choice': _('المستوى المحدد غير صالح')
                 }
             },
-            'language': {
-                'required': True,
-                'error_messages': {
-                    'required': _('لغة البرمجة مطلوبة'),
-                    'invalid_choice': _('لغة البرمجة المحددة غير صالحة')
-                }
-            },
         }
+
+    languages = serializers.ListField(
+        child=serializers.ChoiceField(choices=Project.PROGRAMMING_LANGUAGE_CHOICES),
+        required=False,
+        allow_empty=False,
+    )
+
+    language = serializers.ChoiceField(
+        choices=Project.PROGRAMMING_LANGUAGE_CHOICES,
+        required=False,
+        write_only=True,
+    )
+
+    def validate(self, attrs):
+        if 'languages' in attrs or 'language' in attrs:
+            return normalize_project_languages(attrs)
+        return attrs
     
     def validate_title(self, value):
         """التحقق من أن العنوان الجديد لا يتعارض مع عناوين أخرى في نفس المسار"""
@@ -405,6 +431,23 @@ class ProjectTaskSerializer(serializers.ModelSerializer):
             'is_required',
             'created_at'
         ]
+
+
+class TestsSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Tests
+        fields = [
+            'id',
+            'project',
+            'name',
+            'description',
+            'test_code',
+            'success_message',
+            'failure_message',
+            'created_at',
+            'updated_at',
+        ]
+        read_only_fields = ['id', 'created_at', 'updated_at']
            
 
 class TaskSubmissionSerializer(serializers.ModelSerializer):

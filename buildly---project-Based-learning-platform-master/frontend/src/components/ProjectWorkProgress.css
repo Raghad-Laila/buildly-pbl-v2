@@ -1,0 +1,89 @@
+.project-work-progress {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 4px;
+}
+
+.project-completed-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 16px 18px;
+  border-radius: 10px;
+  border: 1px solid rgba(34, 197, 94, 0.45);
+  background: linear-gradient(135deg, rgba(34, 197, 94, 0.16), rgba(16, 185, 129, 0.08));
+}
+
+.project-completed-icon {
+  font-size: 28px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.project-completed-banner strong {
+  display: block;
+  color: #4ade80;
+  font-size: 18px;
+  margin-bottom: 4px;
+}
+
+.project-completed-banner p {
+  margin: 0;
+  color: #d1fae5;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.project-progress-card {
+  padding: 16px 18px;
+  border-radius: 10px;
+  border: 1px solid #3b3b4f;
+  background: #1b1b32;
+}
+
+.project-progress-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.project-progress-label {
+  color: #d5d5de;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.project-progress-value {
+  color: #f8fafc;
+  font-size: 22px;
+  font-weight: 700;
+}
+
+.project-progress-bar-bg {
+  width: 100%;
+  height: 12px;
+  border-radius: 999px;
+  background: #0a0a23;
+  border: 1px solid #3b3b4f;
+  overflow: hidden;
+}
+
+.project-progress-bar-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #198eee, #38bdf8);
+  transition: width 0.45s ease;
+}
+
+.project-progress-bar-fill.is-complete {
+  background: linear-gradient(90deg, #22c55e, #4ade80);
+}
+
+.project-progress-meta {
+  margin: 10px 0 0;
+  color: #9ca3af;
+  font-size: 13px;
+}

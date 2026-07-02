@@ -3,6 +3,7 @@ import { Link, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { projectsAPI, accountAPI } from '../services/api'
 import FavoriteButton from '../components/FavoriteButton'
+import { formatProjectLanguages } from '../utils/projectLanguages'
 import './Projects.css'
 
 const ProjectsList = () => {
@@ -165,7 +166,7 @@ const ProjectsList = () => {
                     </span>
                   )}
                   <span className="badge badge-info">{project.level_display}</span>
-                  <span className="badge badge-warning">{project.language_display}</span>
+                  <span className="badge badge-warning">{formatProjectLanguages(project)}</span>
                 </div>
               </div>
 

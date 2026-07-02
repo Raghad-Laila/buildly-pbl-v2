@@ -52,6 +52,7 @@ function getStarterHtml(projectLanguage) {
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
+  <!-- عدّل المحتوى هنا — احتفظ ببنية HTML الكاملة -->
   <h1>مرحباً</h1>
   <p>ابدأ بكتابة الكود هنا</p>
   <script src="script.js"></script>
@@ -382,10 +383,49 @@ export function bundleWorkspaceFiles(files) {
   return html
 }
 
+export function getWorkspaceFileContent(workspace, fileName) {
+  const target = fileName.toLowerCase()
+  const file = workspace?.files?.find(
+    (item) =>
+      item.name.toLowerCase() === target ||
+      item.name.toLowerCase().split('/').pop() === target
+  )
+
+  return file?.content || ''
+}
+
+export function getWorkspaceSnapshot(workspaceRef, fallbackWorkspace) {
+  if (workspaceRef?.current?.trim()) {
+    try {
+      const parsed = JSON.parse(workspaceRef.current)
+      if (
+        parsed?.version === WORKSPACE_VERSION &&
+        Array.isArray(parsed.files) &&
+        parsed.files.length > 0
+      ) {
+        return parsed
+      }
+    } catch {
+      // ignore invalid snapshot
+    }
+  }
+
+  return fallbackWorkspace
+}
+
 export function getMainExecutableFile(workspace, projectLanguage) {
   const { files } = workspace
 
-  const priorityNames = [
+  const priorityByLanguage = {
+    html: ['index.html', 'style.css', 'script.js'],
+    css: ['style.css', 'index.html', 'script.js'],
+    javascript: ['script.js', 'index.html', 'style.css'],
+    typescript: ['main.ts', 'script.js', 'index.html'],
+    react: ['App.jsx', 'index.html', 'style.css'],
+    python: ['main.py'],
+  }
+
+  const priorityNames = priorityByLanguage[projectLanguage] || [
     'index.html',
     'main.py',
     'script.js',

@@ -7,8 +7,8 @@ from rest_framework.exceptions import PermissionDenied, ValidationError
 from django.utils.translation import gettext_lazy as _
 from django.db import transaction
 from django.shortcuts import get_object_or_404
-from .models import Project, ProjectStarterFile, ProjectTask, TaskSubmission
-from .serializers import ProjectCreateSerializer, ProjectListSerializer, ProjectDetailSerializer, ProjectTaskSerializer, ProjectUpdateSerializer, ProjectDeleteConfirmationSerializer, ProjectStarterFileSerializer, TaskSubmissionSerializer
+from .models import Project, ProjectStarterFile, ProjectTask, TaskSubmission, Tests
+from .serializers import ProjectCreateSerializer, ProjectListSerializer, ProjectDetailSerializer, ProjectTaskSerializer, ProjectUpdateSerializer, ProjectDeleteConfirmationSerializer, ProjectStarterFileSerializer, TaskSubmissionSerializer, TestsSerializer
 from courses.models import Course
 from progress.models import ProjectProgress
 from account.notifications import create_project_started_notification
@@ -16,10 +16,8 @@ from rest_framework.parsers import MultiPartParser, FormParser
 from reversion.views import RevisionMixin
 import reversion
 from reversion.models import Version
+from .test_runner import run_python_in_docker, run_project_tests
 import subprocess
-import tempfile
-import os
-import pathlib
 
 
 class IsCourseInstructor(permissions.BasePermission):
@@ -752,6 +750,88 @@ class ProjectTaskDeleteView(RevisionMixin, generics.DestroyAPIView):
     serializer_class = ProjectTaskSerializer
     permission_classes = [permissions.IsAuthenticated, IsCourseInstructor]
     lookup_field = 'id'
+
+
+class CreateTestsView(RevisionMixin, generics.CreateAPIView):
+    queryset = Tests.objects.all()
+    serializer_class = TestsSerializer
+    permission_classes = [permissions.IsAuthenticated, IsCourseInstructor]
+
+    def perform_create(self, serializer):
+        project_id = self.request.data.get('project')
+
+        try:
+            project = Project.objects.get(id=project_id)
+        except Project.DoesNotExist:
+            raise ValidationError(_('المشروع غير موجود'))
+
+        serializer.save(project=project)
+
+
+class ProjectTestsListView(generics.ListAPIView):
+    serializer_class = TestsSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        project_id = self.kwargs.get('project_id')
+        return Tests.objects.filter(project_id=project_id).order_by('id')
+
+
+class ProjectTestDetailView(generics.RetrieveAPIView):
+    queryset = Tests.objects.all()
+    serializer_class = TestsSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    lookup_field = 'id'
+
+
+class UpdateTestsView(RevisionMixin, generics.UpdateAPIView):
+    queryset = Tests.objects.all()
+    serializer_class = TestsSerializer
+    permission_classes = [permissions.IsAuthenticated, IsCourseInstructor]
+    lookup_field = 'id'
+
+
+class ProjectTestDeleteView(RevisionMixin, generics.DestroyAPIView):
+    queryset = Tests.objects.all()
+    serializer_class = TestsSerializer
+    permission_classes = [permissions.IsAuthenticated, IsCourseInstructor]
+    lookup_field = 'id'
+
+
+class RunProjectTestsView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request, project_id):
+        code = request.data.get('code')
+        language = request.data.get('language', 'python')
+
+        if not code or not str(code).strip():
+            return Response({'error': 'No code provided'}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            project = Project.objects.get(id=project_id)
+        except Project.DoesNotExist:
+            return Response({'error': 'المشروع غير موجود'}, status=status.HTTP_404_NOT_FOUND)
+
+        tests = Tests.objects.filter(project=project).order_by('id')
+
+        if not tests.exists():
+            return Response(
+                {
+                    'success': True,
+                    'results': [],
+                    'summary': {'total': 0, 'passed': 0, 'failed': 0},
+                }
+            )
+
+        payload = run_project_tests(code, language or project.get_languages_list()[0] or project.language, tests)
+
+        return Response(
+            {
+                'success': True,
+                **payload,
+            }
+        )
         
 
 class ExecuteCodeView(APIView):
@@ -776,35 +856,13 @@ class ExecuteCodeView(APIView):
             }, status=400)
 
         try:
-            with tempfile.TemporaryDirectory() as tmpdir:
-                file_path = os.path.join(tmpdir, "main.py")
+            outcome = run_python_in_docker(code)
 
-                # Save code to file
-                with open(file_path, "w") as f:
-                    f.write(code)
-
-                tmpdir_path = pathlib.Path(tmpdir).resolve()
-                docker_path = tmpdir_path.as_posix()
-                # Run Docker container
-                result = subprocess.run(
-                    [
-                        "docker", "run", "--rm",
-                        "-v", f"{docker_path}:/app",
-                        "--network", "none",          #  no internet
-                        "--memory", "100m",           #  limit RAM
-                        "--cpus", "0.5",              #  limit CPU
-                        "python-runner-image"
-                    ],
-                    capture_output=True,
-                    text=True,
-                    timeout=5  #  kill infinite loops
-                )
-
-                return Response({
-                    "stdout": result.stdout,
-                    "stderr": result.stderr,
-                    "returncode": result.returncode
-                })
+            return Response({
+                "stdout": outcome["stdout"],
+                "stderr": outcome["stderr"],
+                "returncode": outcome["returncode"],
+            })
 
         except subprocess.TimeoutExpired:
             return Response({

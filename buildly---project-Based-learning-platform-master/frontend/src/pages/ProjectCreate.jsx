@@ -1,6 +1,13 @@
 import React, { useState, useEffect } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { coursesAPI, projectsAPI } from '../services/api'
+import ProjectContentSections from '../components/ProjectContentSections'
+import ProjectLanguageSelect from '../components/ProjectLanguageSelect'
+import {
+  joinLines,
+  createEmptyStory,
+  buildTasksFromSections,
+} from '../utils/projectContentMapper'
 import './Form.css'
 
 const ProjectCreate = () => {
@@ -12,28 +19,19 @@ const ProjectCreate = () => {
     course_id: courseIdFromState || '',
     title: '',
     description: '',
-    requirements: '',
-    objectives: '',
-    resources: '',
     estimated_time: '',
     level: 'beginner',
-    language: 'python',
     order: '',
   })
+  const [selectedLanguages, setSelectedLanguages] = useState(['python'])
+  const [languageError, setLanguageError] = useState('')
+  const [objectiveItems, setObjectiveItems] = useState([''])
+  const [userStories, setUserStories] = useState([createEmptyStory()])
+  const [hintItems, setHintItems] = useState([''])
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const [fetchingCourses, setFetchingCourses] = useState(true)
   const [starterFile, setStarterFile] = useState(null)
-  const [tasks, setTasks] = useState([])
-  const [showTaskModal, setShowTaskModal] = useState(false)
-  const [newTask, setNewTask] = useState({
-    title: '',
-    description: '',
-    task_type: 'text',
-    expected_answer: '',
-    hint: '',
-    teaching: '',
-  })
 
   useEffect(() => {
     fetchCourses()
@@ -67,22 +65,27 @@ const ProjectCreate = () => {
     e.preventDefault()
     setError('')
 
-    if (tasks.length === 0) {
-      setError('يجب إضافة مهمة واحدة على الأقل')
-      alert('يجب إضافة مهمة واحدة على الأقل');
-      return;
+    const validStories = userStories.filter(
+      (story) => story.title?.trim() && story.description?.trim()
+    )
+
+    if (validStories.length === 0) {
+      setError('يجب إضافة قصة مستخدم واحدة على الأقل (عنوان ووصف)')
+      return
     }
 
-    const hasInvalidTask = tasks.some(t => !t.title.trim() || !t.description.trim());
-    if (hasInvalidTask) {
-      setError('بعض المهام المضافة غير مكتملة. يرجى مراجعة عناوين ووصف المهام.');
-      return;
+    if (selectedLanguages.length === 0) {
+      setLanguageError('يجب اختيار لغة واحدة على الأقل')
+      return
     }
+
     setLoading(true)
 
     try {
       const submitData = {
         ...formData,
+        objectives: joinLines(objectiveItems),
+        languages: selectedLanguages,
         course_id: parseInt(formData.course_id),
         estimated_time: parseInt(formData.estimated_time),
         order: formData.order ? parseInt(formData.order) : undefined,
@@ -97,18 +100,18 @@ const ProjectCreate = () => {
           await projectsAPI.uploadStarterFile(projectId, starterFile)
         }
 
+        const tasksToCreate = buildTasksFromSections({
+          userStories,
+          hintItems,
+          projectId,
+        })
+
         await Promise.all(
-          tasks.map(task =>
-            projectsAPI.createTask({
-              ...task,
-              project: projectId
-            })
-          )
+          tasksToCreate.map((task) => projectsAPI.createTask(task))
         )
 
         navigate(`/projects/${projectId}`)
       }
-
     } catch (err) {
       const errorData = err.response?.data
 
@@ -126,44 +129,6 @@ const ProjectCreate = () => {
     } finally {
       setLoading(false)
     }
-  }
-
-  const handleAddTask = () => {
-    if (!newTask.title || !newTask.description) {
-      alert(`المهمة غير مكتملة البيانات`);
-      return;
-    }
-    setTasks([
-      ...tasks,
-      {
-        ...newTask,
-        order: tasks.length + 1,
-      }
-    ])
-
-    // reset
-    setNewTask({
-      title: '',
-      description: '',
-      task_type: 'text',
-      expected_answer: '',
-      hint: '',
-      teaching: '',
-    })
-
-    setShowTaskModal(false)
-  }
-
-  const handleRemoveTask = (index) => {
-    const updated = tasks.filter((_, i) => i !== index)
-
-    // reorder
-    const reordered = updated.map((t, i) => ({
-      ...t,
-      order: i + 1
-    }))
-
-    setTasks(reordered)
   }
 
   if (fetchingCourses) {
@@ -229,85 +194,39 @@ const ProjectCreate = () => {
             />
           </div>
 
-          <div className="input-group">
-            <label htmlFor="requirements">المتطلبات</label>
-            <textarea
-              id="requirements"
-              name="requirements"
-              value={formData.requirements}
-              onChange={handleChange}
-              placeholder="متطلبات إنجاز المشروع"
-            />
-          </div>
+          <ProjectContentSections
+            objectiveItems={objectiveItems}
+            onObjectiveItemsChange={setObjectiveItems}
+            userStories={userStories}
+            onUserStoriesChange={setUserStories}
+            hintItems={hintItems}
+            onHintItemsChange={setHintItems}
+          />
 
           <div className="input-group">
-            <label htmlFor="objectives">الأهداف التعليمية</label>
-            <textarea
-              id="objectives"
-              name="objectives"
-              value={formData.objectives}
+            <label htmlFor="level">المستوى *</label>
+            <select
+              id="level"
+              name="level"
+              value={formData.level}
               onChange={handleChange}
-              placeholder="الأهداف التي سيحققها الطالب"
-            />
+              required
+            >
+              <option value="beginner">مبتدئ</option>
+              <option value="intermediate">متوسط</option>
+              <option value="advanced">متقدم</option>
+              <option value="expert">خبير</option>
+            </select>
           </div>
 
-          <div className="input-group">
-            <label htmlFor="resources">الموارد</label>
-            <textarea
-              id="resources"
-              name="resources"
-              value={formData.resources}
-              onChange={handleChange}
-              placeholder="الموارد والمراجع المطلوبة"
-            />
-          </div>
-
-          <div className="form-row">
-            <div className="input-group">
-              <label htmlFor="level">المستوى *</label>
-              <select
-                id="level"
-                name="level"
-                value={formData.level}
-                onChange={handleChange}
-                required
-              >
-                <option value="beginner">مبتدئ</option>
-                <option value="intermediate">متوسط</option>
-                <option value="advanced">متقدم</option>
-                <option value="expert">خبير</option>
-              </select>
-            </div>
-
-            <div className="input-group">
-              <label htmlFor="language">لغة البرمجة *</label>
-              <select
-                id="language"
-                name="language"
-                value={formData.language}
-                onChange={handleChange}
-                required
-              >
-                <option value="python">Python</option>
-                <option value="html">HTML</option>
-                <option value="css">CSS</option>
-                <option value="javascript">JavaScript</option>
-                <option value="typescript">TypeScript</option>
-                <option value="react">React</option>
-                <option value="java">Java</option>
-                <option value="csharp">C#</option>
-                <option value="cpp">C++</option>
-                <option value="php">PHP</option>
-                <option value="ruby">Ruby</option>
-                <option value="go">Go</option>
-                <option value="swift">Swift</option>
-                <option value="kotlin">Kotlin</option>
-                <option value="dart">Dart</option>
-                <option value="rust">Rust</option>
-                <option value="other">أخرى</option>
-              </select>
-            </div>
-          </div>
+          <ProjectLanguageSelect
+            selectedLanguages={selectedLanguages}
+            onChange={(languages) => {
+              setSelectedLanguages(languages)
+              setLanguageError('')
+            }}
+            error={languageError}
+          />
 
           <div className="input-group">
             <label htmlFor="starter_file">ملف البداية (اختياري)</label>
@@ -320,117 +239,6 @@ const ProjectCreate = () => {
               يمكنك رفع ملف يحتوي على كود مبدئي للمشروع
             </small>
           </div>
-
-          <div className="tasks-section">
-            <div className="tasks-header">
-              <h3>المراحل (Tasks)</h3>
-
-              <button
-                type="button"
-                className="btn btn-secondary"
-                onClick={() => setShowTaskModal(true)}
-              >
-                ➕ إضافة مهمة
-              </button>
-            </div>
-
-            <div className="tasks-list">
-              {tasks.map((task, index) => (
-                <div key={index} className="task-card">
-                  <div className="task-header">
-                    <strong>{index + 1}. {task.title}</strong>
-                    <button
-                      type="button"
-                      onClick={() => handleRemoveTask(index)}
-                      className="btn btn-danger btn-sm"
-                    >
-                      حذف
-                    </button>
-                  </div>
-
-                  <p>{task.description}</p>
-
-                  <div className="task-meta">
-                    <span>{task.task_type}</span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {showTaskModal && (
-            <div className="modal-overlay">
-              <div className="modal">
-
-                <h3>إضافة مهمة جديدة</h3>
-
-                <input
-                  type="text"
-                  placeholder="عنوان المهمة"
-                  value={newTask.title}
-                  onChange={(e) =>
-                    setNewTask({ ...newTask, title: e.target.value })
-                  }
-                />
-
-                <textarea
-                  placeholder="وصف المهمة"
-                  value={newTask.description}
-                  onChange={(e) =>
-                    setNewTask({ ...newTask, description: e.target.value })
-                  }
-                />
-
-                <select
-                  value={newTask.task_type}
-                  onChange={(e) =>
-                    setNewTask({ ...newTask, task_type: e.target.value })
-                  }
-                >
-                  <option value="text">نص</option>
-                  <option value="code">كود</option>
-                  <option value="file">ملف</option>
-                </select>
-
-                <textarea
-                  placeholder="الإجابة المتوقعة"
-                  value={newTask.expected_answer}
-                  onChange={(e) =>
-                    setNewTask({ ...newTask, expected_answer: e.target.value })
-                  }
-                />
-
-                <textarea
-                  placeholder="تلميح"
-                  value={newTask.hint}
-                  onChange={(e) =>
-                    setNewTask({ ...newTask, hint: e.target.value })
-                  }
-                />
-
-                <textarea
-                  placeholder="شرح / teaching"
-                  value={newTask.teaching}
-                  onChange={(e) =>
-                    setNewTask({ ...newTask, teaching: e.target.value })
-                  }
-                />
-
-                <div className="modal-actions">
-                  <button type="button" onClick={handleAddTask} className="btn btn-primary">
-                    حفظ
-                  </button>
-                  <button
-                    onClick={() => setShowTaskModal(false)}
-                    className="btn btn-secondary"
-                  >
-                    إلغاء
-                  </button>
-                </div>
-
-              </div>
-            </div>
-          )}
 
           <div className="form-row">
             <div className="input-group">
@@ -481,4 +289,3 @@ const ProjectCreate = () => {
 }
 
 export default ProjectCreate
-

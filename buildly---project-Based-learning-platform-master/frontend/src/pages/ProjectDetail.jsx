@@ -5,6 +5,7 @@ import { projectsAPI, accountAPI } from '../services/api'
 import FavoriteButton from '../components/FavoriteButton'
 import ShareAchievementModal from '../components/ShareAchievementModal'
 import '../components/ShareAchievementModal.css'
+import { formatProjectLanguages } from '../utils/projectLanguages'
 import './Projects.css'
 
 const ProjectDetail = () => {
@@ -193,6 +194,9 @@ const ProjectDetail = () => {
           />
           {isAdmin && (
             <>
+              <Link to={`/projects/${id}/tests`} className="btn btn-secondary">
+                إدارة الاختبارات
+              </Link>
               <Link to={`/projects/${id}/edit`} className="btn btn-secondary">
                 تعديل
               </Link>
@@ -211,24 +215,10 @@ const ProjectDetail = () => {
             <p>{project.description}</p>
           </div>
 
-          {project.requirements && (
-            <div className="card">
-              <h2>المتطلبات</h2>
-              <p>{project.requirements}</p>
-            </div>
-          )}
-
           {project.objectives && (
             <div className="card">
               <h2>الأهداف التعليمية</h2>
               <p>{project.objectives}</p>
-            </div>
-          )}
-
-          {project.resources && (
-            <div className="card">
-              <h2>الموارد</h2>
-              <p>{project.resources}</p>
             </div>
           )}
 
@@ -335,8 +325,8 @@ const ProjectDetail = () => {
                 <span className="info-value">{project.level_display}</span>
               </div>
               <div className="info-item">
-                <span className="info-label">لغة البرمجة:</span>
-                <span className="info-value">{project.language_display}</span>
+                <span className="info-label">لغات المشروع:</span>
+                <span className="info-value">{formatProjectLanguages(project)}</span>
               </div>
               <div className="info-item">
                 <span className="info-label">الوقت المقدر:</span>

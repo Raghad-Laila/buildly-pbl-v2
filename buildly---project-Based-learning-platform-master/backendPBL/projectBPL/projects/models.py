@@ -20,12 +20,24 @@ class Project(models.Model):
     
     # لغات البرمجة
     PROGRAMMING_LANGUAGE_CHOICES = (
-        ('python', 'Python'),
         ('html', 'HTML'),
         ('css', 'CSS'),
         ('javascript', 'JavaScript'),
         ('typescript', 'TypeScript'),
+        ('json', 'JSON'),
         ('react', 'React'),
+        ('vue', 'Vue.js'),
+        ('angular', 'Angular'),
+        ('svelte', 'Svelte'),
+        ('nextjs', 'Next.js'),
+        ('nuxt', 'Nuxt.js'),
+        ('sass', 'Sass'),
+        ('scss', 'SCSS'),
+        ('less', 'Less'),
+        ('tailwind', 'Tailwind CSS'),
+        ('bootstrap', 'Bootstrap'),
+        ('jquery', 'jQuery'),
+        ('python', 'Python'),
         ('java', 'Java'),
         ('csharp', 'C#'),
         ('cpp', 'C++'),
@@ -38,6 +50,12 @@ class Project(models.Model):
         ('rust', 'Rust'),
         ('other', 'أخرى'),
     )
+
+    FRONTEND_LANGUAGE_CODES = {
+        'html', 'css', 'javascript', 'typescript', 'json', 'react', 'vue',
+        'angular', 'svelte', 'nextjs', 'nuxt', 'sass', 'scss', 'less',
+        'tailwind', 'bootstrap', 'jquery',
+    }
     
     id = models.AutoField(primary_key=True, verbose_name='معرف المشروع')
     
@@ -93,8 +111,15 @@ class Project(models.Model):
     language = models.CharField(
         max_length=20,
         choices=PROGRAMMING_LANGUAGE_CHOICES,
-        verbose_name='لغة البرمجة',
-        help_text='لغة البرمجة الرئيسية للمشروع'
+        verbose_name='لغة البرمجة الرئيسية',
+        help_text='اللغة الأولى ضمن قائمة لغات المشروع (للتوافق مع الإصدارات السابقة)',
+    )
+
+    languages = models.JSONField(
+        default=list,
+        blank=True,
+        verbose_name='لغات المشروع',
+        help_text='قائمة لغات البرمجة المستخدمة في المشروع',
     )
     
     created_at = models.DateTimeField(
@@ -137,8 +162,28 @@ class Project(models.Model):
     
     def __str__(self):
         return f"{self.title} - {self.course.title}"
+
+    def get_languages_list(self):
+        if self.languages:
+            return list(self.languages)
+        if self.language:
+            return [self.language]
+        return []
+
+    def get_languages_display_list(self):
+        labels = dict(self.PROGRAMMING_LANGUAGE_CHOICES)
+        return [labels.get(code, code) for code in self.get_languages_list()]
+
+    def sync_language_fields(self):
+        languages = self.get_languages_list()
+        if languages:
+            self.languages = languages
+            self.language = languages[0]
+        elif self.language:
+            self.languages = [self.language]
     
     def save(self, *args, **kwargs):
+        self.sync_language_fields()
         # إذا لم يتم تحديد ترتيب، اجعله الأخير في المسار
         if not self.order:
             last_project = Project.objects.filter(course=self.course).order_by('-order').first()
@@ -258,6 +303,41 @@ class ProjectTask(models.Model):
 
     def __str__(self):
         return f"{self.project.title} - Task {self.order}"
+
+
+@reversion.register(follow=["project"])
+class Tests(models.Model):
+    """اختبارات المشروع (Tests)"""
+
+    id = models.AutoField(primary_key=True)
+
+    project = models.ForeignKey(
+        Project,
+        on_delete=models.CASCADE,
+        related_name='tests',
+        verbose_name=_('Project ID'),
+    )
+
+    name = models.CharField(max_length=200, verbose_name=_('Name'))
+
+    description = models.TextField(verbose_name=_('Description'))
+
+    test_code = models.TextField(verbose_name=_('Test Code'))
+
+    success_message = models.TextField(verbose_name=_('Success Message'))
+
+    failure_message = models.TextField(verbose_name=_('Failure Message'))
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = _('Test')
+        verbose_name_plural = _('Tests')
+        ordering = ['id']
+
+    def __str__(self):
+        return f"{self.project.title} - {self.name}"
     
     
 class TaskSubmission(models.Model):

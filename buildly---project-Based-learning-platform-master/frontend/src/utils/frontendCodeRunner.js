@@ -9,7 +9,19 @@ const FRONTEND_LANGUAGES = new Set([
   'css',
   'javascript',
   'typescript',
+  'json',
   'react',
+  'vue',
+  'angular',
+  'svelte',
+  'nextjs',
+  'nuxt',
+  'sass',
+  'scss',
+  'less',
+  'tailwind',
+  'bootstrap',
+  'jquery',
 ])
 
 const loadScript = (src) =>
@@ -74,6 +86,18 @@ export function resolveExecutionLanguage(code, projectLanguage) {
 export function getMonacoLanguage(language) {
   const map = {
     react: 'javascript',
+    vue: 'html',
+    angular: 'typescript',
+    svelte: 'javascript',
+    nextjs: 'javascript',
+    nuxt: 'javascript',
+    sass: 'scss',
+    scss: 'scss',
+    less: 'less',
+    tailwind: 'css',
+    bootstrap: 'css',
+    jquery: 'javascript',
+    json: 'json',
     html: 'html',
     css: 'css',
     javascript: 'javascript',
