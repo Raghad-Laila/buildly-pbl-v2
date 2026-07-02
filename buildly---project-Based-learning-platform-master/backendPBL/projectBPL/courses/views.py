@@ -593,6 +593,25 @@ class JoinCourseView(APIView):
                     'message': _('انضممت مسبقاً'),
                     'error': _('أنت منضم بالفعل لهذا المسار')
                 }, status=status.HTTP_400_BAD_REQUEST)
+
+            from placement.constants import is_frontend_placement_course
+            from placement.models import PlacementAttempt
+
+            if is_frontend_placement_course(course):
+                has_completed_placement = PlacementAttempt.objects.filter(
+                    user=request.user,
+                    course=course,
+                    status='completed',
+                ).exists()
+                if not has_completed_placement:
+                    return Response({
+                        'success': False,
+                        'message': _('اختبار تحديد المستوى مطلوب'),
+                        'error': _(
+                            'يجب إكمال اختبار تحديد مستوى Frontend قبل الانضمام لهذا المسار'
+                        ),
+                        'requires_placement': True,
+                    }, status=status.HTTP_400_BAD_REQUEST)
             
             if course.add_learner(request.user):
                 current_students_after = course.get_enrolled_emails()

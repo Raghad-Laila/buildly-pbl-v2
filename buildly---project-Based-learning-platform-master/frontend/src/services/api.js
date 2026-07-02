@@ -309,5 +309,16 @@ export const projectsAPI = {
     api.get(`/projects/rollback/${projectId}/${versionId}/`),
 }
 
+export const placementAPI = {
+  getStatus: (courseId) =>
+    api.get(`/placement/frontend/status/${courseId}/`),
+
+  start: (courseId) =>
+    api.post('/placement/frontend/start/', { course_id: Number(courseId) }),
+
+  submitAnswer: (payload) =>
+    api.post('/placement/frontend/submit-answer/', payload),
+}
+
 export default api
 

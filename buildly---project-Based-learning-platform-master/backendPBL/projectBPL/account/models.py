@@ -53,6 +53,7 @@ class CustomUser(AbstractUser):
         ('beginner', 'Beginner'),
         ('intermediate', 'Intermediate'),
         ('advanced', 'Advanced'),
+        ('expert', 'Expert'),
     )
 
     level = models.CharField(

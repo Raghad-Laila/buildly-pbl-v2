@@ -336,9 +336,12 @@ const LearnerDashboard = () => {
           
           {!dashboardData?.user_profile?.is_rated ? (
             <div className="empty-state">
-              <p>قم بإجراء الاختبار للحصول على مشاريع مناسبة لك</p>
+              <p>
+                انضم لمسار Frontend Mastery لإجراء اختبار تحديد المستوى المتكيف
+                والحصول على مشاريع مناسبة لك
+              </p>
               <Link to="/courses" className="btn btn-primary">
-                ابدأ الاختبار
+                تصفح المسارات
               </Link>
             </div>
           ) : suggested_projects?.length > 0 ? (

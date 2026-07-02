@@ -1,14 +1,17 @@
 import React, { useState, useEffect } from 'react'
-import { useParams, useNavigate, Link } from 'react-router-dom'
+import { useParams, useNavigate, Link, useLocation } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
-import { coursesAPI, accountAPI } from '../services/api'
+import { coursesAPI, accountAPI, placementAPI } from '../services/api'
 import ArchiveCourseModal from '../components/ArchiveCourseModal'
 import FavoriteButton from '../components/FavoriteButton'
 import './Courses.css'
 
+const FRONTEND_COURSE_TITLE = 'Frontend Mastery'
+
 const CourseDetail = () => {
   const { id } = useParams()
   const navigate = useNavigate()
+  const location = useLocation()
   const { isAdmin, isLearner } = useAuth()
   const [course, setCourse] = useState(null)
   const [isEnrolled, setIsEnrolled] = useState(false)
@@ -17,14 +20,35 @@ const CourseDetail = () => {
   const [joining, setJoining] = useState(false)
   const [showArchiveModal, setShowArchiveModal] = useState(false)
   const [isFavorite, setIsFavorite] = useState(false)
+  const [placementStatus, setPlacementStatus] = useState(null)
+
+  const isFrontendCourse = course?.title === FRONTEND_COURSE_TITLE
 
   useEffect(() => {
     fetchCourseDetails()
     fetchFavoriteStatus()
     if (isLearner) {
       checkEnrollment()
+      fetchPlacementStatus()
     }
   }, [id, isLearner])
+
+  useEffect(() => {
+    if (location.state?.refreshPlacement && isLearner) {
+      checkEnrollment()
+      fetchPlacementStatus()
+      fetchCourseDetails()
+    }
+  }, [location.state?.refreshPlacement, id, isLearner])
+
+  const fetchPlacementStatus = async () => {
+    try {
+      const response = await placementAPI.getStatus(id)
+      setPlacementStatus(response.data)
+    } catch (err) {
+      console.error('Error fetching placement status:', err)
+    }
+  }
 
   const fetchFavoriteStatus = async () => {
     try {
@@ -59,6 +83,11 @@ const CourseDetail = () => {
   }
 
   const handleJoin = async () => {
+    if (isFrontendCourse && !placementStatus?.has_completed) {
+      navigate(`/placement/frontend/${id}`)
+      return
+    }
+
     try {
       setJoining(true)
       await coursesAPI.join(id)
@@ -97,6 +126,12 @@ const CourseDetail = () => {
   if (error || !course) {
     return <div className="alert alert-error">{error || 'المسار غير موجود'}</div>
   }
+
+  const learnerLevel = placementStatus?.final_level
+  const visibleProjects =
+    isFrontendCourse && isEnrolled && learnerLevel
+      ? (course.course_projects || []).filter((project) => project.level === learnerLevel)
+      : course.course_projects || []
 
   return (
     <div className="container">
@@ -148,11 +183,17 @@ const CourseDetail = () => {
             <p>{course.description}</p>
           </div>
 
-          {course.course_projects && course.course_projects.length > 0 && (
+          {visibleProjects.length > 0 && (
             <div className="card">
               <h2>المشاريع في هذا المسار</h2>
+              {isFrontendCourse && isEnrolled && learnerLevel && (
+                <p className="placement-level-note">
+                  المعروضة حسب مستواك بعد الاختبار:{' '}
+                  <strong>{placementStatus?.final_level_display || learnerLevel}</strong>
+                </p>
+              )}
               <div className="projects-list">
-                {course.course_projects.map((project) => (
+                {visibleProjects.map((project) => (
                   <Link
                     key={project.project_id}
                     to={`/projects/${project.project_id}`}
@@ -217,12 +258,21 @@ const CourseDetail = () => {
               ) : (
                 <div className="enrollment-status">
                   <h4>انضم للمسار</h4>
+                  {isFrontendCourse ? (
+                    <p className="placement-join-note">
+                      سيبدأ اختبار تحديد مستوى Frontend قبل الانضمام للمسار.
+                    </p>
+                  ) : null}
                   <button
                     onClick={handleJoin}
                     className="btn btn-primary"
                     disabled={joining}
                   >
-                    {joining ? 'جاري الانضمام...' : 'انضم الآن'}
+                    {joining
+                      ? 'جاري الانضمام...'
+                      : isFrontendCourse
+                        ? 'ابدأ اختبار تحديد المستوى'
+                        : 'انضم الآن'}
                   </button>
                 </div>
               )}

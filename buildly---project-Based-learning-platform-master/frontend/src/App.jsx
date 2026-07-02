@@ -26,6 +26,7 @@ import MyCourses from './pages/MyCourses'
 import './App.css'
 import ProjectWork from './pages/ProjectWork'
 import ProjectReview from './pages/ProjectReview'
+import PlacementPage from './pages/placement/PlacementPage'
 
 function App() {
   return (
@@ -102,6 +103,15 @@ function App() {
                 element={
                   <PrivateRoute>
                     <MyCourses />
+                  </PrivateRoute>
+                }
+              />
+
+              <Route
+                path="/placement/frontend/:courseId"
+                element={
+                  <PrivateRoute>
+                    <PlacementPage />
                   </PrivateRoute>
                 }
               />

@@ -5,20 +5,16 @@ import { coursesAPI, accountAPI } from '../services/api'
 import ArchiveCourseModal from '../components/ArchiveCourseModal'
 import FavoriteButton from '../components/FavoriteButton'
 import './Courses.css'
-import QuizComponent from './QuizComponent'
 
 const CoursesList = () => {
   const { isAdmin } = useAuth()
   const [courses, setCourses] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
-  const [showQuiz, setShowQuiz] = useState(false)
-  const [answers, setAnswers] = useState({})
   const [archiveCourse, setArchiveCourse] = useState(null)
   const [favoriteCourseIds, setFavoriteCourseIds] = useState(new Set())
 
   useEffect(() => {
-    checkUser()
     fetchCourses()
   }, [])
 
@@ -38,18 +34,6 @@ const CoursesList = () => {
       console.error(err)
     } finally {
       setLoading(false)
-    }
-  }
-
-  const checkUser = async () => {
-    try {
-      const res = await accountAPI.getProfile()
-
-      if (!res.data.quiz_info.is_rated && !isAdmin) {
-        setShowQuiz(true)
-      }
-    } catch (err) {
-      console.error(err)
     }
   }
 
@@ -82,18 +66,6 @@ const CoursesList = () => {
     setArchiveCourse(null)
   }
 
-  const submitQuiz = async (level) => {
-    try {
-
-      await accountAPI.submitQuiz(level);
-
-      setShowQuiz(false);
-      fetchCourses();
-    } catch (err) {
-      console.error("Fehler beim Speichern des Levels:", err);
-    }
-  };
-
   if (loading) {
     return (
       <div className="loading">
@@ -104,16 +76,6 @@ const CoursesList = () => {
 
   if (error) {
     return <div className="alert alert-error">{error}</div>
-  }
-
-  if (showQuiz) {
-    return (
-      <div className="quiz-container">
-        <QuizComponent
-          onFinish={submitQuiz}
-        />
-      </div>
-    )
   }
 
   return (
