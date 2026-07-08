@@ -2,35 +2,11 @@ export const FRONTEND_LANGUAGE_OPTIONS = [
   { value: 'html', label: 'HTML' },
   { value: 'css', label: 'CSS' },
   { value: 'javascript', label: 'JavaScript' },
-  { value: 'typescript', label: 'TypeScript' },
-  { value: 'json', label: 'JSON' },
   { value: 'react', label: 'React' },
-  { value: 'vue', label: 'Vue.js' },
-  { value: 'angular', label: 'Angular' },
-  { value: 'svelte', label: 'Svelte' },
-  { value: 'nextjs', label: 'Next.js' },
-  { value: 'nuxt', label: 'Nuxt.js' },
-  { value: 'sass', label: 'Sass' },
-  { value: 'scss', label: 'SCSS' },
-  { value: 'less', label: 'Less' },
-  { value: 'tailwind', label: 'Tailwind CSS' },
-  { value: 'bootstrap', label: 'Bootstrap' },
-  { value: 'jquery', label: 'jQuery' },
 ]
 
 export const OTHER_LANGUAGE_OPTIONS = [
   { value: 'python', label: 'Python' },
-  { value: 'java', label: 'Java' },
-  { value: 'csharp', label: 'C#' },
-  { value: 'cpp', label: 'C++' },
-  { value: 'php', label: 'PHP' },
-  { value: 'ruby', label: 'Ruby' },
-  { value: 'go', label: 'Go' },
-  { value: 'swift', label: 'Swift' },
-  { value: 'kotlin', label: 'Kotlin' },
-  { value: 'dart', label: 'Dart' },
-  { value: 'rust', label: 'Rust' },
-  { value: 'other', label: 'أخرى' },
 ]
 
 export const ALL_LANGUAGE_OPTIONS = [

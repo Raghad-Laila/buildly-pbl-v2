@@ -6,8 +6,8 @@
 
 .project-card {
   background: var(--bg-primary);
-  border-radius: 12px;
-  padding: 24px;
+  border-radius: 16px;
+  overflow: hidden;
   box-shadow: var(--shadow-sm);
   border: 1px solid var(--border-color);
   transition: all 0.3s ease;
@@ -15,17 +15,73 @@
   flex-direction: column;
 }
 
-.project-card:hover {
-  transform: translateY(-4px);
-  box-shadow: var(--shadow-md);
+.project-image-container {
+  position: relative;
+  height: 200px;
+  width: 100%;
+  background: #f3f4f6;
+}
+
+.project-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.project-image-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
+  color: white;
+  font-size: 48px;
+  font-weight: 700;
+}
+
+.project-favorite-badge {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 2;
+}
+
+.project-card-content {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
 }
 
 .project-header-top {
   display: flex;
   justify-content: space-between;
-  align-items: flex-start;
+  align-items: center;
   gap: 12px;
   margin-bottom: 12px;
+}
+
+.btn-view-details {
+  text-decoration: none !important;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-weight: 600;
+  width: 100%;
+}
+
+.admin-actions {
+  display: flex;
+  gap: 8px;
+  width: 100%;
+  margin-top: 8px;
+}
+
+.admin-actions .btn {
+  flex: 1;
+  padding: 6px;
+  font-size: 13px;
 }
 
 .project-header-top h3 {
@@ -60,16 +116,62 @@
 
 .project-meta {
   display: flex;
-  gap: 24px;
+  flex-direction: column;
+  gap: 12px;
   margin-bottom: 20px;
   padding-top: 16px;
   border-top: 1px solid var(--border-color);
 }
 
+.meta-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+}
+
+.meta-label {
+  color: var(--text-light);
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.meta-value {
+  color: var(--text-primary);
+  font-size: 14px;
+  font-weight: 600;
+}
+
 .project-actions {
   display: flex;
-  gap: 12px;
+  gap: 8px;
   margin-top: auto;
+  align-items: stretch;
+}
+
+.btn-view-details {
+  flex: 2;
+  text-decoration: none !important;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-weight: 700;
+  padding: 10px;
+  font-size: 15px;
+}
+
+.admin-actions {
+  display: flex;
+  gap: 8px;
+  flex: 1.5;
+}
+
+.admin-actions .btn {
+  flex: 1;
+  padding: 10px 5px;
+  font-size: 13px;
+  justify-content: center;
+  white-space: nowrap;
 }
 
 @media (max-width: 768px) {

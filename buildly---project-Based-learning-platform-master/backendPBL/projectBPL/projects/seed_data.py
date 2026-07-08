@@ -50,13 +50,7 @@ FRONTEND_PROJECTS = [
                 'name': 'بنية HTML كاملة',
                 'description': 'يتحقق من وجود DOCTYPE و html و head و body',
                 'test_code': (
-                    'if (!/<!doctype\\s+html>/i.test(html)) throw new Error("doctype");\n'
-                    'if (!/<html[\\s>]/i.test(html)) throw new Error("html");\n'
-                    'if (!/<head[\\s>]/i.test(html)) throw new Error("head");\n'
-                    'if (!/<body[\\s>]/i.test(html)) throw new Error("body");\n'
-                    'if (!/<meta[^>]+charset\\s*=/i.test(html)) throw new Error("charset");\n'
-                    'if (!/<\\/body>/i.test(html)) throw new Error("body close");\n'
-                    'if (!/<\\/html>/i.test(html)) throw new Error("html close");'
+                    'if (!htmlHasStructure()) throw new Error("structure");'
                 ),
                 'success_message': 'بنية HTML5 صحيحة وكاملة!',
                 'failure_message': (
@@ -68,19 +62,17 @@ FRONTEND_PROJECTS = [
                 'name': 'عنوان h1',
                 'description': 'يتحقق من وجود h1 بالنص الصحيح داخل body',
                 'test_code': (
-                    'if (!/<h1[^>]*>[\\s\\S]*مرحباً بك في Buildly[\\s\\S]*<\\/h1>/i.test(html)) '
-                    'throw new Error("h1");'
+                    'if (!htmlHasTagContent("h1", "مرحباً", "Buildly")) throw new Error("h1");'
                 ),
                 'success_message': 'العنوان موجود داخل body!',
-                'failure_message': 'أضف <h1>مرحباً بك في Buildly</h1> داخل body',
+                'failure_message': 'أضف <h1> يحتوي على ترحيب Buildly داخل body',
             },
             {
                 'name': 'فقرة وزر',
                 'description': 'يتحقق من الفقرة ونص الزر',
                 'test_code': (
-                    'if (!html.includes("تعلم الفرونت إند خطوة بخطوة")) throw new Error("paragraph");\n'
-                    'if (!/<button[^>]*>[\\s\\S]*ابدأ التعلم[\\s\\S]*<\\/button>/i.test(html)) '
-                    'throw new Error("button");'
+                    'if (!htmlHasText("تعلم", "الفرونت", "خطوة")) throw new Error("paragraph");\n'
+                    'if (!htmlHasTagContent("button", "ابدأ", "التعلم")) throw new Error("button");'
                 ),
                 'success_message': 'الفقرة والزر صحيحان!',
                 'failure_message': 'أضف الفقرة والزر المطلوبين داخل body',

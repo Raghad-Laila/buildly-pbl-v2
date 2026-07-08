@@ -140,7 +140,7 @@ const ProjectTestsManage = () => {
           <Link to={`/projects/${projectId}`} className="back-link">
             ← العودة للمشروع
           </Link>
-          <h1>إدارة الاختبارات</h1>
+          <h1>الاختبارات</h1>
           {project && <p className="tests-manage-subtitle">{project.title}</p>}
         </div>
         <button type="button" className="btn btn-primary" onClick={openCreateModal}>

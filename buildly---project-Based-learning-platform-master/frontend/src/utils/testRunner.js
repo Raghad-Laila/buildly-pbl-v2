@@ -1,5 +1,6 @@
 import { FRONTEND_LANGUAGE_OPTIONS } from './projectLanguages'
 import { getWorkspaceFileContent } from './codeWorkspace'
+import { runHtmlWorkspaceTest } from './htmlTestHelpers'
 
 const CLIENT_TEST_LANGUAGES = new Set(
   FRONTEND_LANGUAGE_OPTIONS.map((option) => option.value)
@@ -36,8 +37,7 @@ export function runClientTests(code, tests = [], options = {}) {
   const results = tests.map((test) => {
     try {
       if (useWorkspace) {
-        const runner = new Function('html', 'css', test.test_code || '')
-        runner(html, css)
+        runHtmlWorkspaceTest(html, css, test.test_code || '')
       } else {
         const combinedCode = `${code}\n\n${test.test_code || ''}`.trim()
         const runner = new Function(combinedCode)

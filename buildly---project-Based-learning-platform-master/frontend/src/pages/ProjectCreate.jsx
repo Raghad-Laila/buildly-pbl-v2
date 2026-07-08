@@ -32,10 +32,24 @@ const ProjectCreate = () => {
   const [loading, setLoading] = useState(false)
   const [fetchingCourses, setFetchingCourses] = useState(true)
   const [starterFile, setStarterFile] = useState(null)
+  const [projectImage, setProjectImage] = useState(null)
+  const [imagePreview, setImagePreview] = useState(null)
 
   useEffect(() => {
     fetchCourses()
   }, [])
+
+  const handleImageChange = (e) => {
+    const file = e.target.files[0]
+    if (file) {
+      setProjectImage(file)
+      const reader = new FileReader()
+      reader.onloadend = () => {
+        setImagePreview(reader.result)
+      }
+      reader.readAsDataURL(file)
+    }
+  }
 
   const fetchCourses = async () => {
     try {
@@ -62,7 +76,7 @@ const ProjectCreate = () => {
   }
 
   const handleSubmit = async (e) => {
-    e.preventDefault()
+    if (e) e.preventDefault()
     setError('')
 
     const validStories = userStories.filter(
@@ -71,12 +85,12 @@ const ProjectCreate = () => {
 
     if (validStories.length === 0) {
       setError('يجب إضافة قصة مستخدم واحدة على الأقل (عنوان ووصف)')
-      return
+      return null
     }
 
     if (selectedLanguages.length === 0) {
       setLanguageError('يجب اختيار لغة واحدة على الأقل')
-      return
+      return null
     }
 
     setLoading(true)
@@ -89,6 +103,7 @@ const ProjectCreate = () => {
         course_id: parseInt(formData.course_id),
         estimated_time: parseInt(formData.estimated_time),
         order: formData.order ? parseInt(formData.order) : undefined,
+        image: projectImage,
       }
 
       const response = await projectsAPI.create(submitData)
@@ -110,7 +125,7 @@ const ProjectCreate = () => {
           tasksToCreate.map((task) => projectsAPI.createTask(task))
         )
 
-        navigate(`/projects/${projectId}`)
+        return projectId
       }
     } catch (err) {
       const errorData = err.response?.data
@@ -126,8 +141,23 @@ const ProjectCreate = () => {
       } else {
         setError('حدث خطأ أثناء إنشاء المشروع')
       }
+      return null
     } finally {
       setLoading(false)
+    }
+  }
+
+  const handleCreateAndGoToTests = async () => {
+    const projectId = await handleSubmit()
+    if (projectId) {
+      navigate(`/projects/${projectId}/tests`)
+    }
+  }
+
+  const handleFormSubmit = async (e) => {
+    const projectId = await handleSubmit(e)
+    if (projectId) {
+      navigate(`/projects/${projectId}`)
     }
   }
 
@@ -148,7 +178,7 @@ const ProjectCreate = () => {
       <div className="form-container">
         {error && <div className="alert alert-error">{error}</div>}
 
-        <form onSubmit={handleSubmit} className="form">
+        <form onSubmit={handleFormSubmit} className="form">
           <div className="input-group">
             <label htmlFor="course_id">المسار التعليمي *</label>
             <select
@@ -229,6 +259,24 @@ const ProjectCreate = () => {
           />
 
           <div className="input-group">
+            <label htmlFor="project_image">صورة المشروع</label>
+            <input
+              type="file"
+              id="project_image"
+              accept="image/*"
+              onChange={handleImageChange}
+            />
+            {imagePreview && (
+              <div className="image-preview-container">
+                <img src={imagePreview} alt="Preview" className="image-preview" />
+              </div>
+            )}
+            <small className="input-hint">
+              قم برفع صورة تعبيرية للمشروع (يفضل مقاس 16:9)
+            </small>
+          </div>
+
+          <div className="input-group">
             <label htmlFor="starter_file">ملف البداية (اختياري)</label>
             <input
               type="file"
@@ -273,6 +321,14 @@ const ProjectCreate = () => {
           <div className="form-actions">
             <button type="submit" className="btn btn-primary" disabled={loading}>
               {loading ? 'جاري الإنشاء...' : 'إنشاء المشروع'}
+            </button>
+            <button
+              type="button"
+              onClick={handleCreateAndGoToTests}
+              className="btn btn-secondary"
+              disabled={loading}
+            >
+              الاختبارات
             </button>
             <button
               type="button"

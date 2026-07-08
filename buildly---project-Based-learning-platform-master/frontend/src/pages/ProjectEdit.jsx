@@ -32,6 +32,10 @@ const ProjectEdit = () => {
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const [fetching, setFetching] = useState(true)
+  const [projectImage, setProjectImage] = useState(null)
+  const [imagePreview, setImagePreview] = useState(null)
+  const [starterFile, setStarterFile] = useState(null)
+  const [existingStarterFile, setExistingStarterFile] = useState(null)
 
   useEffect(() => {
     fetchProject()
@@ -50,6 +54,8 @@ const ProjectEdit = () => {
         order: project.order || '',
       })
       setSelectedLanguages(getProjectLanguages(project))
+      setImagePreview(project.image)
+      setExistingStarterFile(project.starter_file)
 
       const objectives = splitLines(project.objectives)
       setObjectiveItems(objectives.length > 0 ? objectives : [''])
@@ -76,6 +82,18 @@ const ProjectEdit = () => {
       [name]: value,
     })
     setError('')
+  }
+
+  const handleImageChange = (e) => {
+    const file = e.target.files[0]
+    if (file) {
+      setProjectImage(file)
+      const reader = new FileReader()
+      reader.onloadend = () => {
+        setImagePreview(reader.result)
+      }
+      reader.readAsDataURL(file)
+    }
   }
 
   const handleSubmit = async (e) => {
@@ -107,7 +125,15 @@ const ProjectEdit = () => {
         order: formData.order ? parseInt(formData.order) : undefined,
       }
 
+      if (projectImage) {
+        submitData.image = projectImage
+      }
+
       await projectsAPI.update(id, submitData)
+
+      if (starterFile) {
+        await projectsAPI.uploadStarterFile(id, starterFile)
+      }
 
       await syncProjectTasksOnEdit({
         projectId: id,
@@ -207,6 +233,41 @@ const ProjectEdit = () => {
           />
 
           <div className="input-group">
+            <label htmlFor="project_image">صورة المشروع</label>
+            <input
+              type="file"
+              id="project_image"
+              accept="image/*"
+              onChange={handleImageChange}
+            />
+            {imagePreview && (
+              <div className="image-preview-container">
+                <img src={imagePreview} alt="Preview" className="image-preview" />
+              </div>
+            )}
+            <small className="input-hint">
+              يمكنك تغيير صورة المشروع الحالية
+            </small>
+          </div>
+
+          <div className="input-group">
+            <label htmlFor="starter_file">ملف البداية (اختياري)</label>
+            <input
+              type="file"
+              id="starter_file"
+              onChange={(e) => setStarterFile(e.target.files[0])}
+            />
+            {existingStarterFile && (
+              <p className="existing-file-info">
+                الملف الحالي: <a href={existingStarterFile.file_url} target="_blank" rel="noreferrer">{existingStarterFile.file_name}</a>
+              </p>
+            )}
+            <small className="input-hint">
+              يمكنك تغيير ملف البداية الخاص بالمشروع
+            </small>
+          </div>
+
+          <div className="input-group">
             <label htmlFor="level">المستوى *</label>
             <select
               id="level"
@@ -270,7 +331,7 @@ const ProjectEdit = () => {
               onClick={() => navigate(`/projects/${id}/tests`)}
               className="btn btn-secondary"
             >
-              إدارة الاختبارات
+              الاختبارات
             </button>
             <button
               type="button"

@@ -22,7 +22,7 @@ class ProjectCreateSerializer(serializers.ModelSerializer):
         model = Project
         fields = [
             'course_id', 'title', 'description', 'objectives',
-            'estimated_time', 'level', 'languages', 'language', 'order'
+            'estimated_time', 'level', 'languages', 'language', 'image', 'order'
         ]
         extra_kwargs = {
             'title': {
@@ -187,7 +187,7 @@ class ProjectListSerializer(serializers.ModelSerializer):
             'project_id', 'course_id', 'course_title',
             'title', 'description', 'objectives', 'estimated_time',
             'level', 'level_display', 'language', 'language_display',
-            'languages', 'languages_display',
+            'languages', 'languages_display', 'image',
             'order', 'is_active', 'created_at', 'updated_at',
             'instructor_name', 'total_course_projects'
         ]
@@ -233,7 +233,7 @@ class ProjectUpdateSerializer(serializers.ModelSerializer):
         model = Project
         fields = [
             'title', 'description', 'objectives',
-            'estimated_time', 'level', 'languages', 'language', 'order'
+            'estimated_time', 'level', 'languages', 'language', 'image', 'order'
         ]
         extra_kwargs = {
             'title': {

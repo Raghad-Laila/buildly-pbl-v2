@@ -30,8 +30,28 @@
   cursor: not-allowed;
 }
 
+.favorite-btn.icon-only {
+  padding: 8px;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  justify-content: center;
+  border: none;
+  background: white;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.favorite-btn.icon-only:hover {
+  transform: scale(1.1);
+  background: #fff;
+}
+
+.favorite-btn.icon-only.is-favorite {
+  background: #fff;
+}
+
 .favorite-icon {
-  font-size: 16px;
+  font-size: 20px;
   line-height: 1;
 }
 

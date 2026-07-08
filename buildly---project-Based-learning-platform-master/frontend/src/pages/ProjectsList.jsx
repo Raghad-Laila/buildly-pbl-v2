@@ -146,60 +146,73 @@ const ProjectsList = () => {
 
             return (
             <div key={project.project_id} className="project-card">
-
-              <div className="project-header">
-                <div className="project-header-top">
-                  <h3>{project.title}</h3>
+              <div className="project-image-container">
+                {project.image ? (
+                  <img src={project.image} alt={project.title} className="project-image" />
+                ) : (
+                  <div className="project-image-placeholder">
+                    <span>{project.title.charAt(0)}</span>
+                  </div>
+                )}
+                <div className="project-favorite-badge">
                   <FavoriteButton
                     itemType="project"
                     objectId={project.project_id}
                     initialFavorite={favoriteProjectIds.has(project.project_id)}
                     onToggle={handleFavoriteToggle}
-                    label="مفضلة"
+                    showLabel={false}
                   />
                 </div>
+              </div>
 
-                <div className="project-badges">
-                  {showStatus && (
-                    <span className={`badge status-badge ${getStatusClass(status)}`}>
-                      {getStatusLabel(status)}
-                    </span>
+              <div className="project-card-content">
+                <div className="project-header">
+                  <div className="project-header-top">
+                    <h3>{project.title}</h3>
+                  </div>
+
+                  <div className="project-badges">
+                    {showStatus && (
+                      <span className={`badge status-badge ${getStatusClass(status)}`}>
+                        {getStatusLabel(status)}
+                      </span>
+                    )}
+                    <span className="badge badge-info">{project.level_display}</span>
+                    <span className="badge badge-warning">{formatProjectLanguages(project)}</span>
+                  </div>
+                </div>
+
+                <p className="project-description">
+                  {project.description?.substring(0, 100)}...
+                </p>
+
+                  <div className="project-meta">
+                    <div className="meta-item">
+                      <span className="meta-label">المسار</span>
+                      <span className="meta-value">{project.course_title}</span>
+                    </div>
+                    <div className="meta-item">
+                      <span className="meta-label">الوقت</span>
+                      <span className="meta-value">{project.estimated_time} ساعة</span>
+                    </div>
+                  </div>
+
+                <div className="project-actions">
+                  <Link to={`/projects/${project.project_id}`} className="btn btn-primary btn-view-details">
+                    عرض التفاصيل
+                  </Link>
+
+                  {isAdmin && (
+                    <div className="admin-actions">
+                      <Link to={`/projects/${project.project_id}/edit`} className="btn btn-secondary btn-sm">
+                        تعديل
+                      </Link>
+                      <button onClick={() => handleDelete(project.project_id)} className="btn btn-danger btn-sm">
+                        حذف
+                      </button>
+                    </div>
                   )}
-                  <span className="badge badge-info">{project.level_display}</span>
-                  <span className="badge badge-warning">{formatProjectLanguages(project)}</span>
                 </div>
-              </div>
-
-              <p className="project-description">
-                {project.description?.substring(0, 150)}...
-              </p>
-
-              <div className="project-meta">
-                <div className="meta-item">
-                  <span className="meta-label">المسار:</span>
-                  <span className="meta-value">{project.course_title}</span>
-                </div>
-                <div className="meta-item">
-                  <span className="meta-label">الوقت:</span>
-                  <span className="meta-value">{project.estimated_time} ساعة</span>
-                </div>
-              </div>
-
-              <div className="project-actions">
-                <Link to={`/projects/${project.project_id}`} className="btn btn-primary">
-                  عرض التفاصيل
-                </Link>
-
-                {isAdmin && (
-                  <>
-                    <Link to={`/projects/${project.project_id}/edit`} className="btn btn-secondary">
-                      تعديل
-                    </Link>
-                    <button onClick={() => handleDelete(project.project_id)} className="btn btn-danger">
-                      حذف
-                    </button>
-                  </>
-                )}
               </div>
 
             </div>

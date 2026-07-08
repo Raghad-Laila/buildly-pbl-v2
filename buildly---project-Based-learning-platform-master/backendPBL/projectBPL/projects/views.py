@@ -73,6 +73,7 @@ class CreateProjectView(RevisionMixin, generics.CreateAPIView):
                     'estimated_time': project.estimated_time,
                     'level': project.get_level_display(),
                     'language': project.get_language_display(),
+                    'image': project.image.url if project.image else None,
                     'created_at': project.created_at,
                 }
             }, status=status.HTTP_201_CREATED)
@@ -295,11 +296,10 @@ class UpdateProjectView(RevisionMixin, generics.UpdateAPIView):
     queryset = Project.objects.filter(is_active=True)
     serializer_class = ProjectUpdateSerializer
     permission_classes = [permissions.IsAuthenticated, IsCourseInstructor]
-    lookup_field = 'pk'  # ⭐ تغيير: استخدام pk بدلاً من project_id
+    lookup_field = 'pk'
     
     def get_object(self):
         """الحصول على المشروع المطلوب"""
-        # ⭐ تغيير: استخدام id (رقم) بدلاً من project_id (UUID)
         pk = self.kwargs.get('pk')
         try:
             return Project.objects.get(id=pk, is_active=True)
@@ -308,29 +308,37 @@ class UpdateProjectView(RevisionMixin, generics.UpdateAPIView):
     
     @transaction.atomic
     def put(self, request, *args, **kwargs):
-        """UC-05 الخطوة 4-6: تحديث بيانات المشروع"""
+        """تحديث بيانات المشروع"""
+        kwargs['partial'] = True  # اجعلها partial دائماً لتجنب مشاكل الحقول المفقودة في FormData
+        return self.update_project(request, *args, **kwargs)
+
+    @transaction.atomic
+    def patch(self, request, *args, **kwargs):
+        """تحديث جزئي للمشروع"""
+        kwargs['partial'] = True
+        return self.update_project(request, *args, **kwargs)
+
+    def update_project(self, request, *args, **kwargs):
         try:
-            # الحصول على المشروع الحالي
+            partial = kwargs.get('partial', False)
             project = self.get_object()
             
-            # ⭐ إرسال instance إلى context حتى يصل للـ serializer
             serializer = self.get_serializer(
                 project,
                 data=request.data,
-                partial=False,
+                partial=partial,
                 context={'instance': project, 'request': request}
             )
             serializer.is_valid(raise_exception=True)
             
-            # حفظ التعديلات
             updated_project = serializer.save()
             
             return Response({
                 'success': True,
                 'message': _('تم تعديل المشروع بنجاح'),
                 'project': {
-                    'project_id': updated_project.id,  # ⭐ تغيير
-                    'course_id': updated_project.course.id,  # ⭐ تغيير
+                    'project_id': updated_project.id,
+                    'course_id': updated_project.course.id,
                     'title': updated_project.title,
                     'description': updated_project.description,
                     'requirements': updated_project.requirements,
@@ -338,6 +346,7 @@ class UpdateProjectView(RevisionMixin, generics.UpdateAPIView):
                     'estimated_time': updated_project.estimated_time,
                     'level': updated_project.get_level_display(),
                     'language': updated_project.get_language_display(),
+                    'image': updated_project.image.url if updated_project.image else None,
                     'order': updated_project.order,
                     'updated_by': f"{request.user.first_name} {request.user.last_name}",
                     'updated_at': updated_project.updated_at,
@@ -345,40 +354,11 @@ class UpdateProjectView(RevisionMixin, generics.UpdateAPIView):
             })
             
         except ValidationError as e:
-            error_messages = []
-            
-            if hasattr(e, 'detail'):
-                if isinstance(e.detail, dict):
-                    for field, errors in e.detail.items():
-                        if isinstance(errors, list):
-                            for error in errors:
-                                error_messages.append({
-                                    'field': field,
-                                    'message': str(error)
-                                })
-                        else:
-                            error_messages.append({
-                                'field': field,
-                                'message': str(errors)
-                            })
-                else:
-                    error_messages.append({'field': 'general', 'message': str(e.detail)})
-            else:
-                error_messages.append({'field': 'general', 'message': str(e)})
-            
             return Response({
                 'success': False,
                 'message': _('فشل تعديل المشروع'),
-                'errors': error_messages,
-                'data': request.data
+                'errors': e.detail,
             }, status=status.HTTP_400_BAD_REQUEST)
-            
-        except Project.DoesNotExist:
-            return Response({
-                'success': False,
-                'message': _('المشروع غير موجود'),
-                'error': _('المشروع المطلوب غير موجود')
-            }, status=status.HTTP_404_NOT_FOUND)
             
         except Exception as e:
             return Response({

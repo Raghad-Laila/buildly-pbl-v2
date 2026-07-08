@@ -131,3 +131,28 @@ input[type="file"]:hover {
   gap: 10px;
   margin-top: 10px;
 }
+
+.image-preview-container {
+  margin-top: 12px;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid var(--border-color);
+  max-width: 300px;
+}
+
+.image-preview {
+  width: 100%;
+  display: block;
+}
+
+.existing-file-info {
+  margin-top: 8px;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.existing-file-info a {
+  color: var(--primary-color);
+  text-decoration: underline;
+  font-weight: 500;
+}

@@ -195,7 +195,7 @@ const ProjectDetail = () => {
           {isAdmin && (
             <>
               <Link to={`/projects/${id}/tests`} className="btn btn-secondary">
-                إدارة الاختبارات
+                الاختبارات
               </Link>
               <Link to={`/projects/${id}/edit`} className="btn btn-secondary">
                 تعديل

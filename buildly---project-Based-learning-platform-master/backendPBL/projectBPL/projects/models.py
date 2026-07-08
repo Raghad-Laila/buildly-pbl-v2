@@ -137,6 +137,14 @@ class Project(models.Model):
         verbose_name='نشط'
     )
     
+    image = models.ImageField(
+        upload_to='project_images/',
+        null=True,
+        blank=True,
+        verbose_name='صورة المشروع',
+        help_text='قم برفع صورة تعبيرية للمشروع'
+    )
+    
     order = models.IntegerField(
         default=0,
         verbose_name='الترتيب',

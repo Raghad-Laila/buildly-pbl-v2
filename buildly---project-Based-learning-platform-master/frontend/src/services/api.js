@@ -201,11 +201,39 @@ export const projectsAPI = {
   get: (id) =>
     api.get(`/projects/${id}/`),
 
-  create: (data) =>
-    api.post('/projects/create/', data),
+  create: (data) => {
+    if (data.image instanceof File) {
+      const formData = new FormData()
+      Object.keys(data).forEach((key) => {
+        if (key === 'languages') {
+          data[key].forEach((lang) => formData.append('languages', lang))
+        } else {
+          formData.append(key, data[key])
+        }
+      })
+      return api.post('/projects/create/', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      })
+    }
+    return api.post('/projects/create/', data)
+  },
 
-  update: (id, data) =>
-    api.put(`/projects/${id}/update/`, data),
+  update: (id, data) => {
+    if (data.image instanceof File) {
+      const formData = new FormData()
+      Object.keys(data).forEach((key) => {
+        if (key === 'languages') {
+          data[key].forEach((lang) => formData.append('languages', lang))
+        } else if (data[key] !== undefined) {
+          formData.append(key, data[key])
+        }
+      })
+      return api.patch(`/projects/${id}/update/`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      })
+    }
+    return api.patch(`/projects/${id}/update/`, data)
+  },
 
   delete: (id) =>
     api.delete(`/projects/${id}/delete/`),

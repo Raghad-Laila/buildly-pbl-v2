@@ -138,6 +138,14 @@
   border-color: #f1a33a;
 }
 
+.fcc-story-item-static {
+  cursor: default;
+}
+
+.fcc-story-item-static:hover {
+  border-color: #3b3b4f;
+}
+
 .fcc-story-item.active {
   border-color: #198eee;
   background: rgba(25, 142, 238, 0.08);
@@ -254,6 +262,12 @@
 
 .fcc-current-task-label strong {
   color: #f8fafc;
+}
+
+.fcc-shared-workspace-note {
+  color: #94a3b8;
+  font-size: 0.9rem;
+  font-weight: 400;
 }
 
 .fcc-check-row {

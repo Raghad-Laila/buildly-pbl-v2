@@ -43,6 +43,39 @@ const parseLines = (text) => {
         .filter(Boolean)
 }
 
+async function loadSharedProjectWorkspace(taskList, projectLanguage) {
+    const codeTasks = taskList.filter((item) => item.task_type === 'code')
+    if (!codeTasks.length) {
+        return null
+    }
+
+    let bestWorkspace = null
+    let bestScore = -1
+
+    for (const codeTask of codeTasks) {
+        try {
+            const res = await projectsAPI.getTaskSubmission(codeTask.id)
+            const answer = res.data.progress?.answer || ''
+            if (!answer.trim()) continue
+
+            const parsed = parseWorkspace(answer, projectLanguage)
+            const score = parsed.files?.reduce(
+                (sum, file) => sum + (file.content?.length || 0),
+                0
+            ) || 0
+
+            if (score > bestScore) {
+                bestScore = score
+                bestWorkspace = parsed
+            }
+        } catch {
+            // ignore missing submissions
+        }
+    }
+
+    return bestWorkspace || getDefaultWorkspace(projectLanguage)
+}
+
 const ProjectWork = () => {
     const { id } = useParams()
     const navigate = useNavigate()
@@ -50,12 +83,10 @@ const ProjectWork = () => {
     const [project, setProject] = useState(null)
     const [tasks, setTasks] = useState([])
     const [tests, setTests] = useState([])
-    const [currentIndex, setCurrentIndex] = useState(0)
 
     const [workspace, setWorkspace] = useState(null)
     const [textAnswer, setTextAnswer] = useState('')
     const [hintsOpen, setHintsOpen] = useState(false)
-    const [showCurrentHint, setShowCurrentHint] = useState(false)
 
     const [loading, setLoading] = useState(true)
     const [execution, setExecution] = useState(createExecutionState())
@@ -77,62 +108,58 @@ const ProjectWork = () => {
         if (!tasks.length || !workspace) return
 
         const interval = setInterval(() => {
-            saveTask()
+            saveProjectWork()
         }, 5000)
 
         return () => clearInterval(interval)
-    }, [tasks, currentIndex, workspace])
+    }, [tasks, workspace, textAnswer])
 
     useEffect(() => {
         if (!tasks.length || !project) return
-        const task = tasks[currentIndex]
 
-        const loadSubmission = async () => {
+        const textTask = tasks.find((item) => item.task_type === 'text')
+        if (!textTask) return
+
+        const loadTextSubmission = async () => {
             try {
-                const res = await projectsAPI.getTaskSubmission(task.id)
-                if (task.task_type === 'code') {
-                    const ws = parseWorkspace(
-                        res.data.progress.answer || '',
-                        projectLanguage
-                    )
-                    setWorkspace(ws)
-                    workspaceRef.current = serializeWorkspace(ws)
-                } else if (task.task_type === 'text') {
-                    setTextAnswer(res.data.progress.answer || '')
-                    textRef.current = res.data.progress.answer || ''
-                }
-            } catch (err) {
-                if (task.task_type === 'code') {
-                    const ws = getDefaultWorkspace(projectLanguage)
-                    setWorkspace(ws)
-                    workspaceRef.current = serializeWorkspace(ws)
-                }
+                const res = await projectsAPI.getTaskSubmission(textTask.id)
+                const answer = res.data.progress?.answer || ''
+                setTextAnswer(answer)
+                textRef.current = answer
+            } catch {
+                setTextAnswer('')
+                textRef.current = ''
             }
         }
 
-        loadSubmission()
-    }, [tasks, currentIndex, project])
+        loadTextSubmission()
+    }, [tasks, project])
 
     const handleWorkspaceChange = (nextWorkspace) => {
         setWorkspace(nextWorkspace)
         workspaceRef.current = serializeWorkspace(nextWorkspace)
     }
 
-    const saveTask = async () => {
-        const currentTask = tasks[currentIndex]
-        if (!currentTask) return
+    const saveProjectWork = async () => {
+        const codeTasks = tasks.filter((item) => item.task_type === 'code')
 
         try {
-            const value =
-                currentTask.task_type === 'code'
-                    ? workspaceRef.current
-                    : textRef.current
+            if (codeTasks.length && workspaceRef.current.trim()) {
+                await Promise.all(
+                    codeTasks.map((codeTask) =>
+                        projectsAPI.saveTaskSubmission(codeTask.id, {
+                            answer: workspaceRef.current,
+                        })
+                    )
+                )
+            }
 
-            if (!value.trim()) return
-
-            await projectsAPI.saveTaskSubmission(currentTask.id, {
-                answer: value
-            })
+            const textTask = tasks.find((item) => item.task_type === 'text')
+            if (textTask && textRef.current.trim()) {
+                await projectsAPI.saveTaskSubmission(textTask.id, {
+                    answer: textRef.current,
+                })
+            }
         } catch (err) {
             console.error('Autosave error:', err)
         }
@@ -239,7 +266,8 @@ const ProjectWork = () => {
     }
 
     const runTests = async () => {
-        if (!workspace || runningTests || task?.task_type !== 'code') return
+        const hasCodeTasks = tasks.some((item) => item.task_type === 'code')
+        if (!workspace || runningTests || !hasCodeTasks) return
 
         const currentWorkspace = getWorkspaceSnapshot(workspaceRef, workspace)
         const useWorkspaceTests = shouldUseWorkspaceFileTests(projectLanguage, tests)
@@ -333,9 +361,18 @@ const ProjectWork = () => {
             ])
 
             const p = projectRes.data.project
+            const taskList = tasksRes.data || []
+            const lang = getPrimaryProjectLanguage(p)
+
             setProject(p)
-            setTasks(tasksRes.data || [])
+            setTasks(taskList)
             setTests(testsRes.data || [])
+
+            const sharedWorkspace = await loadSharedProjectWorkspace(taskList, lang)
+            if (sharedWorkspace) {
+                setWorkspace(sharedWorkspace)
+                workspaceRef.current = serializeWorkspace(sharedWorkspace)
+            }
 
             setLoading(false)
         } catch (err) {
@@ -344,43 +381,26 @@ const ProjectWork = () => {
         }
     }
 
-    const task = tasks[currentIndex]
+    const hasTextTasks = tasks.some((item) => item.task_type === 'text')
 
     const isTaskCompleted = () => {
-        if (!task) return false
-
-        if (task.task_type === 'code') {
+        const codeTasks = tasks.filter((item) => item.task_type === 'code')
+        if (codeTasks.length > 0) {
             return workspace ? workspaceHasContent(workspace) : false
         }
 
-        if (task.task_type === 'text') {
+        if (hasTextTasks) {
             return textAnswer.trim().length > 0
         }
 
         return false
     }
 
-    const resetTaskState = () => {
-        setWorkspace(null)
-        workspaceRef.current = ''
-        setTextAnswer('')
-        textRef.current = ''
-        clearExecution()
-        setHintsOpen(false)
-        setShowCurrentHint(false)
-    }
-
-    const handleSelectTask = (index) => {
-        if (index === currentIndex) return
-        resetTaskState()
-        setCurrentIndex(index)
-    }
-
     const handleFinish = async () => {
         if (!isTaskCompleted()) return
 
         try {
-            await saveTask()
+            await saveProjectWork()
             await projectsAPI.complete(id)
             alert('🎉 تم إكمال المشروع بنجاح!')
             navigate('/projects')
@@ -414,7 +434,6 @@ const ProjectWork = () => {
         .map((t, index) => ({ id: t.id, index, title: t.title, hint: t.hint }))
         .filter((item) => item.hint?.trim())
 
-    const currentHint = task?.hint?.trim()
     const testProgress = getProjectTestProgress(tests, testResults)
 
     if (loading) return <div className="loading">Loading...</div>
@@ -473,11 +492,7 @@ const ProjectWork = () => {
                                 <ul className="fcc-story-list">
                                     {userStoriesWithStatus.map((story) => (
                                         <li key={story.id}>
-                                            <button
-                                                type="button"
-                                                className={`fcc-story-item ${story.index === currentIndex ? 'active' : ''}`}
-                                                onClick={() => handleSelectTask(story.index)}
-                                            >
+                                            <div className="fcc-story-item fcc-story-item-static">
                                                 <span className="fcc-story-marker" aria-hidden="true" />
                                                 <span className="fcc-story-text">
                                                     <span className="fcc-story-title-row">
@@ -486,7 +501,7 @@ const ProjectWork = () => {
                                                     </span>
                                                     <span>{story.text}</span>
                                                 </span>
-                                            </button>
+                                            </div>
                                         </li>
                                     ))}
                                 </ul>
@@ -516,10 +531,6 @@ const ProjectWork = () => {
                                             <p>{item.hint}</p>
                                         </div>
                                     ))
-                                ) : currentHint ? (
-                                    <div className="fcc-hint-card">
-                                        <p>{currentHint}</p>
-                                    </div>
                                 ) : (
                                     <p className="fcc-empty-note">لا توجد تلميحات متاحة حالياً.</p>
                                 )}
@@ -530,13 +541,7 @@ const ProjectWork = () => {
                     <section className="fcc-section fcc-editor-section">
                         <h2 className="fcc-section-title">Code Editor</h2>
                         <div className="fcc-section-body">
-                            {task && (
-                                <p className="fcc-current-task-label">
-                                    المهمة الحالية: <strong>{task.title}</strong>
-                                </p>
-                            )}
-
-                            {task?.task_type === 'code' && workspace && (
+                            {tasks.some((item) => item.task_type === 'code') && workspace && (
                                 <div className="deepnote-workspace">
                                     <div className="deepnote-split">
                                         <div className="deepnote-editor-pane">
@@ -562,7 +567,7 @@ const ProjectWork = () => {
                                 </div>
                             )}
 
-                            {task?.task_type === 'text' && (
+                            {hasTextTasks && (
                                 <textarea
                                     className="text-input"
                                     value={textAnswer}
@@ -579,7 +584,7 @@ const ProjectWork = () => {
                                     type="button"
                                     className="btn btn-primary fcc-check-btn"
                                     onClick={runTests}
-                                    disabled={runningTests || task?.task_type !== 'code' || !workspace}
+                                    disabled={runningTests || !workspace || !tasks.some((item) => item.task_type === 'code')}
                                 >
                                     {runningTests ? (
                                         <>
@@ -591,28 +596,12 @@ const ProjectWork = () => {
                                     )}
                                 </button>
 
-                                <button
-                                    type="button"
-                                    className="btn btn-secondary fcc-show-hint-btn"
-                                    onClick={() => setShowCurrentHint((prev) => !prev)}
-                                    disabled={!currentHint}
-                                >
-                                    {showCurrentHint ? 'Hide Hint' : 'Show Hint'}
-                                </button>
-
-                                {task?.task_type === 'code' && (
+                                {tasks.some((item) => item.task_type === 'code') && (
                                     <span className="fcc-check-hint">
                                         أو استخدم <kbd>Ctrl</kbd> + <kbd>Enter</kbd> لتشغيل الكود
                                     </span>
                                 )}
                             </div>
-
-                            {showCurrentHint && currentHint && (
-                                <div className="fcc-current-hint-panel">
-                                    <h4>تلميح للمهمة الحالية</h4>
-                                    <p>{currentHint}</p>
-                                </div>
-                            )}
                         </div>
                     </section>
 
