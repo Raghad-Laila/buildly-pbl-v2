@@ -2,31 +2,13 @@ import React from 'react'
 import './ProjectContentSections.css'
 
 const ProjectContentSections = ({
-  objectiveItems,
-  onObjectiveItemsChange,
+  objective,
+  onObjectiveChange,
   userStories,
   onUserStoriesChange,
   hintItems,
   onHintItemsChange,
 }) => {
-  const updateObjective = (index, value) => {
-    const next = [...objectiveItems]
-    next[index] = value
-    onObjectiveItemsChange(next)
-  }
-
-  const addObjective = () => {
-    onObjectiveItemsChange([...objectiveItems, ''])
-  }
-
-  const removeObjective = (index) => {
-    if (objectiveItems.length === 1) {
-      onObjectiveItemsChange([''])
-      return
-    }
-    onObjectiveItemsChange(objectiveItems.filter((_, i) => i !== index))
-  }
-
   const updateStory = (index, field, value) => {
     const next = userStories.map((story, i) =>
       i === index ? { ...story, [field]: value } : story
@@ -72,41 +54,25 @@ const ProjectContentSections = ({
 
   return (
     <div className="project-content-sections">
-      <section className="content-section-card">
+      <section className="content-section-card" data-field="objective">
         <div className="content-section-header">
           <div>
-            <h3>Objectives</h3>
-            <p>أهداف تعليمية واضحة يحققها المتعلم بعد إكمال المشروع</p>
+            <h3>Objective</h3>
+            <p>هدف تعليمي واحد واضح يحققه المتعلم بعد إكمال المشروع</p>
           </div>
-          <button type="button" className="btn btn-secondary btn-sm" onClick={addObjective}>
-            + إضافة هدف
-          </button>
         </div>
 
         <div className="content-items-list">
-          {objectiveItems.map((item, index) => (
-            <div key={`objective-${index}`} className="content-item-row">
-              <span className="content-item-index">{index + 1}</span>
-              <input
-                type="text"
-                value={item}
-                onChange={(e) => updateObjective(index, e.target.value)}
-                placeholder="مثال: فهم أساسيات HTML و CSS"
-              />
-              <button
-                type="button"
-                className="btn btn-danger btn-sm"
-                onClick={() => removeObjective(index)}
-                aria-label="حذف الهدف"
-              >
-                حذف
-              </button>
-            </div>
-          ))}
+          <input
+            type="text"
+            value={objective}
+            onChange={(e) => onObjectiveChange(e.target.value)}
+            placeholder="مثال: فهم أساسيات HTML و CSS"
+          />
         </div>
       </section>
 
-      <section className="content-section-card">
+      <section className="content-section-card" data-field="user_stories">
         <div className="content-section-header">
           <div>
             <h3>User Stories</h3>

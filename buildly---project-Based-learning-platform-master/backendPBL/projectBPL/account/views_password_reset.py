@@ -73,7 +73,7 @@ class PasswordResetResendOTPView(APIView):
 
         return Response({
             'success': True,
-            'message': _('تم إنشاء رمز تحقق جديد'),
+            'message': _('تم إرسال رمز تحقق جديد إلى بريدك الإلكتروني'),
             'resend_available_in': result['resend_available_in'],
             **result['delivery_payload'],
         })

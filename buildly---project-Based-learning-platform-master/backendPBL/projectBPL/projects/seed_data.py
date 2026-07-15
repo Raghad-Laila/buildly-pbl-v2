@@ -1,7 +1,8 @@
 SEED_PREFIX = '[Buildly] '
 
 FRONTEND_COURSE_TITLE = 'Frontend Mastery'
-PYTHON_COURSE_TITLE = 'مسار تعلم Python'
+PYTHON_COURSE_TITLE = 'Python'
+PYTHON_COURSE_FALLBACK_TITLE = 'مسار تعلم Python'
 
 FRONTEND_PROJECTS = [
     {

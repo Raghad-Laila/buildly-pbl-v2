@@ -20,6 +20,22 @@ from datetime import timedelta
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 
+def _load_env_file():
+    env_path = BASE_DIR / '.env'
+    if not env_path.exists():
+        return
+
+    for line in env_path.read_text(encoding='utf-8').splitlines():
+        line = line.strip()
+        if not line or line.startswith('#') or '=' not in line:
+            continue
+        key, value = line.split('=', 1)
+        os.environ.setdefault(key.strip(), value.strip().strip('"').strip("'"))
+
+
+_load_env_file()
+
+
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.0/howto/deployment/checklist/
 
@@ -223,16 +239,31 @@ CORS_ALLOW_HEADERS = [
     'x-requested-with',
 ]
 
-# Email Configuration (لرسائل التأكيد في المستقبل)
-EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'  # للتطوير
-EMAIL_HOST = 'localhost'
-EMAIL_PORT = 1025
-EMAIL_USE_TLS = False
+# Email Configuration (Mailtrap SMTP)
+EMAIL_BACKEND = os.environ.get(
+    'EMAIL_BACKEND',
+    'django.core.mail.backends.smtp.EmailBackend',
+)
+EMAIL_HOST = os.environ.get('EMAIL_HOST') or os.environ.get('SMTP_HOST', 'sandbox.smtp.mailtrap.io')
+EMAIL_PORT = int(os.environ.get('EMAIL_PORT') or os.environ.get('SMTP_PORT', '2525'))
+EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER') or os.environ.get('SMTP_USER', '')
+EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD') or os.environ.get('SMTP_PASS', '')
+EMAIL_USE_TLS = os.environ.get('EMAIL_USE_TLS', 'false').lower() == 'true'
+EMAIL_USE_SSL = os.environ.get('EMAIL_USE_SSL', 'false').lower() == 'true'
+DEFAULT_FROM_EMAIL = os.environ.get(
+    'DEFAULT_FROM_EMAIL',
+    'Buildly Platform <noreply@buildly.local>',
+)
 
 # Session Settings
 SESSION_COOKIE_HTTPONLY = True
 SESSION_COOKIE_SECURE = False  # True في الإنتاج مع HTTPS
 SESSION_COOKIE_SAMESITE = 'Lax'
+
+# Placement AI question generation (Google Gemini)
+GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY', '')
+GEMINI_MODEL = os.environ.get('GEMINI_MODEL', 'gemini-2.0-flash')
+PLACEMENT_AI_ENABLED = os.environ.get('PLACEMENT_AI_ENABLED', 'true').lower() == 'true'
 
 # Security Settings (للإنتاج)
 if not DEBUG:

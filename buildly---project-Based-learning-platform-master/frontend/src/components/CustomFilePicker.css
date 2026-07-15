@@ -1,0 +1,82 @@
+.custom-file-picker {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  border: 1px dashed var(--border-color);
+  border-radius: 8px;
+  background: var(--bg-secondary);
+  direction: rtl;
+}
+
+.custom-file-picker:hover {
+  border-color: var(--primary-color);
+}
+
+.custom-file-picker-status {
+  flex: 1;
+  font-size: 14px;
+  color: var(--text-secondary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: left;
+  direction: rtl;
+}
+
+.custom-file-picker-status.is-selected {
+  color: var(--text-primary);
+}
+
+.custom-file-picker-actions {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  position: relative;
+}
+
+.custom-file-picker-menu-wrapper {
+  position: relative;
+}
+
+.custom-file-picker-trigger {
+  min-width: 108px;
+}
+
+.custom-file-picker-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 20;
+  min-width: 140px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 6px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  background: var(--bg-primary);
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.12);
+}
+
+.custom-file-picker-menu-item {
+  width: 100%;
+  border: none;
+  border-radius: 6px;
+  padding: 8px 10px;
+  background: transparent;
+  color: var(--text-primary);
+  font: inherit;
+  font-size: 14px;
+  text-align: right;
+  cursor: pointer;
+}
+
+.custom-file-picker-menu-item:hover {
+  background: var(--bg-secondary);
+}
+
+.custom-file-picker-input {
+  display: none;
+}

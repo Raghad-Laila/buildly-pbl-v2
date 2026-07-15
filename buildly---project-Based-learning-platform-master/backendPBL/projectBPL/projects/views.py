@@ -17,7 +17,24 @@ from reversion.views import RevisionMixin
 import reversion
 from reversion.models import Version
 from .test_runner import run_python_in_docker, run_project_tests
+from .starter_utils import build_starter_zip_from_uploads
 import subprocess
+
+
+def get_learner_projects_queryset(user):
+    """مشاريع المسارات التي انضم إليها المتعلم فقط."""
+    return Project.objects.filter(
+        course__enrolled_learners=user,
+        course__is_active=True,
+        course__is_archived=False,
+        is_active=True,
+    )
+
+
+def learner_can_access_course(user, course):
+    if user.is_admin:
+        return True
+    return course.is_student_enrolled(user)
 
 
 class IsCourseInstructor(permissions.BasePermission):
@@ -145,7 +162,7 @@ class ListProjectsView(generics.ListAPIView):
                 
                 if user.is_admin:
                     queryset = Project.objects.filter(course=course, is_active=True)
-                elif course.is_public and course.is_active and not course.is_archived:
+                elif learner_can_access_course(user, course):
                     queryset = Project.objects.filter(course=course, is_active=True)
                 else:
                     return Project.objects.none()
@@ -159,12 +176,7 @@ class ListProjectsView(generics.ListAPIView):
         if user.is_admin:
             queryset = Project.objects.filter(is_active=True).order_by('course', 'order')
         else:
-            queryset = Project.objects.filter(
-                course__is_public=True,
-                course__is_active=True,
-                course__is_archived=False,
-                is_active=True
-            ).order_by('course', 'order')
+            queryset = get_learner_projects_queryset(user).order_by('course', 'order')
 
         return self.apply_search_filter(queryset)
     
@@ -173,8 +185,14 @@ class ListProjectsView(generics.ListAPIView):
         
         if not queryset.exists():
             search = request.query_params.get('search', '').strip()
+            if search:
+                message = _('لا توجد مشاريع مطابقة لبحثك')
+            elif not request.user.is_admin:
+                message = _('لا توجد مشاريع في مساراتك المنضم إليها')
+            else:
+                message = _('لا توجد مشاريع متاحة')
             return Response({
-                'message': _('لا توجد مشاريع مطابقة لبحثك') if search else _('لا توجد مشاريع متاحة'),
+                'message': message,
                 'projects': [],
                 'count': 0,
                 'search': search,
@@ -202,12 +220,7 @@ class ProjectDetailView(generics.RetrieveAPIView):
         
         if user.is_admin:
             return Project.objects.filter(is_active=True)
-        else:
-            return Project.objects.filter(
-                course__is_public=True,
-                course__is_active=True,
-                is_active=True
-            )
+        return get_learner_projects_queryset(user)
     
     def retrieve(self, request, *args, **kwargs):
         instance = self.get_object()
@@ -240,9 +253,8 @@ class CourseProjectsView(generics.ListAPIView):
             
             if user.is_admin:
                 return Project.objects.filter(course=self.course, is_active=True)
-            else:
-                if self.course.is_public and self.course.is_active:
-                    return Project.objects.filter(course=self.course, is_active=True)
+            if learner_can_access_course(user, self.course):
+                return Project.objects.filter(course=self.course, is_active=True)
             
             return Project.objects.none()
             
@@ -659,27 +671,40 @@ class UploadStarterFileView(RevisionMixin, APIView):
         try:
             project = Project.objects.get(id=pk, is_active=True)
 
-            file = request.FILES.get('file')
+            uploaded_files = request.FILES.getlist('files')
+            single_file = request.FILES.get('file')
 
-            if not file:
+            if uploaded_files:
+                zip_name = f'project_{project.id}_starter.zip'
+                try:
+                    zip_file = build_starter_zip_from_uploads(uploaded_files, zip_name=zip_name)
+                except ValueError as exc:
+                    return Response({
+                        'success': False,
+                        'message': str(exc),
+                    }, status=status.HTTP_400_BAD_REQUEST)
+            elif single_file:
+                zip_file = single_file
+            else:
                 return Response({
                     'success': False,
-                    'message': _('لم يتم إرسال أي ملف')
+                    'message': _('لم يتم إرسال أي مجلد')
                 }, status=status.HTTP_400_BAD_REQUEST)
 
             starter, created = ProjectStarterFile.objects.update_or_create(
                 project=project,
                 defaults={
-                    'file': file,
+                    'file': zip_file,
                     'uploaded_by': request.user
                 }
             )
 
             return Response({
                 'success': True,
-                'message': _('تم رفع ملف البداية بنجاح'),
+                'message': _('تم رفع مجلد البداية بنجاح'),
                 'file': {
                     'url': starter.file.url,
+                    'file_name': starter.file.name.split('/')[-1],
                     'uploaded_at': starter.uploaded_at
                 }
             })
@@ -693,7 +718,7 @@ class UploadStarterFileView(RevisionMixin, APIView):
         except Exception as e:
             return Response({
                 'success': False,
-                'message': _('حدث خطأ أثناء رفع الملف'),
+                'message': _('حدث خطأ أثناء رفع مجلد البداية'),
                 'error': str(e)
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 

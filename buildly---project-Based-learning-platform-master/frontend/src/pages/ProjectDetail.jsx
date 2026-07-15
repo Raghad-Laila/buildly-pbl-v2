@@ -6,6 +6,7 @@ import FavoriteButton from '../components/FavoriteButton'
 import ShareAchievementModal from '../components/ShareAchievementModal'
 import '../components/ShareAchievementModal.css'
 import { formatProjectLanguages } from '../utils/projectLanguages'
+import './Courses.css'
 import './Projects.css'
 
 const ProjectDetail = () => {
@@ -210,26 +211,30 @@ const ProjectDetail = () => {
 
       <div className="detail-grid">
         <div className="detail-main">
-          <div className="card">
-            <h2>الوصف</h2>
-            <p>{project.description}</p>
-          </div>
-
-          {project.objectives && (
-            <div className="card">
-              <h2>الأهداف التعليمية</h2>
-              <p>{project.objectives}</p>
+          <div className="card project-detail-content-card">
+            {project.image && (
+              <div className="project-detail-image-frame">
+                <img
+                  src={project.image}
+                  alt={project.title}
+                  className="project-detail-image"
+                />
+              </div>
+            )}
+            <div className="project-detail-description">
+              <h2>الوصف</h2>
+              <p>{project.description}</p>
             </div>
-          )}
+          </div>
 
           {project.starter_file && (
             <div className="card">
-              <h2>ملف البداية</h2>
+              <h2>مجلد البداية</h2>
 
               <div className="starter-file-single">
 
                 <div className="file-info">
-                  <span className="file-icon">📄</span>
+                  <span className="file-icon">📁</span>
                   <span className="file-name">
                     {project.starter_file.file_name}
                   </span>
@@ -241,7 +246,7 @@ const ProjectDetail = () => {
                   rel="noopener noreferrer"
                   className="btn btn-secondary"
                 >
-                  تحميل الملف
+                  تحميل المجلد
                 </a>
 
               </div>

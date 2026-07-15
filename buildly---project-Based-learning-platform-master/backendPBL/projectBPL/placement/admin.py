@@ -7,13 +7,16 @@ from .models import PlacementAttempt, PlacementQuestion
 class PlacementQuestionAdmin(admin.ModelAdmin):
     list_display = (
         'id',
+        'track_slug',
         'topic',
         'difficulty_level',
         'difficulty_score',
+        'source',
+        'attempt',
         'is_active',
         'question_preview',
     )
-    list_filter = ('topic', 'difficulty_level', 'is_active')
+    list_filter = ('track_slug', 'topic', 'difficulty_level', 'source', 'is_active')
     search_fields = ('question', 'explanation')
 
     def question_preview(self, obj):

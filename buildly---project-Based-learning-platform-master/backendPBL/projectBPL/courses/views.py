@@ -594,21 +594,24 @@ class JoinCourseView(APIView):
                     'error': _('أنت منضم بالفعل لهذا المسار')
                 }, status=status.HTTP_400_BAD_REQUEST)
 
-            from placement.constants import is_frontend_placement_course
+            from placement.constants import requires_placement_course
             from placement.models import PlacementAttempt
+            from placement.track_config import get_track_config, get_track_for_course
 
-            if is_frontend_placement_course(course):
+            if requires_placement_course(course):
                 has_completed_placement = PlacementAttempt.objects.filter(
                     user=request.user,
                     course=course,
                     status='completed',
                 ).exists()
                 if not has_completed_placement:
+                    track_slug = get_track_for_course(course)
+                    track_name = get_track_config(track_slug)['display_name'] if track_slug else 'المسار'
                     return Response({
                         'success': False,
                         'message': _('اختبار تحديد المستوى مطلوب'),
                         'error': _(
-                            'يجب إكمال اختبار تحديد مستوى Frontend قبل الانضمام لهذا المسار'
+                            f'يجب إكمال اختبار تحديد مستوى {track_name} قبل الانضمام لهذا المسار'
                         ),
                         'requires_placement': True,
                     }, status=status.HTTP_400_BAD_REQUEST)

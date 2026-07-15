@@ -108,6 +108,15 @@ function App() {
               />
 
               <Route
+                path="/placement/:courseId"
+                element={
+                  <PrivateRoute>
+                    <PlacementPage />
+                  </PrivateRoute>
+                }
+              />
+
+              <Route
                 path="/placement/frontend/:courseId"
                 element={
                   <PrivateRoute>
@@ -130,6 +139,15 @@ function App() {
                 element={
                   <PrivateRoute requireAdmin>
                     <ProjectCreate />
+                  </PrivateRoute>
+                }
+              />
+
+              <Route
+                path="/projects/course/:courseId"
+                element={
+                  <PrivateRoute>
+                    <ProjectsList />
                   </PrivateRoute>
                 }
               />

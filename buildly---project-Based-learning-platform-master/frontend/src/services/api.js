@@ -250,6 +250,19 @@ export const projectsAPI = {
   getProgress: () =>
     api.get('/progress/projects/'),
 
+  uploadStarterFolder: (projectId, files) => {
+    const formData = new FormData()
+    Array.from(files).forEach((file) => {
+      formData.append('files', file, file.webkitRelativePath || file.name)
+    })
+
+    return api.post(`/projects/${projectId}/starter-file/`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    })
+  },
+
   uploadStarterFile: (projectId, file) => {
     const formData = new FormData()
     formData.append('file', file)
@@ -339,13 +352,16 @@ export const projectsAPI = {
 
 export const placementAPI = {
   getStatus: (courseId) =>
-    api.get(`/placement/frontend/status/${courseId}/`),
+    api.get(`/placement/status/${courseId}/`),
 
   start: (courseId) =>
-    api.post('/placement/frontend/start/', { course_id: Number(courseId) }),
+    api.post('/placement/start/', { course_id: Number(courseId) }),
 
   submitAnswer: (payload) =>
-    api.post('/placement/frontend/submit-answer/', payload),
+    api.post('/placement/submit-answer/', payload),
+
+  replaceQuestion: (payload) =>
+    api.post('/placement/replace-question/', payload),
 }
 
 export default api

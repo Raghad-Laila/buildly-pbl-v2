@@ -150,6 +150,18 @@ class Project(models.Model):
         verbose_name='الترتيب',
         help_text='ترتيب المشروع ضمن المسار'
     )
+
+    assets_provided = models.JSONField(
+        default=list,
+        blank=True,
+        verbose_name='الأصول المتوفرة',
+    )
+
+    ideas_to_test = models.JSONField(
+        default=list,
+        blank=True,
+        verbose_name='أفكار للاختبار',
+    )
     
     class Meta:
         verbose_name = _('مشروع')

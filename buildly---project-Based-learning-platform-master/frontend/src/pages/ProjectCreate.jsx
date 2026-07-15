@@ -3,11 +3,19 @@ import { useNavigate, useLocation } from 'react-router-dom'
 import { coursesAPI, projectsAPI } from '../services/api'
 import ProjectContentSections from '../components/ProjectContentSections'
 import ProjectLanguageSelect from '../components/ProjectLanguageSelect'
+import ProjectImageInput from '../components/ProjectImageInput'
+import StarterFolderInput from '../components/StarterFolderInput'
 import {
-  joinLines,
+  createEmptyStarterSelection,
+  hasStarterFolderSelection,
+  uploadStarterSelection,
+} from '../utils/starterFolder'
+import {
   createEmptyStory,
   buildTasksFromSections,
 } from '../utils/projectContentMapper'
+import FormErrorToast from '../components/FormErrorToast'
+import useFormFeedback from '../hooks/useFormFeedback'
 import './Form.css'
 
 const ProjectCreate = () => {
@@ -25,13 +33,13 @@ const ProjectCreate = () => {
   })
   const [selectedLanguages, setSelectedLanguages] = useState(['python'])
   const [languageError, setLanguageError] = useState('')
-  const [objectiveItems, setObjectiveItems] = useState([''])
+  const [objective, setObjective] = useState('')
   const [userStories, setUserStories] = useState([createEmptyStory()])
   const [hintItems, setHintItems] = useState([''])
-  const [error, setError] = useState('')
+  const { error, errorField, setError, clearError, handleInvalid } = useFormFeedback()
   const [loading, setLoading] = useState(false)
   const [fetchingCourses, setFetchingCourses] = useState(true)
-  const [starterFile, setStarterFile] = useState(null)
+  const [starterSelection, setStarterSelection] = useState(createEmptyStarterSelection())
   const [projectImage, setProjectImage] = useState(null)
   const [imagePreview, setImagePreview] = useState(null)
 
@@ -39,16 +47,9 @@ const ProjectCreate = () => {
     fetchCourses()
   }, [])
 
-  const handleImageChange = (e) => {
-    const file = e.target.files[0]
-    if (file) {
-      setProjectImage(file)
-      const reader = new FileReader()
-      reader.onloadend = () => {
-        setImagePreview(reader.result)
-      }
-      reader.readAsDataURL(file)
-    }
+  const handleImageChange = ({ file, preview }) => {
+    setProjectImage(file)
+    setImagePreview(preview)
   }
 
   const fetchCourses = async () => {
@@ -72,24 +73,30 @@ const ProjectCreate = () => {
       ...formData,
       [name]: value,
     })
-    setError('')
+    clearError()
   }
 
   const handleSubmit = async (e) => {
     if (e) e.preventDefault()
-    setError('')
+    clearError()
 
     const validStories = userStories.filter(
       (story) => story.title?.trim() && story.description?.trim()
     )
 
     if (validStories.length === 0) {
-      setError('يجب إضافة قصة مستخدم واحدة على الأقل (عنوان ووصف)')
+      setError('يجب إضافة قصة مستخدم واحدة على الأقل (عنوان ووصف)', 'user_stories')
       return null
     }
 
     if (selectedLanguages.length === 0) {
       setLanguageError('يجب اختيار لغة واحدة على الأقل')
+      setError('يجب اختيار لغة واحدة على الأقل', 'languages')
+      return null
+    }
+
+    if (!hasStarterFolderSelection(starterSelection)) {
+      setError('يجب رفع مجلد البداية', 'starter_folder')
       return null
     }
 
@@ -98,7 +105,7 @@ const ProjectCreate = () => {
     try {
       const submitData = {
         ...formData,
-        objectives: joinLines(objectiveItems),
+        objectives: objective.trim(),
         languages: selectedLanguages,
         course_id: parseInt(formData.course_id),
         estimated_time: parseInt(formData.estimated_time),
@@ -111,9 +118,7 @@ const ProjectCreate = () => {
       if (response.data.success) {
         const projectId = response.data.project.project_id
 
-        if (starterFile) {
-          await projectsAPI.uploadStarterFile(projectId, starterFile)
-        }
+        await uploadStarterSelection(projectId, starterSelection, projectsAPI)
 
         const tasksToCreate = buildTasksFromSections({
           userStories,
@@ -178,8 +183,12 @@ const ProjectCreate = () => {
       <div className="form-container">
         {error && <div className="alert alert-error">{error}</div>}
 
-        <form onSubmit={handleFormSubmit} className="form">
-          <div className="input-group">
+        <form
+          onSubmit={handleFormSubmit}
+          onInvalidCapture={handleInvalid}
+          className="form"
+        >
+          <div className="input-group" data-field="course_id">
             <label htmlFor="course_id">المسار التعليمي *</label>
             <select
               id="course_id"
@@ -197,7 +206,7 @@ const ProjectCreate = () => {
             </select>
           </div>
 
-          <div className="input-group">
+          <div className="input-group" data-field="title">
             <label htmlFor="title">عنوان المشروع *</label>
             <input
               type="text"
@@ -211,7 +220,7 @@ const ProjectCreate = () => {
             />
           </div>
 
-          <div className="input-group">
+          <div className="input-group" data-field="description">
             <label htmlFor="description">وصف المشروع *</label>
             <textarea
               id="description"
@@ -225,15 +234,18 @@ const ProjectCreate = () => {
           </div>
 
           <ProjectContentSections
-            objectiveItems={objectiveItems}
-            onObjectiveItemsChange={setObjectiveItems}
+            objective={objective}
+            onObjectiveChange={setObjective}
             userStories={userStories}
-            onUserStoriesChange={setUserStories}
+            onUserStoriesChange={(next) => {
+              setUserStories(next)
+              clearError()
+            }}
             hintItems={hintItems}
             onHintItemsChange={setHintItems}
           />
 
-          <div className="input-group">
+          <div className="input-group" data-field="level">
             <label htmlFor="level">المستوى *</label>
             <select
               id="level"
@@ -254,42 +266,27 @@ const ProjectCreate = () => {
             onChange={(languages) => {
               setSelectedLanguages(languages)
               setLanguageError('')
+              clearError()
             }}
             error={languageError}
           />
 
-          <div className="input-group">
-            <label htmlFor="project_image">صورة المشروع</label>
-            <input
-              type="file"
-              id="project_image"
-              accept="image/*"
-              onChange={handleImageChange}
-            />
-            {imagePreview && (
-              <div className="image-preview-container">
-                <img src={imagePreview} alt="Preview" className="image-preview" />
-              </div>
-            )}
-            <small className="input-hint">
-              قم برفع صورة تعبيرية للمشروع (يفضل مقاس 16:9)
-            </small>
-          </div>
+          <ProjectImageInput
+            selectedFile={projectImage}
+            preview={imagePreview}
+            onChange={handleImageChange}
+          />
 
-          <div className="input-group">
-            <label htmlFor="starter_file">ملف البداية (اختياري)</label>
-            <input
-              type="file"
-              id="starter_file"
-              onChange={(e) => setStarterFile(e.target.files[0])}
-            />
-            <small className="input-hint">
-              يمكنك رفع ملف يحتوي على كود مبدئي للمشروع
-            </small>
-          </div>
+          <StarterFolderInput
+            selection={starterSelection}
+            onChange={(next) => {
+              setStarterSelection(next)
+              clearError()
+            }}
+          />
 
           <div className="form-row">
-            <div className="input-group">
+            <div className="input-group" data-field="estimated_time">
               <label htmlFor="estimated_time">الوقت المقدر (بالساعات) *</label>
               <input
                 type="number"
@@ -339,6 +336,12 @@ const ProjectCreate = () => {
             </button>
           </div>
         </form>
+
+        <FormErrorToast
+          message={error}
+          field={errorField}
+          onDismiss={clearError}
+        />
       </div>
     </div>
   )

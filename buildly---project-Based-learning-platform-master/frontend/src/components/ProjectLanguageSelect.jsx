@@ -31,7 +31,7 @@ const ProjectLanguageSelect = ({ selectedLanguages, onChange, error = '' }) => {
   )
 
   return (
-    <div className="language-select-section">
+    <div className="language-select-section" data-field="languages">
       <div className="language-select-header">
         <label>لغات المشروع *</label>
         <span className="language-select-count">

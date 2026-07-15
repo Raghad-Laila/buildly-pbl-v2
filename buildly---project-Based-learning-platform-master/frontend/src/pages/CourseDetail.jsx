@@ -6,8 +6,6 @@ import ArchiveCourseModal from '../components/ArchiveCourseModal'
 import FavoriteButton from '../components/FavoriteButton'
 import './Courses.css'
 
-const FRONTEND_COURSE_TITLE = 'Frontend Mastery'
-
 const CourseDetail = () => {
   const { id } = useParams()
   const navigate = useNavigate()
@@ -22,7 +20,7 @@ const CourseDetail = () => {
   const [isFavorite, setIsFavorite] = useState(false)
   const [placementStatus, setPlacementStatus] = useState(null)
 
-  const isFrontendCourse = course?.title === FRONTEND_COURSE_TITLE
+  const requiresPlacement = Boolean(placementStatus?.requires_placement)
 
   useEffect(() => {
     fetchCourseDetails()
@@ -83,8 +81,8 @@ const CourseDetail = () => {
   }
 
   const handleJoin = async () => {
-    if (isFrontendCourse && !placementStatus?.has_completed) {
-      navigate(`/placement/frontend/${id}`)
+    if (requiresPlacement && !placementStatus?.has_completed) {
+      navigate(`/placement/${id}`)
       return
     }
 
@@ -129,7 +127,7 @@ const CourseDetail = () => {
 
   const learnerLevel = placementStatus?.final_level
   const visibleProjects =
-    isFrontendCourse && isEnrolled && learnerLevel
+    requiresPlacement && isEnrolled && learnerLevel
       ? (course.course_projects || []).filter((project) => project.level === learnerLevel)
       : course.course_projects || []
 
@@ -186,7 +184,7 @@ const CourseDetail = () => {
           {visibleProjects.length > 0 && (
             <div className="card">
               <h2>المشاريع في هذا المسار</h2>
-              {isFrontendCourse && isEnrolled && learnerLevel && (
+              {requiresPlacement && isEnrolled && learnerLevel && (
                 <p className="placement-level-note">
                   المعروضة حسب مستواك بعد الاختبار:{' '}
                   <strong>{placementStatus?.final_level_display || learnerLevel}</strong>
@@ -258,9 +256,10 @@ const CourseDetail = () => {
               ) : (
                 <div className="enrollment-status">
                   <h4>انضم للمسار</h4>
-                  {isFrontendCourse ? (
+                  {requiresPlacement ? (
                     <p className="placement-join-note">
-                      سيبدأ اختبار تحديد مستوى Frontend قبل الانضمام للمسار.
+                      سيبدأ اختبار تحديد مستوى{' '}
+                      {placementStatus?.track_display_name || 'المسار'} قبل الانضمام للمسار.
                     </p>
                   ) : null}
                   <button
@@ -270,7 +269,7 @@ const CourseDetail = () => {
                   >
                     {joining
                       ? 'جاري الانضمام...'
-                      : isFrontendCourse
+                      : requiresPlacement
                         ? 'ابدأ اختبار تحديد المستوى'
                         : 'انضم الآن'}
                   </button>

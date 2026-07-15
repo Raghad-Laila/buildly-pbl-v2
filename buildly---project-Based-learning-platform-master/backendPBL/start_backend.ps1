@@ -1,23 +1,11 @@
-Write-Host "========================================" -ForegroundColor Cyan
-Write-Host "   تشغيل الباك إند - Django Server" -ForegroundColor Cyan
-Write-Host "========================================" -ForegroundColor Cyan
-Write-Host ""
+$ProjectDir = Join-Path $PSScriptRoot "projectBPL"
+$PythonExe = Join-Path $ProjectDir "venv\Scripts\python.exe"
 
-# تفعيل البيئة الافتراضية
-Write-Host "[1/3] تفعيل البيئة الافتراضية..." -ForegroundColor Yellow
-& .\venv\Scripts\Activate.ps1
+if (-not (Test-Path $PythonExe)) {
+    Write-Host "venv غير موجود. شغّل: .\recreate_venv.ps1" -ForegroundColor Red
+    exit 1
+}
 
-# الانتقال لمجلد المشروع
-Write-Host "[2/3] الانتقال لمجلد المشروع..." -ForegroundColor Yellow
-Set-Location projectBPL
-
-# تشغيل السيرفر
-Write-Host "[3/3] تشغيل السيرفر..." -ForegroundColor Yellow
-Write-Host ""
-Write-Host "الباك إند يعمل الآن على: http://localhost:8000" -ForegroundColor Green
-Write-Host "اضغط CTRL+C لإيقاف السيرفر" -ForegroundColor Yellow
-Write-Host ""
-
-python manage.py runserver
-
-
+Set-Location $ProjectDir
+Write-Host "تشغيل السيرفر على http://localhost:8000" -ForegroundColor Green
+& $PythonExe manage.py runserver

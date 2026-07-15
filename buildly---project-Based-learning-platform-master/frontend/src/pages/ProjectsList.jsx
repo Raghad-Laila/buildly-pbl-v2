@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { Link, useSearchParams } from 'react-router-dom'
+import { Link, useSearchParams, useParams } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { projectsAPI, accountAPI } from '../services/api'
 import FavoriteButton from '../components/FavoriteButton'
@@ -8,9 +8,11 @@ import './Projects.css'
 
 const ProjectsList = () => {
   const { isAdmin, isLearner } = useAuth()
+  const { courseId: routeCourseId } = useParams()
   const [searchParams] = useSearchParams()
-  const courseId = searchParams.get('course_id')
+  const courseId = routeCourseId || searchParams.get('course_id')
   const [projects, setProjects] = useState([])
+  const [courseInfo, setCourseInfo] = useState(null)
   const [initialLoading, setInitialLoading] = useState(true)
   const [searching, setSearching] = useState(false)
   const [error, setError] = useState('')
@@ -42,13 +44,32 @@ const ProjectsList = () => {
         setSearching(true)
       }
 
-      const [projectsRes, progressRes, favoritesRes] = await Promise.all([
-        projectsAPI.list(courseId, debouncedSearch),
-        projectsAPI.getProgress(),
-        accountAPI.getFavorites().catch(() => ({ data: { favorite_project_ids: [] } })),
-      ])
+      const progressPromise = isAdmin
+        ? Promise.resolve({ data: {} })
+        : projectsAPI.getProgress()
+      const favoritesPromise = accountAPI.getFavorites().catch(() => ({ data: { favorite_project_ids: [] } }))
 
-      setProjects(projectsRes.data.projects || [])
+      let projectsRes
+
+      if (courseId && !debouncedSearch) {
+        projectsRes = await projectsAPI.getByCourse(courseId)
+        setCourseInfo(projectsRes.data.course_info || null)
+        setProjects(projectsRes.data.projects || [])
+      } else if (courseId) {
+        const [listRes, courseRes] = await Promise.all([
+          projectsAPI.list(courseId, debouncedSearch),
+          projectsAPI.getByCourse(courseId).catch(() => null),
+        ])
+        setCourseInfo(courseRes?.data?.course_info || null)
+        setProjects(listRes.data.projects || [])
+      } else {
+        projectsRes = await projectsAPI.list(courseId, debouncedSearch)
+        setCourseInfo(null)
+        setProjects(projectsRes.data.projects || [])
+      }
+
+      const [progressRes, favoritesRes] = await Promise.all([progressPromise, favoritesPromise])
+
       setProgress(progressRes.data || {})
       setFavoriteProjectIds(new Set(favoritesRes.data.favorite_project_ids || []))
       setError('')
@@ -128,17 +149,18 @@ const ProjectsList = () => {
     groupedProjects[status].push(project)
   })
 
-  const totalVisibleProjects =
-    groupedProjects.not_started.length +
-    groupedProjects.in_progress.length +
-    groupedProjects.completed.length
+  const totalVisibleProjects = isAdmin
+    ? filteredProjects.length
+    : groupedProjects.not_started.length +
+      groupedProjects.in_progress.length +
+      groupedProjects.completed.length
 
   const ProjectSection = ({ title, projects, isAdmin, handleDelete, showStatus = false }) => {
     if (!projects.length) return null
 
     return (
-      <div className="project-section">
-        <h2 className="section-title">{title}</h2>
+      <div className={title ? 'project-section' : 'projects-sections-flat'}>
+        {title && <h2 className="section-title">{title}</h2>}
 
         <div className="projects-grid">
           {projects.map((project) => {
@@ -225,6 +247,21 @@ const ProjectsList = () => {
 
   const isSearchActive = Boolean(debouncedSearch)
 
+  const levelFilterSelect = (
+    <select
+      value={levelFilter}
+      onChange={(e) => setLevelFilter(e.target.value)}
+      className="filter-select projects-level-filter"
+      aria-label="تصفية حسب المستوى"
+    >
+      <option value="all">جميع المستويات</option>
+      <option value="beginner">مبتدئ</option>
+      <option value="intermediate">متوسط</option>
+      <option value="advanced">متقدم</option>
+      <option value="expert">خبير</option>
+    </select>
+  )
+
   if (initialLoading) {
     return (
       <div className="loading">
@@ -241,9 +278,32 @@ const ProjectsList = () => {
     <div className="container">
 
       <div className="container">
-        <div className="page-header projects-page-header">
-          <div>
-            <h1>المشاريع التعليمية</h1>
+        <div className={`page-header projects-page-header ${isAdmin ? 'projects-page-header--admin' : 'projects-page-header--learner'}`}>
+          <div className="projects-header-main">
+            {courseId && (
+              <Link to={`/courses/${courseId}`} className="back-link">
+                ← العودة للمسار
+              </Link>
+            )}
+            <h1>
+              {courseInfo?.title
+                ? `مشاريع المسار: ${courseInfo.title}`
+                : 'المشاريع التعليمية'}
+            </h1>
+
+            {isLearner && (
+              <div className="projects-level-filter-wrap">
+                {levelFilterSelect}
+              </div>
+            )}
+
+            {courseInfo && (
+              <p className="projects-search-summary">
+                {projects.length > 0
+                  ? `${projects.length} مشروع في هذا المسار`
+                  : 'لا توجد مشاريع في هذا المسار حالياً'}
+              </p>
+            )}
             {isLearner && debouncedSearch && (
               <p className="projects-search-summary">
                 {searching
@@ -255,8 +315,8 @@ const ProjectsList = () => {
             )}
           </div>
 
-          <div className="projects-toolbar">
-            {isLearner && (
+          {isLearner && (
+            <div className="projects-toolbar">
               <div className="projects-search-box">
                 <span className="projects-search-icon" aria-hidden="true">🔍</span>
                 <input
@@ -279,25 +339,20 @@ const ProjectsList = () => {
                   </button>
                 )}
               </div>
-            )}
-
-            <select
-              value={levelFilter}
-              onChange={(e) => setLevelFilter(e.target.value)}
-              className="filter-select"
-            >
-              <option value="all">جميع المستويات</option>
-              <option value="beginner">مبتدئ</option>
-              <option value="intermediate">متوسط</option>
-              <option value="advanced">متقدم</option>
-              <option value="expert">خبير</option>
-            </select>
-          </div>
+            </div>
+          )}
 
           {isAdmin && (
-            <Link to="/projects/create" className="btn btn-primary">
-              إضافة مشروع جديد
-            </Link>
+            <div className="projects-header-actions">
+              {levelFilterSelect}
+              <Link
+                to="/projects/create"
+                state={courseId ? { courseId: Number(courseId) } : undefined}
+                className="btn btn-primary"
+              >
+                إضافة مشروع جديد
+              </Link>
+            </div>
           )}
         </div>
 
@@ -306,8 +361,19 @@ const ProjectsList = () => {
             <p>
               {debouncedSearch
                 ? `لا توجد مشاريع مطابقة لـ "${debouncedSearch}"`
-                : 'لا توجد مشاريع متاحة'}
+                : courseId
+                  ? 'لا توجد مشاريع في هذا المسار حالياً'
+                  : 'لا توجد مشاريع في مساراتك المنضم إليها. انضم لمسار من صفحة المسارات لعرض مشاريعه.'}
             </p>
+            {isAdmin && courseId && (
+              <Link
+                to="/projects/create"
+                state={{ courseId: Number(courseId) }}
+                className="btn btn-primary"
+              >
+                إضافة أول مشروع للمسار
+              </Link>
+            )}
           </div>
         ) : totalVisibleProjects === 0 ? (
           <div className="empty-state">
@@ -315,7 +381,13 @@ const ProjectsList = () => {
           </div>
         ) : (
           <div className="projects-sections">
-            {isSearchActive ? (
+            {isAdmin ? (
+              <ProjectSection
+                projects={filteredProjects}
+                isAdmin={isAdmin}
+                handleDelete={handleDelete}
+              />
+            ) : isSearchActive ? (
               <ProjectSection
                 title={`🔍 نتائج البحث (${totalVisibleProjects})`}
                 projects={filteredProjects}

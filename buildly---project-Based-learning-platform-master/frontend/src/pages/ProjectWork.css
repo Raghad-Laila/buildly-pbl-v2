@@ -41,7 +41,18 @@
 }
 
 .fcc-layout {
-  display: block;
+  display: flex;
+  align-items: stretch;
+  min-height: calc(100vh - 88px);
+}
+
+.fcc-main {
+  flex: 1;
+  min-width: 0;
+  padding: 24px 20px 40px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
 }
 
 .fcc-content {
@@ -498,6 +509,12 @@
   border-color: #3b3b4f;
 }
 
+@media (max-width: 1100px) {
+  .fcc-layout {
+    flex-direction: column;
+  }
+}
+
 @media (max-width: 768px) {
   .fcc-header {
     flex-direction: column;
@@ -508,6 +525,7 @@
     font-size: 22px;
   }
 
+  .fcc-main,
   .fcc-content {
     padding: 16px 12px 28px;
   }
@@ -880,28 +898,452 @@
   color: #e5e7eb;
 }
 
-.deepnote-split {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px;
-  min-height: 520px;
-}
-
-.deepnote-editor-pane,
-.deepnote-output-pane {
-  min-height: 520px;
+.deepnote-coding-area {
   display: flex;
   flex-direction: column;
+  min-height: 420px;
 }
 
-.deepnote-editor-pane .multi-file-editor {
+.editor-with-explorer {
+  display: flex;
   flex: 1;
-  min-height: 520px;
+  min-height: 420px;
+  direction: ltr;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  overflow: hidden;
+  background: #1e1e1e;
 }
 
-.deepnote-editor-pane .monaco-wrapper {
+.editor-with-explorer-main {
+  display: flex;
+  flex-direction: column;
   flex: 1;
-  min-height: 470px;
+  min-width: 0;
+}
+
+.file-explorer {
+  width: 220px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  background: #252526;
+  border-right: 1px solid #1e1e1e;
+  direction: ltr;
+}
+
+.file-explorer-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 10px;
+  min-height: 38px;
+  box-sizing: border-box;
+  background: #2d2d2d;
+  border-bottom: 1px solid #1e1e1e;
+  flex-shrink: 0;
+}
+
+.file-explorer-title {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  color: #bbbbbb;
+  text-transform: uppercase;
+}
+
+.file-explorer-add {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 24px;
+  padding: 0 8px;
+  border: 1px solid #3c3c3c;
+  border-radius: 4px;
+  background: transparent;
+  color: #cccccc;
+  font-size: 11px;
+  line-height: 1;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.file-explorer-add-plus {
+  font-size: 14px;
+  line-height: 1;
+}
+
+.file-explorer-add:hover {
+  background: #3c3c3c;
+  border-color: #4b4b4b;
+  color: #ffffff;
+}
+
+.file-explorer-list {
+  list-style: none;
+  margin: 0;
+  padding: 6px 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  flex: 1;
+  min-height: 0;
+}
+
+.file-explorer-row {
+  position: relative;
+}
+
+.file-explorer-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 8px 5px 10px;
+  min-height: 28px;
+  color: #cccccc;
+  cursor: pointer;
+  user-select: none;
+  border-left: 2px solid transparent;
+  box-sizing: border-box;
+}
+
+.file-explorer-item:hover {
+  background: #2a2d2e;
+}
+
+.file-explorer-item.active {
+  background: #2a2d2e;
+  border-left-color: #007acc;
+  color: #ffffff;
+}
+
+.file-explorer-item.active .file-explorer-name {
+  font-weight: 600;
+}
+
+.file-explorer-icon-wrap {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  flex-shrink: 0;
+  color: #9d9d9d;
+}
+
+.file-explorer-icon {
+  display: block;
+}
+
+.file-explorer-icon.icon-html {
+  color: #e37933;
+}
+
+.file-explorer-icon.icon-css {
+  color: #5685c4;
+}
+
+.file-explorer-icon.icon-js,
+.file-explorer-icon.icon-ts {
+  color: #cbcb41;
+}
+
+.file-explorer-icon.icon-py {
+  color: #4b8bbe;
+}
+
+.file-explorer-icon.icon-json {
+  color: #cbcb41;
+}
+
+.file-explorer-icon.icon-md {
+  color: #519aba;
+}
+
+.file-explorer-icon.icon-txt,
+.file-explorer-icon.icon-unknown {
+  color: #9d9d9d;
+}
+
+.file-explorer-name {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 13px;
+  font-family: 'Fira Code', Consolas, monospace;
+  font-weight: 400;
+}
+
+.file-explorer-menu-wrap {
+  position: relative;
+  flex-shrink: 0;
+  opacity: 0;
+  transition: opacity 0.12s;
+}
+
+.file-explorer-item:hover .file-explorer-menu-wrap,
+.file-explorer-item.active .file-explorer-menu-wrap,
+.file-explorer-menu-wrap:focus-within,
+.file-explorer-menu-wrap:has(.file-explorer-menu) {
+  opacity: 1;
+}
+
+.file-explorer-menu-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  color: #aaaaaa;
+  font-size: 14px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0;
+}
+
+.file-explorer-menu-btn:hover,
+.file-explorer-menu-btn.open {
+  background: #3c3c3c;
+  color: #ffffff;
+}
+
+.file-explorer-menu {
+  position: absolute;
+  top: calc(100% + 2px);
+  right: 0;
+  z-index: 20;
+  min-width: 120px;
+  padding: 4px;
+  background: #252526;
+  border: 1px solid #454545;
+  border-radius: 6px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
+}
+
+.file-explorer-menu-item {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 6px 10px;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  color: #cccccc;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.file-explorer-menu-item:hover:not(:disabled) {
+  background: #2a2d2e;
+  color: #ffffff;
+}
+
+.file-explorer-menu-item.danger:hover:not(:disabled) {
+  color: #f48771;
+}
+
+.file-explorer-menu-item:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.file-explorer-rename-input {
+  flex: 1;
+  min-width: 0;
+  height: 22px;
+  padding: 0 4px;
+  border: 1px solid #007acc;
+  border-radius: 3px;
+  background: #3c3c3c;
+  color: #ffffff;
+  font-size: 12px;
+  font-family: 'Fira Code', Consolas, monospace;
+  outline: none;
+}
+
+.file-explorer-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  flex: 1;
+  min-height: 120px;
+  padding: 20px 12px;
+  text-align: center;
+}
+
+.file-explorer-empty-text {
+  margin: 0;
+  color: #9d9d9d;
+  font-size: 13px;
+}
+
+.file-explorer-empty-btn {
+  padding: 6px 12px;
+  border: 1px solid #3c3c3c;
+  border-radius: 4px;
+  background: #2d2d2d;
+  color: #cccccc;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.file-explorer-empty-btn:hover {
+  background: #3c3c3c;
+  color: #ffffff;
+}
+
+.deepnote-coding-area .multi-file-editor {
+  flex: 1;
+  min-height: 420px;
+  border: none;
+  border-radius: 0;
+}
+
+.deepnote-coding-area .editor-tabs-bar {
+  border-radius: 0;
+  border-left: none;
+  border-top: none;
+}
+
+.deepnote-coding-area .monaco-wrapper {
+  flex: 1;
+  min-height: 380px;
+}
+
+/* Bottom dock (Output | Tests | Terminal) */
+.bottom-dock {
+  display: flex;
+  flex-direction: column;
+  min-height: 260px;
+  max-height: 360px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  overflow: hidden;
+  background: #111827;
+  direction: ltr;
+}
+
+.bottom-dock-tabs {
+  display: flex;
+  align-items: stretch;
+  gap: 0;
+  background: #1f2937;
+  border-bottom: 1px solid #374151;
+  flex-shrink: 0;
+}
+
+.bottom-dock-tab {
+  padding: 8px 16px;
+  border: none;
+  border-bottom: 2px solid transparent;
+  background: transparent;
+  color: #9ca3af;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.bottom-dock-tab:hover {
+  color: #e5e7eb;
+  background: #273449;
+}
+
+.bottom-dock-tab.active {
+  color: #ffffff;
+  border-bottom-color: #22c55e;
+  background: #111827;
+}
+
+.bottom-dock-body {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+}
+
+.bottom-dock-panel {
+  height: 100%;
+  min-height: 220px;
+}
+
+.bottom-dock-panel[hidden] {
+  display: none !important;
+}
+
+.bottom-dock .execution-panel {
+  min-height: 220px;
+  height: 100%;
+  border: none;
+  border-radius: 0;
+}
+
+.bottom-dock .execution-preview-frame {
+  min-height: 180px;
+}
+
+.bottom-dock .fcc-tests-section {
+  margin: 0;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  min-height: 220px;
+}
+
+.bottom-dock .fcc-tests-section .fcc-section-title {
+  display: none;
+}
+
+.bottom-dock .fcc-section-body {
+  padding: 12px;
+}
+
+.bottom-dock-terminal {
+  padding: 12px;
+  font-family: 'Fira Code', monospace;
+  color: #e5e7eb;
+}
+
+.bottom-dock-terminal-empty {
+  color: #9ca3af;
+  font-size: 13px;
+  padding: 16px 4px;
+}
+
+.bottom-dock-terminal-block {
+  margin-bottom: 12px;
+}
+
+.bottom-dock-terminal-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #9ca3af;
+  margin-bottom: 4px;
+}
+
+.bottom-dock-terminal-block.block-stderr .bottom-dock-terminal-label {
+  color: #f87171;
+}
+
+.bottom-dock-terminal-content {
+  margin: 0;
+  padding: 8px 10px;
+  background: #0b1220;
+  border-radius: 6px;
+  border: 1px solid #1f2937;
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.bottom-dock-terminal-block.block-stderr .bottom-dock-terminal-content {
+  border-color: #7f1d1d;
+  color: #fecaca;
 }
 
 /* Execution panel */
@@ -1138,13 +1580,17 @@
 }
 
 @media (max-width: 1100px) {
-  .deepnote-split {
-    grid-template-columns: 1fr;
+  .deepnote-coding-area,
+  .editor-with-explorer,
+  .bottom-dock {
+    min-height: 280px;
   }
 
-  .deepnote-editor-pane,
-  .deepnote-output-pane,
-  .execution-panel {
-    min-height: 400px;
+  .bottom-dock {
+    max-height: none;
+  }
+
+  .file-explorer {
+    width: 180px;
   }
 }

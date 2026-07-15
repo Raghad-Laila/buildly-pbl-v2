@@ -3,10 +3,23 @@ from django.db import models
 from django.utils.translation import gettext_lazy as _
 
 from .constants import DIFFICULTY_LEVELS, FINAL_LEVELS, TOPICS
+from .track_config import PLACEMENT_TRACKS
+
+
+def _topic_label(topic: str) -> str:
+    for track in PLACEMENT_TRACKS.values():
+        if topic in track['topic_labels']:
+            return track['topic_labels'][topic]
+    return topic.upper()
 
 
 class PlacementQuestion(models.Model):
-    TOPIC_CHOICES = tuple((topic, topic.upper()) for topic in TOPICS)
+    SOURCE_CHOICES = (
+        ('manual', _('يدوي')),
+        ('ai', _('ذكاء اصطناعي')),
+    )
+    TRACK_CHOICES = tuple((slug, config['display_name']) for slug, config in PLACEMENT_TRACKS.items())
+    TOPIC_CHOICES = tuple((topic, _topic_label(topic)) for topic in TOPICS)
 
     question = models.TextField(verbose_name=_('السؤال'))
     options = models.JSONField(verbose_name=_('الخيارات'))
@@ -16,12 +29,32 @@ class PlacementQuestion(models.Model):
     )
     explanation = models.TextField(verbose_name=_('الشرح'))
     topic = models.CharField(max_length=20, choices=TOPIC_CHOICES, verbose_name=_('الموضوع'))
+    track_slug = models.CharField(
+        max_length=20,
+        choices=TRACK_CHOICES,
+        default='frontend',
+        verbose_name=_('المسار'),
+    )
     difficulty_level = models.CharField(
         max_length=20,
         choices=DIFFICULTY_LEVELS,
         verbose_name=_('مستوى الصعوبة'),
     )
     difficulty_score = models.FloatField(verbose_name=_('درجة الصعوبة'))
+    source = models.CharField(
+        max_length=20,
+        choices=SOURCE_CHOICES,
+        default='manual',
+        verbose_name=_('المصدر'),
+    )
+    attempt = models.ForeignKey(
+        'PlacementAttempt',
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name='generated_questions',
+        verbose_name=_('المحاولة'),
+    )
     is_active = models.BooleanField(default=True, verbose_name=_('نشط'))
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -62,6 +95,11 @@ class PlacementAttempt(models.Model):
     asked_question_ids = models.JSONField(default=list, blank=True)
     responses = models.JSONField(default=list, blank=True)
     total_questions = models.PositiveSmallIntegerField(default=12)
+    random_seed = models.PositiveIntegerField(
+        default=0,
+        verbose_name=_('بذرة عشوائية'),
+        help_text=_('بذرة فريدة لكل محاولة لاختيار أسئلة مختلفة بين الطلاب'),
+    )
     started_at = models.DateTimeField(auto_now_add=True)
     completed_at = models.DateTimeField(null=True, blank=True)
 

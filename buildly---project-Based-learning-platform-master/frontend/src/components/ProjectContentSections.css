@@ -63,6 +63,7 @@
   flex-shrink: 0;
 }
 
+.content-items-list input,
 .content-item-row input,
 .content-item-row textarea,
 .content-story-card input,

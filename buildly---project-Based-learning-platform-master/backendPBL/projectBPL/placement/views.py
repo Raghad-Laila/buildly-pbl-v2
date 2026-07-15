@@ -1,3 +1,5 @@
+import secrets
+
 from django.utils import timezone
 from rest_framework import permissions, status
 from rest_framework.response import Response
@@ -6,18 +8,20 @@ from rest_framework.views import APIView
 from courses.models import Course
 
 from .adaptive import apply_answer, get_starting_question, select_next_question
-from .constants import (
-    INITIAL_ABILITY_SCORE,
-    TOTAL_QUESTIONS,
-    ability_to_final_level,
-    is_frontend_placement_course,
-)
+from .constants import INITIAL_ABILITY_SCORE, QUESTION_TIME_LIMIT_SECONDS, TOTAL_QUESTIONS, ability_to_final_level
 from .models import PlacementAttempt, PlacementQuestion
 from .serializers import (
     PlacementAnswerSerializer,
     PlacementQuestionPublicSerializer,
+    PlacementReplaceQuestionSerializer,
     PlacementStartSerializer,
     PlacementStatusSerializer,
+)
+from .track_config import (
+    build_track_status_meta,
+    get_track_config,
+    get_track_for_course,
+    requires_placement_course,
 )
 
 
@@ -49,9 +53,10 @@ def build_status_payload(user, course):
         course=course,
         status='in_progress',
     ).first()
+    track_meta = build_track_status_meta(course)
 
     return {
-        'requires_placement': is_frontend_placement_course(course),
+        'requires_placement': requires_placement_course(course),
         'has_completed': bool(completed_attempt),
         'has_in_progress': bool(in_progress_attempt),
         'attempt_id': in_progress_attempt.id if in_progress_attempt else None,
@@ -62,6 +67,8 @@ def build_status_payload(user, course):
         else None,
         'completed_at': completed_attempt.completed_at if completed_attempt else None,
         'is_enrolled': course.is_student_enrolled(user),
+        'course_title': course.title,
+        **track_meta,
     }
 
 
@@ -84,7 +91,61 @@ def finalize_attempt(attempt, user):
     return attempt
 
 
-class FrontendPlacementStatusView(APIView):
+def _has_static_bank(track_slug: str) -> bool:
+    return PlacementQuestion.objects.filter(
+        is_active=True,
+        source='manual',
+        attempt__isnull=True,
+        track_slug=track_slug,
+    ).count() >= TOTAL_QUESTIONS
+
+
+def _create_attempt_with_first_question(user, course):
+    random_seed = secrets.randbelow(2**31 - 1) or 1
+    attempt = PlacementAttempt.objects.create(
+        user=user,
+        course=course,
+        ability_score=INITIAL_ABILITY_SCORE,
+        random_seed=random_seed,
+        total_questions=TOTAL_QUESTIONS,
+    )
+
+    first_question = get_starting_question(random_seed, attempt=attempt)
+    if not first_question:
+        attempt.delete()
+        return None, None
+
+    attempt.asked_question_ids = [first_question.id]
+    attempt.save(update_fields=['asked_question_ids'])
+    return attempt, first_question
+
+
+def replace_timed_out_question(attempt, expired_question_id):
+    current_question = get_current_question(attempt)
+    if not current_question or current_question.id != expired_question_id:
+        return None, 'هذا السؤال ليس السؤال الحالي'
+
+    attempt.ability_score = apply_answer(attempt.ability_score, False)
+
+    asked_questions = list(
+        PlacementQuestion.objects.filter(id__in=attempt.asked_question_ids)
+    )
+    replacement = select_next_question(
+        attempt.ability_score,
+        attempt.asked_question_ids,
+        asked_questions,
+        attempt.random_seed,
+        attempt=attempt,
+    )
+    if not replacement:
+        return None, 'لا توجد أسئلة بديلة متاحة'
+
+    attempt.asked_question_ids[-1] = replacement.id
+    attempt.save(update_fields=['ability_score', 'asked_question_ids'])
+    return replacement, None
+
+
+class PlacementStatusView(APIView):
     permission_classes = [permissions.IsAuthenticated, IsLearner]
 
     def get(self, request, course_id):
@@ -97,7 +158,7 @@ class FrontendPlacementStatusView(APIView):
         return Response(serializer.data)
 
 
-class FrontendPlacementStartView(APIView):
+class PlacementStartView(APIView):
     permission_classes = [permissions.IsAuthenticated, IsLearner]
 
     def post(self, request):
@@ -111,9 +172,10 @@ class FrontendPlacementStartView(APIView):
         if not course:
             return Response({'error': 'المسار غير موجود'}, status=status.HTTP_404_NOT_FOUND)
 
-        if not is_frontend_placement_course(course):
+        track_slug = get_track_for_course(course)
+        if not track_slug:
             return Response(
-                {'error': 'اختبار تحديد المستوى متاح لمسار Frontend فقط'},
+                {'error': 'اختبار تحديد المستوى غير متاح لهذا المسار'},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
@@ -140,6 +202,9 @@ class FrontendPlacementStartView(APIView):
                     'final_level_display': completed_attempt.get_final_level_display(),
                     'completed_at': completed_attempt.completed_at,
                     'enrolled': True,
+                    'course_title': course.title,
+                    'track_slug': track_slug,
+                    'track_display_name': get_track_config(track_slug)['display_name'],
                 }
             )
 
@@ -160,35 +225,33 @@ class FrontendPlacementStartView(APIView):
                     'final_level_display': attempt.get_final_level_display(),
                     'completed_at': attempt.completed_at,
                     'enrolled': True,
+                    'course_title': course.title,
+                    'track_slug': track_slug,
+                    'track_display_name': get_track_config(track_slug)['display_name'],
                 }
             )
 
         if not attempt:
-            if PlacementQuestion.objects.filter(is_active=True).count() < TOTAL_QUESTIONS:
+            if not _has_static_bank(track_slug):
                 return Response(
                     {'error': 'بنك الأسئلة غير جاهز بعد. تواصل مع المشرف.'},
                     status=status.HTTP_503_SERVICE_UNAVAILABLE,
                 )
 
-            first_question = get_starting_question()
-            if not first_question:
+            attempt, current_question = _create_attempt_with_first_question(request.user, course)
+            if not attempt:
                 return Response(
                     {'error': 'لا توجد أسئلة متاحة لبدء الاختبار'},
                     status=status.HTTP_503_SERVICE_UNAVAILABLE,
                 )
-
-            attempt = PlacementAttempt.objects.create(
-                user=request.user,
-                course=course,
-                ability_score=INITIAL_ABILITY_SCORE,
-                asked_question_ids=[first_question.id],
-                total_questions=TOTAL_QUESTIONS,
-            )
-            current_question = first_question
         else:
             current_question = get_current_question(attempt)
             if not current_question:
-                first_question = get_starting_question()
+                if not attempt.random_seed:
+                    attempt.random_seed = secrets.randbelow(2**31 - 1) or 1
+                    attempt.save(update_fields=['random_seed'])
+
+                first_question = get_starting_question(attempt.random_seed, attempt=attempt)
                 if not first_question:
                     return Response(
                         {'error': 'لا توجد أسئلة متاحة لاستئناف الاختبار'},
@@ -205,11 +268,15 @@ class FrontendPlacementStartView(APIView):
                 'current_question_number': attempt.questions_answered + 1,
                 'ability_score': attempt.ability_score,
                 'question': serialize_question(current_question),
+                'course_title': course.title,
+                'track_slug': track_slug,
+                'track_display_name': get_track_config(track_slug)['display_name'],
+                'question_time_limit_seconds': QUESTION_TIME_LIMIT_SECONDS,
             }
         )
 
 
-class FrontendPlacementSubmitAnswerView(APIView):
+class PlacementSubmitAnswerView(APIView):
     permission_classes = [permissions.IsAuthenticated, IsLearner]
 
     def post(self, request):
@@ -255,6 +322,7 @@ class FrontendPlacementSubmitAnswerView(APIView):
         attempt.save(update_fields=['ability_score', 'responses'])
 
         answered_count = attempt.questions_answered
+        track_slug = get_track_for_course(attempt.course)
         response_payload = {
             'is_correct': is_correct,
             'explanation': question.explanation,
@@ -272,6 +340,11 @@ class FrontendPlacementSubmitAnswerView(APIView):
                     'final_level_display': attempt.get_final_level_display(),
                     'completed_at': attempt.completed_at,
                     'enrolled': True,
+                    'course_title': attempt.course.title,
+                    'track_slug': track_slug,
+                    'track_display_name': get_track_config(track_slug)['display_name']
+                    if track_slug
+                    else None,
                 }
             )
             return Response(response_payload)
@@ -284,6 +357,8 @@ class FrontendPlacementSubmitAnswerView(APIView):
             attempt.ability_score,
             used_ids,
             asked_questions,
+            attempt.random_seed,
+            attempt=attempt,
         )
 
         if not next_question:
@@ -295,6 +370,11 @@ class FrontendPlacementSubmitAnswerView(APIView):
                     'final_level_display': attempt.get_final_level_display(),
                     'completed_at': attempt.completed_at,
                     'enrolled': True,
+                    'course_title': attempt.course.title,
+                    'track_slug': track_slug,
+                    'track_display_name': get_track_config(track_slug)['display_name']
+                    if track_slug
+                    else None,
                 }
             )
             return Response(response_payload)
@@ -306,6 +386,49 @@ class FrontendPlacementSubmitAnswerView(APIView):
             {
                 'current_question_number': answered_count + 1,
                 'question': serialize_question(next_question),
+                'question_time_limit_seconds': QUESTION_TIME_LIMIT_SECONDS,
             }
         )
         return Response(response_payload)
+
+
+class PlacementReplaceQuestionView(APIView):
+    permission_classes = [permissions.IsAuthenticated, IsLearner]
+
+    def post(self, request):
+        serializer = PlacementReplaceQuestionSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        data = serializer.validated_data
+        attempt = PlacementAttempt.objects.filter(
+            id=data['attempt_id'],
+            user=request.user,
+            status='in_progress',
+        ).select_related('course').first()
+
+        if not attempt:
+            return Response({'error': 'محاولة الاختبار غير موجودة'}, status=status.HTTP_404_NOT_FOUND)
+
+        replacement, error_message = replace_timed_out_question(attempt, data['question_id'])
+        if error_message:
+            status_code = status.HTTP_400_BAD_REQUEST
+            if error_message == 'لا توجد أسئلة بديلة متاحة':
+                status_code = status.HTTP_503_SERVICE_UNAVAILABLE
+            return Response({'error': error_message}, status=status_code)
+
+        return Response(
+            {
+                'replaced': True,
+                'message': 'انتهى الوقت — تم استبدال السؤال بسؤال جديد',
+                'ability_score': attempt.ability_score,
+                'current_question_number': attempt.questions_answered + 1,
+                'question': serialize_question(replacement),
+                'question_time_limit_seconds': QUESTION_TIME_LIMIT_SECONDS,
+            }
+        )
+
+
+# Backward-compatible aliases
+FrontendPlacementStatusView = PlacementStatusView
+FrontendPlacementStartView = PlacementStartView
+FrontendPlacementSubmitAnswerView = PlacementSubmitAnswerView

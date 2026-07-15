@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import Editor from '@monaco-editor/react'
 import {
-  addFile,
   deleteFile,
   getActiveFile,
   getMonacoLanguageFromFileName,
@@ -45,25 +44,6 @@ const MultiFileEditor = ({
   const handleContentChange = (value) => {
     if (!activeFile || readOnly) return
     emitChange(updateFileContent(workspace, activeFile.id, value || ''))
-  }
-
-  const handleAddFile = () => {
-    const name = window.prompt('اسم الملف الجديد:', 'untitled.js')
-    if (!name) return
-
-    const trimmed = name.trim()
-    if (!trimmed) return
-
-    const exists = workspace.files.some(
-      (file) => file.name.toLowerCase() === trimmed.toLowerCase()
-    )
-
-    if (exists) {
-      window.alert('يوجد ملف بنفس الاسم مسبقاً')
-      return
-    }
-
-    emitChange(addFile(workspace, trimmed))
   }
 
   const startRename = (file) => {
@@ -191,17 +171,6 @@ const MultiFileEditor = ({
             )
           })}
         </div>
-
-        {!readOnly && (
-          <button
-            type="button"
-            className="editor-tab-add"
-            onClick={handleAddFile}
-            title="ملف جديد"
-          >
-            +
-          </button>
-        )}
       </div>
 
       <div className="monaco-wrapper">

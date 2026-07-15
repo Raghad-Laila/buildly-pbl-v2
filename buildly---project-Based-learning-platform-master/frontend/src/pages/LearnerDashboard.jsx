@@ -337,7 +337,7 @@ const LearnerDashboard = () => {
           {!dashboardData?.user_profile?.is_rated ? (
             <div className="empty-state">
               <p>
-                انضم لمسار Frontend Mastery لإجراء اختبار تحديد المستوى المتكيف
+                انضم لمسار Frontend Mastery أو Python لإجراء اختبار تحديد المستوى المتكيف
                 والحصول على مشاريع مناسبة لك
               </p>
               <Link to="/courses" className="btn btn-primary">

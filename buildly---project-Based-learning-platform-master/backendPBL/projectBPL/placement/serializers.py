@@ -19,6 +19,12 @@ class PlacementStatusSerializer(serializers.Serializer):
     final_level_display = serializers.CharField(allow_null=True)
     completed_at = serializers.DateTimeField(allow_null=True)
     is_enrolled = serializers.BooleanField()
+    course_title = serializers.CharField(allow_null=True, required=False)
+    track_slug = serializers.CharField(allow_null=True, required=False)
+    track_display_name = serializers.CharField(allow_null=True, required=False)
+    topics = serializers.ListField(child=serializers.CharField(), required=False)
+    topic_labels = serializers.DictField(required=False)
+    skills_description = serializers.CharField(allow_null=True, required=False)
 
 
 class PlacementStartSerializer(serializers.Serializer):
@@ -30,6 +36,11 @@ class PlacementAnswerSerializer(serializers.Serializer):
     question_id = serializers.IntegerField()
     selected_answer = serializers.IntegerField(min_value=0)
     time_ms = serializers.IntegerField(min_value=0, required=False, default=0)
+
+
+class PlacementReplaceQuestionSerializer(serializers.Serializer):
+    attempt_id = serializers.IntegerField()
+    question_id = serializers.IntegerField()
 
 
 class PlacementAttemptSerializer(serializers.ModelSerializer):

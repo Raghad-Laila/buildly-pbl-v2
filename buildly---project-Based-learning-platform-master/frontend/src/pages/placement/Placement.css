@@ -133,6 +133,26 @@
   font-weight: 600;
 }
 
+.placement-timer-warning {
+  background: #fee2e2;
+  color: #b91c1c;
+  animation: placement-timer-pulse 1s ease-in-out infinite;
+}
+
+.placement-timeout-notice {
+  margin-bottom: 12px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  background: #fef3c7;
+  color: #92400e;
+  font-size: 0.92rem;
+}
+
+@keyframes placement-timer-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.65; }
+}
+
 .placement-explanation {
   margin-top: 16px;
   padding: 14px 16px;
@@ -192,4 +212,19 @@
 .placement-topic-tag.javascript {
   background: #fef9c3;
   color: #a16207;
+}
+
+.placement-topic-tag.basics {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.placement-topic-tag.data_structures {
+  background: #e0e7ff;
+  color: #3730a3;
+}
+
+.placement-topic-tag.oop {
+  background: #fce7f3;
+  color: #9d174d;
 }

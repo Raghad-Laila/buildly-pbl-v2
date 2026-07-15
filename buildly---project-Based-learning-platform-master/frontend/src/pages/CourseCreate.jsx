@@ -1,6 +1,8 @@
 import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { coursesAPI } from '../services/api'
+import FormErrorToast from '../components/FormErrorToast'
+import useFormFeedback from '../hooks/useFormFeedback'
 import './Form.css'
 
 const CourseCreate = () => {
@@ -8,12 +10,11 @@ const CourseCreate = () => {
   const [formData, setFormData] = useState({
     title: '',
     description: '',
-    level: 'beginner',
     category: 'other',
     estimated_duration: '',
     is_public: false,
   })
-  const [error, setError] = useState('')
+  const { error, errorField, setError, clearError, handleInvalid } = useFormFeedback()
   const [loading, setLoading] = useState(false)
 
   const handleChange = (e) => {
@@ -22,23 +23,35 @@ const CourseCreate = () => {
       ...formData,
       [name]: type === 'checkbox' ? checked : value,
     })
-    setError('')
+    clearError()
   }
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-    setError('')
+    clearError()
     setLoading(true)
 
     try {
-      const response = await coursesAPI.create(formData)
+      const response = await coursesAPI.create({
+        ...formData,
+        level: 'beginner',
+      })
       if (response.data.success) {
         navigate(`/courses/${response.data.course.id}`)
       }
     } catch (err) {
       const errorData = err.response?.data
       if (errorData?.errors) {
-        setError(Array.isArray(errorData.errors) ? errorData.errors.join(', ') : errorData.errors)
+        const errors = errorData.errors
+        if (typeof errors === 'object' && !Array.isArray(errors)) {
+          const firstField = Object.keys(errors).find((key) => key !== 'non_field_errors')
+          setError(
+            Object.values(errors).flat().join(', '),
+            firstField || null
+          )
+        } else {
+          setError(Array.isArray(errors) ? errors.join(', ') : errors)
+        }
       } else if (errorData?.message) {
         setError(errorData.message)
       } else {
@@ -58,8 +71,8 @@ const CourseCreate = () => {
       <div className="form-container">
         {error && <div className="alert alert-error">{error}</div>}
 
-        <form onSubmit={handleSubmit} className="form">
-          <div className="input-group">
+        <form onSubmit={handleSubmit} onInvalidCapture={handleInvalid} className="form">
+          <div className="input-group" data-field="title">
             <label htmlFor="title">عنوان المسار *</label>
             <input
               type="text"
@@ -73,7 +86,7 @@ const CourseCreate = () => {
             />
           </div>
 
-          <div className="input-group">
+          <div className="input-group" data-field="description">
             <label htmlFor="description">وصف المسار *</label>
             <textarea
               id="description"
@@ -86,45 +99,27 @@ const CourseCreate = () => {
             />
           </div>
 
-          <div className="form-row">
-            <div className="input-group">
-              <label htmlFor="level">المستوى *</label>
-              <select
-                id="level"
-                name="level"
-                value={formData.level}
-                onChange={handleChange}
-                required
-              >
-                <option value="beginner">مبتدئ</option>
-                <option value="intermediate">متوسط</option>
-                <option value="advanced">متقدم</option>
-                <option value="expert">خبير</option>
-              </select>
-            </div>
-
-            <div className="input-group">
-              <label htmlFor="category">الفئة *</label>
-              <select
-                id="category"
-                name="category"
-                value={formData.category}
-                onChange={handleChange}
-                required
-              >
-                <option value="web">تطوير الويب</option>
-                <option value="mobile">تطوير الموبايل</option>
-                <option value="data">علوم البيانات</option>
-                <option value="ai">الذكاء الاصطناعي</option>
-                <option value="design">التصميم</option>
-                <option value="business">أعمال</option>
-                <option value="language">لغات</option>
-                <option value="other">أخرى</option>
-              </select>
-            </div>
+          <div className="input-group" data-field="category">
+            <label htmlFor="category">الفئة *</label>
+            <select
+              id="category"
+              name="category"
+              value={formData.category}
+              onChange={handleChange}
+              required
+            >
+              <option value="web">تطوير الويب</option>
+              <option value="mobile">تطوير الموبايل</option>
+              <option value="data">علوم البيانات</option>
+              <option value="ai">الذكاء الاصطناعي</option>
+              <option value="design">التصميم</option>
+              <option value="business">أعمال</option>
+              <option value="language">لغات</option>
+              <option value="other">أخرى</option>
+            </select>
           </div>
 
-          <div className="input-group">
+          <div className="input-group" data-field="estimated_duration">
             <label htmlFor="estimated_duration">المدة المقدرة (بالساعات) *</label>
             <input
               type="number"
@@ -164,10 +159,15 @@ const CourseCreate = () => {
             </button>
           </div>
         </form>
+
+        <FormErrorToast
+          message={error}
+          field={errorField}
+          onDismiss={clearError}
+        />
       </div>
     </div>
   )
 }
 
 export default CourseCreate
-

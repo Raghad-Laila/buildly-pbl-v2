@@ -1,31 +1,31 @@
 import React, { useEffect, useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { accountAPI } from '../services/api'
+import AuthStepIndicator from '../components/AuthStepIndicator'
 import './Auth.css'
 
 const OTP_LENGTH = 6
 const DEFAULT_RESEND_COOLDOWN = 60
+const RESET_STEPS = ['البريد الإلكتروني', 'رمز التحقق', 'كلمة مرور جديدة']
 
 const ResetPasswordVerify = () => {
   const [searchParams] = useSearchParams()
   const emailParam = searchParams.get('email') || ''
   const cooldownParam = Number(searchParams.get('cooldown') || DEFAULT_RESEND_COOLDOWN)
 
-  const [email, setEmail] = useState(emailParam)
+  const [email] = useState(emailParam)
   const [code, setCode] = useState('')
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
   const [loading, setLoading] = useState(false)
   const [resendCooldown, setResendCooldown] = useState(cooldownParam)
-  const [devOtp, setDevOtp] = useState('')
   const navigate = useNavigate()
 
   useEffect(() => {
-    const storedOtp = sessionStorage.getItem('dev_password_reset_otp')
-    if (storedOtp) {
-      setDevOtp(storedOtp)
+    if (!email) {
+      navigate('/forgot-password')
     }
-  }, [])
+  }, [email, navigate])
 
   useEffect(() => {
     if (resendCooldown <= 0) return undefined
@@ -52,7 +52,6 @@ const ResetPasswordVerify = () => {
     try {
       const response = await accountAPI.verifyPasswordResetOTP(email.trim(), code.trim())
       sessionStorage.setItem('password_reset_token', response.data.reset_token)
-      sessionStorage.removeItem('dev_password_reset_otp')
 
       setSuccess(response.data.message || 'تم التحقق بنجاح')
       setTimeout(() => {
@@ -78,13 +77,7 @@ const ResetPasswordVerify = () => {
     try {
       const response = await accountAPI.resendPasswordResetOTP(email.trim())
       setResendCooldown(response.data.resend_available_in || DEFAULT_RESEND_COOLDOWN)
-
-      if (response.data.dev_otp) {
-        setDevOtp(response.data.dev_otp)
-        sessionStorage.setItem('dev_password_reset_otp', response.data.dev_otp)
-      }
-
-      setSuccess(response.data.message || 'تم إنشاء رمز تحقق جديد')
+      setSuccess(response.data.message || 'تم إرسال رمز تحقق جديد إلى بريدك الإلكتروني')
     } catch (err) {
       const cooldown = err.response?.data?.resend_available_in
       if (cooldown) {
@@ -98,39 +91,25 @@ const ResetPasswordVerify = () => {
     }
   }
 
+  if (!email) {
+    return null
+  }
+
   return (
     <div className="auth-container">
       <div className="auth-card">
+        <AuthStepIndicator currentStep={2} labels={RESET_STEPS} />
+
         <h1 className="auth-title">التحقق من الرمز</h1>
         <p className="auth-subtitle">
-          أدخل رمز التحقق لإعادة تعيين كلمة المرور
+          أدخل رمز التحقق المكوّن من 6 أرقام المرسل إلى{' '}
+          <strong>{email}</strong>
         </p>
-
-        {devOtp && (
-          <div className="dev-otp-panel" role="note">
-            <strong>وضع التطوير</strong>
-            <p>رمز إعادة تعيين كلمة المرور للاختبار:</p>
-            <code className="dev-otp-code">{devOtp}</code>
-          </div>
-        )}
 
         {error && <div className="alert alert-error">{error}</div>}
         {success && <div className="alert alert-success">{success}</div>}
 
         <form onSubmit={handleSubmit} className="auth-form">
-          <div className="input-group">
-            <label htmlFor="email">البريد الإلكتروني</label>
-            <input
-              type="email"
-              id="email"
-              name="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              placeholder="أدخل بريدك الإلكتروني"
-            />
-          </div>
-
           <div className="input-group">
             <label htmlFor="code">رمز التحقق</label>
             <input
@@ -163,6 +142,11 @@ const ResetPasswordVerify = () => {
               ? `إعادة إرسال الرمز خلال ${resendCooldown} ثانية`
               : 'إعادة إرسال رمز التحقق'}
           </button>
+          <p>
+            <Link to="/forgot-password" className="auth-link">
+              تغيير البريد الإلكتروني
+            </Link>
+          </p>
           <p>
             <Link to="/login" className="auth-link">
               العودة لتسجيل الدخول

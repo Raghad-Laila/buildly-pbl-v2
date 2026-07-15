@@ -8,6 +8,7 @@ from projects.seed_data import (
     FRONTEND_COURSE_TITLE,
     FRONTEND_PROJECTS,
     PYTHON_COURSE_TITLE,
+    PYTHON_COURSE_FALLBACK_TITLE,
     PYTHON_PROJECTS,
     SEED_PREFIX,
 )
@@ -22,6 +23,11 @@ class Command(BaseCommand):
             action='store_true',
             help='Deactivate old projects in target courses that are not Buildly seeds',
         )
+        parser.add_argument(
+            '--python-only',
+            action='store_true',
+            help='Seed Python course projects only',
+        )
 
     @transaction.atomic
     def handle(self, *args, **options):
@@ -34,23 +40,34 @@ class Command(BaseCommand):
             self.stderr.write(self.style.ERROR('No admin user found.'))
             return
 
-        frontend_course = self._get_frontend_course()
         python_course = self._ensure_python_course(admin)
 
         if options['deactivate_old']:
-            self._deactivate_old_projects(frontend_course)
             self._deactivate_old_projects(python_course)
 
-        frontend_count = self._seed_projects(frontend_course, FRONTEND_PROJECTS)
         python_count = self._seed_projects(python_course, PYTHON_PROJECTS)
+
+        self.stdout.write(self.style.SUCCESS(
+            f'Seeded {python_count} python projects in "{python_course.title}" '
+            f'(id={python_course.id})'
+        ))
+
+        if options['python_only']:
+            self.stdout.write(self.style.SUCCESS(
+                f'Admin: {admin.email} | Look for projects starting with "{SEED_PREFIX}"'
+            ))
+            return
+
+        frontend_course = self._get_frontend_course()
+
+        if options['deactivate_old']:
+            self._deactivate_old_projects(frontend_course)
+
+        frontend_count = self._seed_projects(frontend_course, FRONTEND_PROJECTS)
 
         self.stdout.write(self.style.SUCCESS(
             f'Seeded {frontend_count} frontend projects in "{frontend_course.title}" '
             f'(id={frontend_course.id})'
-        ))
-        self.stdout.write(self.style.SUCCESS(
-            f'Seeded {python_count} python projects in "{python_course.title}" '
-            f'(id={python_course.id})'
         ))
         self.stdout.write(self.style.SUCCESS(
             f'Admin: {admin.email} | Look for projects starting with "{SEED_PREFIX}"'
@@ -66,7 +83,11 @@ class Command(BaseCommand):
         )
 
     def _ensure_python_course(self, admin):
-        course = Course.objects.filter(title=PYTHON_COURSE_TITLE).first()
+        course = (
+            Course.objects.filter(title=PYTHON_COURSE_TITLE, is_active=True).first()
+            or Course.objects.filter(title=PYTHON_COURSE_TITLE).first()
+            or Course.objects.filter(title=PYTHON_COURSE_FALLBACK_TITLE).first()
+        )
 
         if course:
             changed = False
@@ -126,6 +147,8 @@ class Command(BaseCommand):
                     'estimated_time': data['estimated_time'],
                     'order': order,
                     'is_active': True,
+                    'assets_provided': data.get('assets_provided', []),
+                    'ideas_to_test': data.get('ideas_to_test', []),
                 },
             )
 

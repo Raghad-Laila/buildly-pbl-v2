@@ -1,16 +1,22 @@
 import React, { useEffect, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import MultiFileEditor from '../components/MultiFileEditor'
+import FileExplorer from '../components/FileExplorer'
+import BottomDock from '../components/BottomDock'
 import ExecutionPanel from '../components/ExecutionPanel'
 import RunningTestsPanel from '../components/RunningTestsPanel'
 import ProjectWorkProgress from '../components/ProjectWorkProgress'
-import TestLinkStatus from '../components/TestLinkStatus'
+import ProjectWorkSidebar from '../components/ProjectWorkSidebar'
 import { projectsAPI } from '../services/api'
 import {
+    addFile,
+    deleteFile,
     getDefaultWorkspace,
     getMainExecutableFile,
     parseWorkspace,
+    renameFile,
     serializeWorkspace,
+    setActiveFile,
     getWorkspaceFileContent,
     getWorkspaceSnapshot,
     workspaceHasContent,
@@ -34,14 +40,6 @@ import { linkResultsByIndex } from '../utils/testResultLinking'
 import { getProjectTestProgress } from '../utils/projectProgress'
 import { getPrimaryProjectLanguage } from '../utils/projectLanguages'
 import './ProjectWork.css'
-
-const parseLines = (text) => {
-    if (!text?.trim()) return []
-    return text
-        .split('\n')
-        .map((line) => line.trim())
-        .filter(Boolean)
-}
 
 async function loadSharedProjectWorkspace(taskList, projectLanguage) {
     const codeTasks = taskList.filter((item) => item.task_type === 'code')
@@ -86,7 +84,6 @@ const ProjectWork = () => {
 
     const [workspace, setWorkspace] = useState(null)
     const [textAnswer, setTextAnswer] = useState('')
-    const [hintsOpen, setHintsOpen] = useState(false)
 
     const [loading, setLoading] = useState(true)
     const [execution, setExecution] = useState(createExecutionState())
@@ -138,6 +135,26 @@ const ProjectWork = () => {
     const handleWorkspaceChange = (nextWorkspace) => {
         setWorkspace(nextWorkspace)
         workspaceRef.current = serializeWorkspace(nextWorkspace)
+    }
+
+    const handleExplorerSelectFile = (fileId) => {
+        if (!workspace) return
+        handleWorkspaceChange(setActiveFile(workspace, fileId))
+    }
+
+    const handleExplorerAddFile = (name) => {
+        if (!workspace) return
+        handleWorkspaceChange(addFile(workspace, name))
+    }
+
+    const handleExplorerRenameFile = (fileId, newName) => {
+        if (!workspace) return
+        handleWorkspaceChange(renameFile(workspace, fileId, newName))
+    }
+
+    const handleExplorerDeleteFile = (fileId) => {
+        if (!workspace) return
+        handleWorkspaceChange(deleteFile(workspace, fileId))
     }
 
     const saveProjectWork = async () => {
@@ -413,7 +430,7 @@ const ProjectWork = () => {
     const showKernelReset =
         projectLanguage === 'python' || projectLanguage === 'javascript'
 
-    const objectives = parseLines(project?.objectives)
+    const objective = project?.objectives?.trim() || ''
     const userStories = tasks.length
         ? tasks.map((t, index) => ({
             id: t.id,
@@ -422,11 +439,6 @@ const ProjectWork = () => {
             title: t.title,
         }))
         : []
-
-    const objectivesWithStatus = linkResultsByIndex(
-        objectives.map((text, index) => ({ id: index, index, text })),
-        testResults
-    )
 
     const userStoriesWithStatus = linkResultsByIndex(userStories, testResults)
 
@@ -443,7 +455,7 @@ const ProjectWork = () => {
         <div className="fcc-workspace">
             <header className="fcc-header">
                 <div>
-                    <p className="fcc-breadcrumb">Project Workspace</p>
+                    <p className="fcc-breadcrumb">مساحة تنفيذ المشروع</p>
                     <h1>{project.title}</h1>
                 </div>
                 <button
@@ -457,104 +469,45 @@ const ProjectWork = () => {
             </header>
 
             <div className="fcc-layout">
-                <div className="fcc-content">
+                <ProjectWorkSidebar
+                    project={project}
+                    objective={objective}
+                    userStoriesWithStatus={userStoriesWithStatus}
+                    availableHints={availableHints}
+                />
+
+                <div className="fcc-main">
                     <ProjectWorkProgress progress={testProgress} />
-
-                    <section className="fcc-section">
-                        <h2 className="fcc-section-title">Project Description</h2>
-                        <div className="fcc-section-body">
-                            <p className="fcc-description">{project.description}</p>
-                        </div>
-                    </section>
-
-                    <section className="fcc-section">
-                        <h2 className="fcc-section-title">Objectives</h2>
-                        <div className="fcc-section-body">
-                            {objectivesWithStatus.length > 0 ? (
-                                <ul className="fcc-list">
-                                    {objectivesWithStatus.map((item) => (
-                                        <li key={item.id} className="fcc-list-item-with-status">
-                                            <span className="fcc-list-item-text">{item.text}</span>
-                                            <TestLinkStatus status={item.testStatus} />
-                                        </li>
-                                    ))}
-                                </ul>
-                            ) : (
-                                <p className="fcc-empty-note">لا توجد أهداف محددة لهذا المشروع بعد.</p>
-                            )}
-                        </div>
-                    </section>
-
-                    <section className="fcc-section">
-                        <h2 className="fcc-section-title">User Stories</h2>
-                        <div className="fcc-section-body">
-                            {userStoriesWithStatus.length > 0 ? (
-                                <ul className="fcc-story-list">
-                                    {userStoriesWithStatus.map((story) => (
-                                        <li key={story.id}>
-                                            <div className="fcc-story-item fcc-story-item-static">
-                                                <span className="fcc-story-marker" aria-hidden="true" />
-                                                <span className="fcc-story-text">
-                                                    <span className="fcc-story-title-row">
-                                                        <strong>{story.title}</strong>
-                                                        <TestLinkStatus status={story.testStatus} />
-                                                    </span>
-                                                    <span>{story.text}</span>
-                                                </span>
-                                            </div>
-                                        </li>
-                                    ))}
-                                </ul>
-                            ) : (
-                                <p className="fcc-empty-note">لا توجد قصص مستخدم لهذا المشروع بعد.</p>
-                            )}
-                        </div>
-                    </section>
-
-                    <section className="fcc-section fcc-hints-section">
-                        <button
-                            type="button"
-                            className="fcc-hints-toggle"
-                            onClick={() => setHintsOpen((prev) => !prev)}
-                            aria-expanded={hintsOpen}
-                        >
-                            <span>Hints</span>
-                            <span className="fcc-hints-icon">{hintsOpen ? '−' : '+'}</span>
-                        </button>
-
-                        {hintsOpen && (
-                            <div className="fcc-hints-panel">
-                                {availableHints.length > 0 ? (
-                                    availableHints.map((item) => (
-                                        <div key={item.id} className="fcc-hint-card">
-                                            <h4>{item.title}</h4>
-                                            <p>{item.hint}</p>
-                                        </div>
-                                    ))
-                                ) : (
-                                    <p className="fcc-empty-note">لا توجد تلميحات متاحة حالياً.</p>
-                                )}
-                            </div>
-                        )}
-                    </section>
 
                     <section className="fcc-section fcc-editor-section">
                         <h2 className="fcc-section-title">Code Editor</h2>
                         <div className="fcc-section-body">
                             {tasks.some((item) => item.task_type === 'code') && workspace && (
                                 <div className="deepnote-workspace">
-                                    <div className="deepnote-split">
-                                        <div className="deepnote-editor-pane">
-                                            <MultiFileEditor
+                                    <div className="deepnote-coding-area">
+                                        <div className="editor-with-explorer">
+                                            <FileExplorer
                                                 workspace={workspace}
-                                                onChange={handleWorkspaceChange}
-                                                onRun={runCode}
-                                                editorHeight="470px"
-                                                defaultMonacoLanguage={getMonacoLanguage(projectLanguage)}
+                                                onSelectFile={handleExplorerSelectFile}
+                                                onAddFile={handleExplorerAddFile}
+                                                onRenameFile={handleExplorerRenameFile}
+                                                onDeleteFile={handleExplorerDeleteFile}
                                             />
+                                            <div className="editor-with-explorer-main">
+                                                <MultiFileEditor
+                                                    workspace={workspace}
+                                                    onChange={handleWorkspaceChange}
+                                                    onRun={runCode}
+                                                    editorHeight="470px"
+                                                    defaultMonacoLanguage={getMonacoLanguage(projectLanguage)}
+                                                />
+                                            </div>
                                         </div>
+                                    </div>
 
-                                        <div className="deepnote-output-pane">
+                                    <BottomDock
+                                        executionBlocks={execution?.blocks || []}
+                                        output={
                                             <ExecutionPanel
                                                 execution={execution}
                                                 kernelLabel={getKernelLabel(projectLanguage, workspace)}
@@ -562,8 +515,16 @@ const ProjectWork = () => {
                                                 onResetKernel={resetKernel}
                                                 showResetKernel={showKernelReset}
                                             />
-                                        </div>
-                                    </div>
+                                        }
+                                        tests={
+                                            <RunningTestsPanel
+                                                running={runningTests}
+                                                testError={testError}
+                                                testResults={testResults}
+                                                testsCount={tests.length}
+                                            />
+                                        }
+                                    />
                                 </div>
                             )}
 
@@ -604,13 +565,6 @@ const ProjectWork = () => {
                             </div>
                         </div>
                     </section>
-
-                    <RunningTestsPanel
-                        running={runningTests}
-                        testError={testError}
-                        testResults={testResults}
-                        testsCount={tests.length}
-                    />
                 </div>
             </div>
         </div>

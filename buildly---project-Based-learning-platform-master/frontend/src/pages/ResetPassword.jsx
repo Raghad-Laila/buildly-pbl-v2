@@ -1,7 +1,10 @@
 import React, { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { accountAPI } from '../services/api'
+import AuthStepIndicator from '../components/AuthStepIndicator'
 import './Auth.css'
+
+const RESET_STEPS = ['البريد الإلكتروني', 'رمز التحقق', 'كلمة مرور جديدة']
 
 const ResetPassword = () => {
   const [formData, setFormData] = useState({
@@ -58,7 +61,6 @@ const ResetPassword = () => {
       })
 
       sessionStorage.removeItem('password_reset_token')
-      sessionStorage.removeItem('dev_password_reset_otp')
 
       setSuccess(response.data.message || 'تمت إعادة تعيين كلمة المرور بنجاح')
       setTimeout(() => {
@@ -82,6 +84,8 @@ const ResetPassword = () => {
   return (
     <div className="auth-container">
       <div className="auth-card">
+        <AuthStepIndicator currentStep={3} labels={RESET_STEPS} />
+
         <h1 className="auth-title">كلمة مرور جديدة</h1>
         <p className="auth-subtitle">
           أدخل كلمة المرور الجديدة وتأكيدها

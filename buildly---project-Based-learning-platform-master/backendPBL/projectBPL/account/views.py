@@ -16,7 +16,7 @@ from .serializers import (
 from .models import CustomUser
 from .notifications import create_password_reset_notification
 from .email_verification import RESEND_COOLDOWN_SECONDS, create_verification_otp
-from .otp_delivery import build_dev_otp_payload
+from .otp_delivery import deliver_otp
 
 
 def build_user_response(user, request=None):
@@ -24,12 +24,17 @@ def build_user_response(user, request=None):
     return serializer.data
 
 def build_registration_response(user, otp_code):
+    delivery_payload = deliver_otp(
+        user=user,
+        otp_code=otp_code,
+        purpose='email_verification',
+    )
     response_data = {
-        'message': _('تم إنشاء الحساب. يرجى إدخال رمز التحقق لتفعيل الحساب.'),
+        'message': _('تم إنشاء الحساب. تحقق من بريدك الإلكتروني وأدخل رمز التحقق.'),
         'email': user.email,
         'requires_verification': True,
         'resend_available_in': RESEND_COOLDOWN_SECONDS,
-        **build_dev_otp_payload(otp_code),
+        'email_sent': delivery_payload.get('email_sent', False),
     }
     return response_data
 

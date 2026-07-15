@@ -343,7 +343,7 @@ class PasswordResetVerifyOTPSerializer(serializers.Serializer):
             user = CustomUser.objects.get(email=attrs['email'])
         except CustomUser.DoesNotExist:
             raise serializers.ValidationError({
-                'email': _('البريد الإلكتروني غير موجود'),
+                'code': _('رمز التحقق غير صحيح أو انتهت صلاحيته'),
             })
 
         attrs['user'] = user

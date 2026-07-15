@@ -3,14 +3,22 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { projectsAPI } from '../services/api'
 import ProjectContentSections from '../components/ProjectContentSections'
 import ProjectLanguageSelect from '../components/ProjectLanguageSelect'
+import ProjectImageInput from '../components/ProjectImageInput'
+import StarterFolderInput from '../components/StarterFolderInput'
+import {
+  createEmptyStarterSelection,
+  hasStarterFolderSelection,
+  uploadStarterSelection,
+} from '../utils/starterFolder'
 import {
   splitLines,
-  joinLines,
   createEmptyStory,
   tasksToEditorState,
   syncProjectTasksOnEdit,
 } from '../utils/projectContentMapper'
 import { getProjectLanguages } from '../utils/projectLanguages'
+import FormErrorToast from '../components/FormErrorToast'
+import useFormFeedback from '../hooks/useFormFeedback'
 import './Form.css'
 
 const ProjectEdit = () => {
@@ -25,16 +33,16 @@ const ProjectEdit = () => {
   })
   const [selectedLanguages, setSelectedLanguages] = useState(['python'])
   const [languageError, setLanguageError] = useState('')
-  const [objectiveItems, setObjectiveItems] = useState([''])
+  const [objective, setObjective] = useState('')
   const [userStories, setUserStories] = useState([createEmptyStory()])
   const [hintItems, setHintItems] = useState([''])
   const [originalTasks, setOriginalTasks] = useState([])
-  const [error, setError] = useState('')
+  const { error, errorField, setError, clearError, handleInvalid } = useFormFeedback()
   const [loading, setLoading] = useState(false)
   const [fetching, setFetching] = useState(true)
   const [projectImage, setProjectImage] = useState(null)
   const [imagePreview, setImagePreview] = useState(null)
-  const [starterFile, setStarterFile] = useState(null)
+  const [starterSelection, setStarterSelection] = useState(createEmptyStarterSelection())
   const [existingStarterFile, setExistingStarterFile] = useState(null)
 
   useEffect(() => {
@@ -58,7 +66,7 @@ const ProjectEdit = () => {
       setExistingStarterFile(project.starter_file)
 
       const objectives = splitLines(project.objectives)
-      setObjectiveItems(objectives.length > 0 ? objectives : [''])
+      setObjective(objectives[0] || '')
 
       const tasksResponse = await projectsAPI.getTasks(id)
       const tasks = tasksResponse.data || []
@@ -81,36 +89,35 @@ const ProjectEdit = () => {
       ...formData,
       [name]: value,
     })
-    setError('')
+    clearError()
   }
 
-  const handleImageChange = (e) => {
-    const file = e.target.files[0]
-    if (file) {
-      setProjectImage(file)
-      const reader = new FileReader()
-      reader.onloadend = () => {
-        setImagePreview(reader.result)
-      }
-      reader.readAsDataURL(file)
-    }
+  const handleImageChange = ({ file, preview }) => {
+    setProjectImage(file)
+    setImagePreview(preview)
   }
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-    setError('')
+    clearError()
 
     const validStories = userStories.filter(
       (story) => story.title?.trim() && story.description?.trim()
     )
 
     if (validStories.length === 0) {
-      setError('يجب إضافة قصة مستخدم واحدة على الأقل (عنوان ووصف)')
+      setError('يجب إضافة قصة مستخدم واحدة على الأقل (عنوان ووصف)', 'user_stories')
       return
     }
 
     if (selectedLanguages.length === 0) {
       setLanguageError('يجب اختيار لغة واحدة على الأقل')
+      setError('يجب اختيار لغة واحدة على الأقل', 'languages')
+      return
+    }
+
+    if (!hasStarterFolderSelection(starterSelection, existingStarterFile)) {
+      setError('يجب رفع مجلد البداية', 'starter_folder')
       return
     }
 
@@ -119,7 +126,7 @@ const ProjectEdit = () => {
     try {
       const submitData = {
         ...formData,
-        objectives: joinLines(objectiveItems),
+        objectives: objective.trim(),
         languages: selectedLanguages,
         estimated_time: parseInt(formData.estimated_time),
         order: formData.order ? parseInt(formData.order) : undefined,
@@ -131,9 +138,7 @@ const ProjectEdit = () => {
 
       await projectsAPI.update(id, submitData)
 
-      if (starterFile) {
-        await projectsAPI.uploadStarterFile(id, starterFile)
-      }
+      await uploadStarterSelection(id, starterSelection, projectsAPI)
 
       await syncProjectTasksOnEdit({
         projectId: id,
@@ -152,6 +157,9 @@ const ProjectEdit = () => {
         setError(errorData.message)
       } else if (errorData?.errors) {
         if (typeof errorData.errors === 'object' && !Array.isArray(errorData.errors)) {
+          const firstField = Object.keys(errorData.errors).find(
+            (key) => key !== 'non_field_errors'
+          )
           const fieldErrors = Object.entries(errorData.errors)
             .map(([field, messages]) => {
               const fieldName = field === 'non_field_errors' ? '' : `${field}: `
@@ -160,7 +168,7 @@ const ProjectEdit = () => {
                 : `${fieldName}${messages}`
             })
             .join('\n')
-          setError(fieldErrors || 'حدث خطأ أثناء تحديث المشروع')
+          setError(fieldErrors || 'حدث خطأ أثناء تحديث المشروع', firstField || null)
         } else {
           setError(
             Array.isArray(errorData.errors)
@@ -195,8 +203,8 @@ const ProjectEdit = () => {
       <div className="form-container">
         {error && <div className="alert alert-error">{error}</div>}
 
-        <form onSubmit={handleSubmit} className="form">
-          <div className="input-group">
+        <form onSubmit={handleSubmit} onInvalidCapture={handleInvalid} className="form">
+          <div className="input-group" data-field="title">
             <label htmlFor="title">عنوان المشروع *</label>
             <input
               type="text"
@@ -210,7 +218,7 @@ const ProjectEdit = () => {
             />
           </div>
 
-          <div className="input-group">
+          <div className="input-group" data-field="description">
             <label htmlFor="description">وصف المشروع *</label>
             <textarea
               id="description"
@@ -224,50 +232,34 @@ const ProjectEdit = () => {
           </div>
 
           <ProjectContentSections
-            objectiveItems={objectiveItems}
-            onObjectiveItemsChange={setObjectiveItems}
+            objective={objective}
+            onObjectiveChange={setObjective}
             userStories={userStories}
-            onUserStoriesChange={setUserStories}
+            onUserStoriesChange={(next) => {
+              setUserStories(next)
+              clearError()
+            }}
             hintItems={hintItems}
             onHintItemsChange={setHintItems}
           />
 
-          <div className="input-group">
-            <label htmlFor="project_image">صورة المشروع</label>
-            <input
-              type="file"
-              id="project_image"
-              accept="image/*"
-              onChange={handleImageChange}
-            />
-            {imagePreview && (
-              <div className="image-preview-container">
-                <img src={imagePreview} alt="Preview" className="image-preview" />
-              </div>
-            )}
-            <small className="input-hint">
-              يمكنك تغيير صورة المشروع الحالية
-            </small>
-          </div>
+          <ProjectImageInput
+            selectedFile={projectImage}
+            preview={imagePreview}
+            onChange={handleImageChange}
+            hint="يمكنك تغيير صورة المشروع الحالية"
+          />
 
-          <div className="input-group">
-            <label htmlFor="starter_file">ملف البداية (اختياري)</label>
-            <input
-              type="file"
-              id="starter_file"
-              onChange={(e) => setStarterFile(e.target.files[0])}
-            />
-            {existingStarterFile && (
-              <p className="existing-file-info">
-                الملف الحالي: <a href={existingStarterFile.file_url} target="_blank" rel="noreferrer">{existingStarterFile.file_name}</a>
-              </p>
-            )}
-            <small className="input-hint">
-              يمكنك تغيير ملف البداية الخاص بالمشروع
-            </small>
-          </div>
+          <StarterFolderInput
+            selection={starterSelection}
+            onChange={(next) => {
+              setStarterSelection(next)
+              clearError()
+            }}
+            existingFile={existingStarterFile}
+          />
 
-          <div className="input-group">
+          <div className="input-group" data-field="level">
             <label htmlFor="level">المستوى *</label>
             <select
               id="level"
@@ -288,12 +280,13 @@ const ProjectEdit = () => {
             onChange={(languages) => {
               setSelectedLanguages(languages)
               setLanguageError('')
+              clearError()
             }}
             error={languageError}
           />
 
           <div className="form-row">
-            <div className="input-group">
+            <div className="input-group" data-field="estimated_time">
               <label htmlFor="estimated_time">الوقت المقدر (بالساعات) *</label>
               <input
                 type="number"
@@ -342,6 +335,12 @@ const ProjectEdit = () => {
             </button>
           </div>
         </form>
+
+        <FormErrorToast
+          message={error}
+          field={errorField}
+          onDismiss={clearError}
+        />
       </div>
     </div>
   )

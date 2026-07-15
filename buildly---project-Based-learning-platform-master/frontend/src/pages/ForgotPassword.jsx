@@ -1,7 +1,10 @@
 import React, { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { accountAPI } from '../services/api'
+import AuthStepIndicator from '../components/AuthStepIndicator'
 import './Auth.css'
+
+const RESET_STEPS = ['البريد الإلكتروني', 'رمز التحقق', 'كلمة مرور جديدة']
 
 const ForgotPassword = () => {
   const [email, setEmail] = useState('')
@@ -16,25 +19,27 @@ const ForgotPassword = () => {
     setSuccess('')
     setLoading(true)
 
+    const normalizedEmail = email.trim()
+
     try {
-      const response = await accountAPI.requestPasswordReset(email.trim())
+      const response = await accountAPI.requestPasswordReset(normalizedEmail)
       const cooldown = response.data.resend_available_in || 60
 
-      if (response.data.dev_otp) {
-        sessionStorage.setItem('dev_password_reset_otp', response.data.dev_otp)
-      }
+      setSuccess(
+        response.data.message ||
+          'إذا كان البريد مسجلاً لدينا، ستصلك رسالة تحتوي على رمز التحقق.'
+      )
 
-      setSuccess(response.data.message)
       setTimeout(() => {
         navigate(
-          `/reset-password/verify?email=${encodeURIComponent(email.trim())}&cooldown=${cooldown}`
+          `/reset-password/verify?email=${encodeURIComponent(normalizedEmail)}&cooldown=${cooldown}`
         )
       }, 900)
     } catch (err) {
       const cooldown = err.response?.data?.resend_available_in
       if (cooldown) {
         navigate(
-          `/reset-password/verify?email=${encodeURIComponent(email.trim())}&cooldown=${cooldown}`
+          `/reset-password/verify?email=${encodeURIComponent(normalizedEmail)}&cooldown=${cooldown}`
         )
         return
       }
@@ -52,9 +57,11 @@ const ForgotPassword = () => {
   return (
     <div className="auth-container">
       <div className="auth-card">
+        <AuthStepIndicator currentStep={1} labels={RESET_STEPS} />
+
         <h1 className="auth-title">نسيت كلمة المرور؟</h1>
         <p className="auth-subtitle">
-          أدخل بريدك الإلكتروني وسنرسل لك رمز تحقق لإعادة تعيين كلمة المرور
+          أدخل بريدك الإلكتروني وسنرسل لك رمز تحقق مكوّناً من 6 أرقام عبر البريد
         </p>
 
         {error && <div className="alert alert-error">{error}</div>}
@@ -70,7 +77,8 @@ const ForgotPassword = () => {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              placeholder="أدخل بريدك الإلكتروني"
+              placeholder="example@email.com"
+              autoComplete="email"
             />
           </div>
 
