@@ -3,13 +3,80 @@ import pathlib
 import subprocess
 import tempfile
 
+ALLOWED_WORKSPACE_EXTENSIONS = {'.py', '.json', '.txt'}
 
-def run_python_in_docker(code, timeout=5):
+
+def _safe_relative_path(file_name):
+    """Return a path confined to the temp workspace, or None if unsafe."""
+    cleaned = str(file_name or '').replace('\\', '/').lstrip('/')
+    parts = [part for part in cleaned.split('/') if part and part not in ('.', '..')]
+    if not parts:
+        return None
+
+    relative = '/'.join(parts)
+    suffix = pathlib.Path(parts[-1]).suffix.lower()
+    if suffix and suffix not in ALLOWED_WORKSPACE_EXTENSIONS:
+        return None
+
+    return relative
+
+
+def _write_workspace_files(tmpdir, files, entry_file_name):
+    written = []
+
+    for item in files or []:
+        if not isinstance(item, dict):
+            continue
+
+        relative = _safe_relative_path(item.get('name'))
+        if not relative:
+            continue
+
+        absolute = os.path.join(tmpdir, *relative.split('/'))
+        parent = os.path.dirname(absolute)
+        if parent:
+            os.makedirs(parent, exist_ok=True)
+
+        content = item.get('content')
+        if content is None:
+            content = ''
+
+        with open(absolute, 'w', encoding='utf-8') as handle:
+            handle.write(str(content))
+
+        written.append(relative)
+
+    if not written:
+        raise ValueError('No safe workspace files provided for Docker execution')
+
+    entry = _safe_relative_path(entry_file_name) or 'main.py'
+    if entry not in written:
+        raise ValueError(f'Entry file "{entry_file_name}" was not found in workspace files')
+
+    return entry
+
+
+def run_python_in_docker(code=None, timeout=5, files=None, entry_file_name='main.py'):
+    """
+    Run Python in Docker.
+
+    Legacy:
+        run_python_in_docker(code_string)
+
+    Multi-file:
+        run_python_in_docker(files=[...], entry_file_name='main.py')
+    """
     with tempfile.TemporaryDirectory() as tmpdir:
-        file_path = os.path.join(tmpdir, 'main.py')
+        if files is not None:
+            entry = _write_workspace_files(tmpdir, files, entry_file_name)
+        else:
+            if code is None:
+                raise ValueError('Either code or files must be provided')
 
-        with open(file_path, 'w', encoding='utf-8') as file:
-            file.write(code)
+            entry = 'main.py'
+            file_path = os.path.join(tmpdir, entry)
+            with open(file_path, 'w', encoding='utf-8') as handle:
+                handle.write(code)
 
         tmpdir_path = pathlib.Path(tmpdir).resolve()
         docker_path = tmpdir_path.as_posix()
@@ -28,6 +95,8 @@ def run_python_in_docker(code, timeout=5):
                 '--cpus',
                 '0.5',
                 'python-runner-image',
+                'python3',
+                entry,
             ],
             capture_output=True,
             text=True,

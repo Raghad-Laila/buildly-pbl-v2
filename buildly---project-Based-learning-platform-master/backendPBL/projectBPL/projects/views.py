@@ -845,8 +845,16 @@ class ExecuteCodeView(APIView):
     def post(self, request):
         code = request.data.get("code")
         language = request.data.get("language", "python")
+        files = request.data.get("files")
+        entry_file_name = (
+            request.data.get("entryFileName")
+            or request.data.get("entry_file_name")
+            or "main.py"
+        )
 
-        if not code:
+        has_files = isinstance(files, list) and len(files) > 0
+
+        if not has_files and not code:
             return Response({"error": "No code provided"}, status=400)
 
         frontend_languages = {'html', 'css', 'javascript', 'typescript', 'react'}
@@ -861,13 +869,24 @@ class ExecuteCodeView(APIView):
             }, status=400)
 
         try:
-            outcome = run_python_in_docker(code)
+            if has_files:
+                outcome = run_python_in_docker(
+                    files=files,
+                    entry_file_name=entry_file_name,
+                )
+            else:
+                outcome = run_python_in_docker(code)
 
             return Response({
                 "stdout": outcome["stdout"],
                 "stderr": outcome["stderr"],
                 "returncode": outcome["returncode"],
             })
+
+        except ValueError as e:
+            return Response({
+                "error": str(e)
+            }, status=400)
 
         except subprocess.TimeoutExpired:
             return Response({

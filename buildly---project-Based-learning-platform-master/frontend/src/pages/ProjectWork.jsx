@@ -39,7 +39,19 @@ import {
 import { linkResultsByIndex } from '../utils/testResultLinking'
 import { getProjectTestProgress } from '../utils/projectProgress'
 import { getPrimaryProjectLanguage } from '../utils/projectLanguages'
+import {
+    DOCK_HEIGHT_DEFAULT,
+    DOCK_HEIGHT_MAX_RATIO,
+    DOCK_TAB_DEFAULT,
+    EXPLORER_WIDTH_DEFAULT,
+    clampDockHeight as clampStoredDockHeight,
+    clampExplorerWidth as clampStoredExplorerWidth,
+    loadWorkspaceUiPrefs,
+    saveWorkspaceUiPrefs,
+} from '../utils/workspaceUiStorage'
 import './ProjectWork.css'
+
+const RESIZE_BREAKPOINT = 1100
 
 async function loadSharedProjectWorkspace(taskList, projectLanguage) {
     const codeTasks = taskList.filter((item) => item.task_type === 'code')
@@ -95,7 +107,225 @@ const ProjectWork = () => {
     const workspaceRef = useRef('')
     const textRef = useRef('')
     const streamBlocksRef = useRef([])
+    const workspaceLayoutRef = useRef(null)
+    const resizeDragRef = useRef(null)
+    const resizeRafRef = useRef(null)
+    const livePanelSizesRef = useRef({
+        explorerWidth: EXPLORER_WIDTH_DEFAULT,
+        dockHeight: DOCK_HEIGHT_DEFAULT,
+    })
+    const pendingActiveFileIdRef = useRef(null)
+
+    const [explorerWidth, setExplorerWidth] = useState(EXPLORER_WIDTH_DEFAULT)
+    const [dockHeight, setDockHeight] = useState(DOCK_HEIGHT_DEFAULT)
+    const [dockActiveTab, setDockActiveTab] = useState(DOCK_TAB_DEFAULT)
+    const [explorerCollapsed, setExplorerCollapsed] = useState(false)
+    const [uiHydrated, setUiHydrated] = useState(false)
+
     const projectLanguage = getPrimaryProjectLanguage(project)
+
+    const isResizeEnabled = () => window.matchMedia(`(max-width: ${RESIZE_BREAKPOINT}px)`).matches === false
+
+    const applyPanelSizeVariables = (width, height) => {
+        const layout = workspaceLayoutRef.current
+        if (!layout) return
+        layout.style.setProperty('--explorer-width', `${width}px`)
+        layout.style.setProperty('--dock-height', `${height}px`)
+    }
+
+    const getMaxDockHeight = () => {
+        const layout = workspaceLayoutRef.current
+        return layout ? layout.clientHeight * DOCK_HEIGHT_MAX_RATIO : Number.POSITIVE_INFINITY
+    }
+
+    const clampExplorerWidth = (width) =>
+        clampStoredExplorerWidth(width) ?? EXPLORER_WIDTH_DEFAULT
+
+    const clampDockHeight = (height) =>
+        clampStoredDockHeight(height, getMaxDockHeight()) ?? DOCK_HEIGHT_DEFAULT
+
+    const refreshEditorLayout = () => {
+        window.dispatchEvent(new Event('resize'))
+    }
+
+    const schedulePanelSizePaint = () => {
+        if (resizeRafRef.current != null) return
+
+        resizeRafRef.current = requestAnimationFrame(() => {
+            resizeRafRef.current = null
+            if (!resizeDragRef.current) return
+
+            const { explorerWidth: width, dockHeight: height } = livePanelSizesRef.current
+            applyPanelSizeVariables(width, height)
+        })
+    }
+
+    const finishPanelResize = (event) => {
+        const drag = resizeDragRef.current
+        if (!drag) return
+
+        resizeDragRef.current = null
+
+        if (resizeRafRef.current != null) {
+            cancelAnimationFrame(resizeRafRef.current)
+            resizeRafRef.current = null
+        }
+
+        document.body.classList.remove('workspace-resizing', 'workspace-resizing-x', 'workspace-resizing-y')
+
+        const { explorerWidth: nextExplorerWidth, dockHeight: nextDockHeight } =
+            livePanelSizesRef.current
+
+        applyPanelSizeVariables(nextExplorerWidth, nextDockHeight)
+        setExplorerWidth(nextExplorerWidth)
+        setDockHeight(nextDockHeight)
+        refreshEditorLayout()
+
+        if (event?.currentTarget?.hasPointerCapture?.(event.pointerId)) {
+            event.currentTarget.releasePointerCapture(event.pointerId)
+        }
+    }
+
+    const handleExplorerResizeStart = (event) => {
+        if (!isResizeEnabled()) return
+
+        event.preventDefault()
+        resizeDragRef.current = {
+            axis: 'explorer',
+            startPointer: event.clientX,
+            startSize: livePanelSizesRef.current.explorerWidth,
+        }
+
+        document.body.classList.add('workspace-resizing', 'workspace-resizing-x')
+        event.currentTarget.setPointerCapture(event.pointerId)
+    }
+
+    const handleDockResizeStart = (event) => {
+        if (!isResizeEnabled()) return
+
+        event.preventDefault()
+        resizeDragRef.current = {
+            axis: 'dock',
+            startPointer: event.clientY,
+            startSize: livePanelSizesRef.current.dockHeight,
+        }
+
+        document.body.classList.add('workspace-resizing', 'workspace-resizing-y')
+        event.currentTarget.setPointerCapture(event.pointerId)
+    }
+
+    const handlePanelResizeMove = (event) => {
+        const drag = resizeDragRef.current
+        if (!drag) return
+
+        if (drag.axis === 'explorer') {
+            const delta = event.clientX - drag.startPointer
+            livePanelSizesRef.current.explorerWidth = clampExplorerWidth(drag.startSize + delta)
+        } else {
+            const delta = event.clientY - drag.startPointer
+            livePanelSizesRef.current.dockHeight = clampDockHeight(drag.startSize + delta)
+        }
+
+        schedulePanelSizePaint()
+    }
+
+    useEffect(() => {
+        livePanelSizesRef.current = { explorerWidth, dockHeight }
+
+        if (resizeDragRef.current) return
+
+        applyPanelSizeVariables(explorerWidth, dockHeight)
+    }, [explorerWidth, dockHeight])
+
+    useEffect(() => {
+        return () => {
+            if (resizeRafRef.current != null) {
+                cancelAnimationFrame(resizeRafRef.current)
+            }
+            document.body.classList.remove('workspace-resizing', 'workspace-resizing-x', 'workspace-resizing-y')
+        }
+    }, [])
+
+    useEffect(() => {
+        setUiHydrated(false)
+
+        const prefs = loadWorkspaceUiPrefs(id)
+        setExplorerWidth(prefs.explorerWidth)
+        setDockHeight(prefs.dockHeight)
+        setDockActiveTab(prefs.dockActiveTab)
+        setExplorerCollapsed(prefs.explorerCollapsed)
+        pendingActiveFileIdRef.current = prefs.activeFileId
+        livePanelSizesRef.current = {
+            explorerWidth: prefs.explorerWidth,
+            dockHeight: prefs.dockHeight,
+        }
+
+        setUiHydrated(true)
+    }, [id])
+
+    useEffect(() => {
+        if (!workspace) return
+
+        const pendingId = pendingActiveFileIdRef.current
+        if (!pendingId) return
+
+        pendingActiveFileIdRef.current = null
+
+        const exists = workspace.files.some((file) => file.id === pendingId)
+        if (!exists || workspace.activeFileId === pendingId) return
+
+        const nextWorkspace = setActiveFile(workspace, pendingId)
+        setWorkspace(nextWorkspace)
+        workspaceRef.current = serializeWorkspace(nextWorkspace)
+    }, [workspace])
+
+    useEffect(() => {
+        if (!uiHydrated || !id) return
+
+        let activeFileId = null
+        if (workspace?.files?.length) {
+            activeFileId = workspace.files.some((file) => file.id === workspace.activeFileId)
+                ? workspace.activeFileId
+                : null
+        } else {
+            activeFileId = pendingActiveFileIdRef.current
+        }
+
+        saveWorkspaceUiPrefs(
+            id,
+            {
+                explorerWidth,
+                dockHeight,
+                dockActiveTab,
+                activeFileId,
+                explorerCollapsed,
+            },
+            { maxDockHeight: getMaxDockHeight() }
+        )
+    }, [
+        uiHydrated,
+        id,
+        explorerWidth,
+        dockHeight,
+        dockActiveTab,
+        explorerCollapsed,
+        workspace?.activeFileId,
+    ])
+
+    useEffect(() => {
+        if (!workspace || !uiHydrated) return
+
+        const frame = requestAnimationFrame(() => {
+            const clamped = clampDockHeight(dockHeight)
+            if (clamped === dockHeight) return
+
+            livePanelSizesRef.current.dockHeight = clamped
+            setDockHeight(clamped)
+            applyPanelSizeVariables(explorerWidth, clamped)
+        })
+
+        return () => cancelAnimationFrame(frame)
+    }, [workspace, uiHydrated])
 
     useEffect(() => {
         fetchData()
@@ -197,7 +427,7 @@ const ProjectWork = () => {
             ...createExecutionState('running'),
             runId,
             previewHtml: null,
-            kernelMessage: 'جاري التنفيذ...',
+            kernelMessage: 'Executing workspace...',
             blocks: [],
         })
 
@@ -230,8 +460,20 @@ const ProjectWork = () => {
         try {
             const raw = await executeWorkspace(currentWorkspace, projectLanguage, {
                 onStream,
-                runServerPython: async (code) => {
-                    const res = await projectsAPI.executeCode(code, projectLanguage)
+                runServerPython: async ({ files, entryFileName, code } = {}) => {
+                    const mountableFiles = (files || [])
+                        .filter((file) => /\.(py|json|txt)$/i.test(file?.name || ''))
+                        .map((file) => ({
+                            name: file.name,
+                            content: file.content || '',
+                        }))
+
+                    const res = await projectsAPI.executeCode({
+                        code,
+                        files: mountableFiles.length ? mountableFiles : undefined,
+                        entryFileName: entryFileName || 'main.py',
+                        language: projectLanguage,
+                    })
                     const stderr = res.data.stderr || res.data.error || ''
                     const stdout = res.data.stdout || ''
 
@@ -483,48 +725,77 @@ const ProjectWork = () => {
                         <h2 className="fcc-section-title">Code Editor</h2>
                         <div className="fcc-section-body">
                             {tasks.some((item) => item.task_type === 'code') && workspace && (
-                                <div className="deepnote-workspace">
+                                <div ref={workspaceLayoutRef} className="deepnote-workspace">
                                     <div className="deepnote-coding-area">
                                         <div className="editor-with-explorer">
-                                            <FileExplorer
-                                                workspace={workspace}
-                                                onSelectFile={handleExplorerSelectFile}
-                                                onAddFile={handleExplorerAddFile}
-                                                onRenameFile={handleExplorerRenameFile}
-                                                onDeleteFile={handleExplorerDeleteFile}
+                                            <div className="file-explorer-panel">
+                                                <FileExplorer
+                                                    workspace={workspace}
+                                                    onSelectFile={handleExplorerSelectFile}
+                                                    onAddFile={handleExplorerAddFile}
+                                                    onRenameFile={handleExplorerRenameFile}
+                                                    onDeleteFile={handleExplorerDeleteFile}
+                                                />
+                                            </div>
+
+                                            <div
+                                                className="workspace-resize-handle workspace-resize-handle-vertical"
+                                                role="separator"
+                                                aria-orientation="vertical"
+                                                aria-label="Resize file explorer"
+                                                onPointerDown={handleExplorerResizeStart}
+                                                onPointerMove={handlePanelResizeMove}
+                                                onPointerUp={finishPanelResize}
+                                                onPointerCancel={finishPanelResize}
                                             />
+
                                             <div className="editor-with-explorer-main">
                                                 <MultiFileEditor
                                                     workspace={workspace}
                                                     onChange={handleWorkspaceChange}
                                                     onRun={runCode}
-                                                    editorHeight="470px"
+                                                    editorHeight="100%"
                                                     defaultMonacoLanguage={getMonacoLanguage(projectLanguage)}
                                                 />
                                             </div>
                                         </div>
                                     </div>
 
-                                    <BottomDock
-                                        executionBlocks={execution?.blocks || []}
-                                        output={
-                                            <ExecutionPanel
-                                                execution={execution}
-                                                kernelLabel={getKernelLabel(projectLanguage, workspace)}
-                                                onClear={clearExecution}
-                                                onResetKernel={resetKernel}
-                                                showResetKernel={showKernelReset}
-                                            />
-                                        }
-                                        tests={
-                                            <RunningTestsPanel
-                                                running={runningTests}
-                                                testError={testError}
-                                                testResults={testResults}
-                                                testsCount={tests.length}
-                                            />
-                                        }
+                                    <div
+                                        className="workspace-resize-handle workspace-resize-handle-horizontal"
+                                        role="separator"
+                                        aria-orientation="horizontal"
+                                        aria-label="Resize bottom dock"
+                                        onPointerDown={handleDockResizeStart}
+                                        onPointerMove={handlePanelResizeMove}
+                                        onPointerUp={finishPanelResize}
+                                        onPointerCancel={finishPanelResize}
                                     />
+
+                                    <div className="bottom-dock-panel">
+                                        <BottomDock
+                                            activeTab={dockActiveTab}
+                                            onActiveTabChange={setDockActiveTab}
+                                            executionBlocks={execution?.blocks || []}
+                                            output={
+                                                <ExecutionPanel
+                                                    execution={execution}
+                                                    kernelLabel={getKernelLabel(projectLanguage, workspace)}
+                                                    onClear={clearExecution}
+                                                    onResetKernel={resetKernel}
+                                                    showResetKernel={showKernelReset}
+                                                />
+                                            }
+                                            tests={
+                                                <RunningTestsPanel
+                                                    running={runningTests}
+                                                    testError={testError}
+                                                    testResults={testResults}
+                                                    testsCount={tests.length}
+                                                />
+                                            }
+                                        />
+                                    </div>
                                 </div>
                             )}
 

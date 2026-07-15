@@ -856,10 +856,13 @@
 
 /* Deepnote-style execution layout */
 .deepnote-workspace {
+  --explorer-width: 220px;
+  --dock-height: 260px;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 0;
   width: 100%;
+  min-height: 500px;
 }
 
 .deepnote-toolbar {
@@ -901,18 +904,117 @@
 .deepnote-coding-area {
   display: flex;
   flex-direction: column;
-  min-height: 420px;
+  flex: 1;
+  min-height: 280px;
 }
 
 .editor-with-explorer {
   display: flex;
   flex: 1;
-  min-height: 420px;
+  min-height: 0;
   direction: ltr;
   border: 1px solid var(--border-color);
-  border-radius: 8px;
+  border-radius: 8px 8px 0 0;
   overflow: hidden;
   background: #1e1e1e;
+}
+
+.file-explorer-panel {
+  width: var(--explorer-width);
+  flex-shrink: 0;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.file-explorer-panel .file-explorer {
+  width: 100%;
+  flex: 1;
+  border-right: none;
+}
+
+.workspace-resize-handle {
+  flex-shrink: 0;
+  position: relative;
+  z-index: 2;
+  background: transparent;
+  touch-action: none;
+  transition: background 0.12s ease;
+}
+
+.workspace-resize-handle::after {
+  content: '';
+  position: absolute;
+  background: #3c3c3c;
+  opacity: 0;
+  transition: opacity 0.12s ease;
+}
+
+.workspace-resize-handle:hover::after,
+.workspace-resize-handle:active::after,
+body.workspace-resizing .workspace-resize-handle::after {
+  opacity: 1;
+}
+
+.workspace-resize-handle-vertical {
+  width: 3px;
+  cursor: col-resize;
+}
+
+.workspace-resize-handle-vertical::after {
+  top: 0;
+  bottom: 0;
+  left: 1px;
+  width: 1px;
+}
+
+.workspace-resize-handle-horizontal {
+  height: 3px;
+  cursor: row-resize;
+}
+
+.workspace-resize-handle-horizontal::after {
+  left: 0;
+  right: 0;
+  top: 1px;
+  height: 1px;
+}
+
+body.workspace-resizing {
+  user-select: none;
+}
+
+body.workspace-resizing-x,
+body.workspace-resizing-x * {
+  cursor: col-resize !important;
+}
+
+body.workspace-resizing-y,
+body.workspace-resizing-y * {
+  cursor: row-resize !important;
+}
+
+.bottom-dock-panel {
+  height: var(--dock-height);
+  flex-shrink: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--border-color);
+  border-top: none;
+  border-radius: 0 0 8px 8px;
+  overflow: hidden;
+}
+
+.bottom-dock-panel .bottom-dock {
+  flex: 1;
+  height: 100%;
+  min-height: 0;
+  max-height: none;
+  border: none;
+  border-radius: 0;
 }
 
 .editor-with-explorer-main {
@@ -923,7 +1025,6 @@
 }
 
 .file-explorer {
-  width: 220px;
   flex-shrink: 0;
   display: flex;
   flex-direction: column;
@@ -1200,7 +1301,8 @@
 
 .deepnote-coding-area .multi-file-editor {
   flex: 1;
-  min-height: 420px;
+  min-height: 0;
+  height: 100%;
   border: none;
   border-radius: 0;
 }
@@ -1213,15 +1315,15 @@
 
 .deepnote-coding-area .monaco-wrapper {
   flex: 1;
-  min-height: 380px;
+  min-height: 0;
+  height: 100%;
 }
 
 /* Bottom dock (Output | Tests | Terminal) */
 .bottom-dock {
   display: flex;
   flex-direction: column;
-  min-height: 260px;
-  max-height: 360px;
+  min-height: 0;
   border: 1px solid var(--border-color);
   border-radius: 8px;
   overflow: hidden;
@@ -1580,17 +1682,35 @@
 }
 
 @media (max-width: 1100px) {
+  .deepnote-workspace {
+    min-height: 0;
+  }
+
   .deepnote-coding-area,
-  .editor-with-explorer,
-  .bottom-dock {
+  .editor-with-explorer {
     min-height: 280px;
   }
 
-  .bottom-dock {
-    max-height: none;
+  .workspace-resize-handle {
+    display: none;
   }
 
-  .file-explorer {
+  .editor-with-explorer {
+    border-radius: 8px;
+  }
+
+  .file-explorer-panel {
     width: 180px;
+  }
+
+  .bottom-dock-panel {
+    height: auto;
+    border: none;
+    border-radius: 0;
+    margin-top: 12px;
+  }
+
+  .bottom-dock-panel .bottom-dock {
+    min-height: 260px;
   }
 }

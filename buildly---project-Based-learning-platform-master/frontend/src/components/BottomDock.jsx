@@ -8,11 +8,27 @@ const DOCK_TABS = [
 
 /**
  * Presentation-only dock. Owns no execution/test/workspace state.
- * Renders Output / Tests panels passed from ProjectWork; Terminal
- * displays existing stdout/stderr blocks from the shared execution state.
+ * Optionally controlled via activeTab + onActiveTabChange.
  */
-const BottomDock = ({ output, tests, executionBlocks = [] }) => {
-  const [activeTab, setActiveTab] = useState('output')
+const BottomDock = ({
+  output,
+  tests,
+  executionBlocks = [],
+  activeTab: controlledTab,
+  onActiveTabChange,
+}) => {
+  const [internalTab, setInternalTab] = useState('output')
+  const isControlled =
+    controlledTab !== undefined && typeof onActiveTabChange === 'function'
+  const activeTab = isControlled ? controlledTab : internalTab
+
+  const setActiveTab = (tabId) => {
+    if (isControlled) {
+      onActiveTabChange(tabId)
+      return
+    }
+    setInternalTab(tabId)
+  }
 
   const streamBlocks = executionBlocks.filter(
     (block) => block.type === 'stdout' || block.type === 'stderr'

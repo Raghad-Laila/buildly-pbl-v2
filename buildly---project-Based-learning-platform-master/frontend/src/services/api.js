@@ -280,9 +280,10 @@ export const projectsAPI = {
   getTasks: (projectId) =>
     api.get(`/projects/${projectId}/tasks/`),
 
-  executeCode: (code, language) =>
+  executeCode: ({ code, files, entryFileName, language } = {}) =>
     api.post('/projects/code/execute/', {
-      code,
+      ...(code != null && code !== '' ? { code } : {}),
+      ...(Array.isArray(files) && files.length ? { files, entryFileName } : {}),
       language,
     }),
 

@@ -58,12 +58,23 @@ const ExecutionPanel = ({
 
         <div className="execution-panel-meta">
           <span className={`execution-kernel-dot status-${status}`} />
-          <span className="execution-kernel-label">{kernelLabel}</span>
+          <span className="execution-kernel-label">
+            {status === 'running'
+              ? execution?.kernelMessage || 'Executing workspace...'
+              : kernelLabel}
+          </span>
           {execution?.durationMs != null && (
             <span className="execution-duration">{execution.durationMs}ms</span>
           )}
           <span className={`execution-status-badge status-${status}`}>
-            {statusIcon} {status === 'running' ? 'Running' : status === 'success' ? 'Success' : status === 'error' ? 'Error' : 'Ready'}
+            {statusIcon}{' '}
+            {status === 'running'
+              ? 'Running'
+              : status === 'success'
+                ? 'Success'
+                : status === 'error'
+                  ? 'Error'
+                  : 'Ready'}
           </span>
         </div>
       </div>
@@ -83,7 +94,7 @@ const ExecutionPanel = ({
         {status === 'running' && (
           <div className="execution-running-banner">
             <span className="execution-spinner" />
-            {execution?.kernelMessage || 'جاري التنفيذ...'}
+            {execution?.kernelMessage || 'Executing workspace...'}
           </div>
         )}
 
