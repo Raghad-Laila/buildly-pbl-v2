@@ -1,0 +1,237 @@
+.code-quality-drawer {
+  position: fixed;
+  top: 0;
+  right: 0;
+  z-index: 1210;
+  display: flex;
+  flex-direction: column;
+  width: min(440px, 100vw);
+  height: 100vh;
+  background: #14201a;
+  border-left: 1px solid #2f4a3a;
+  box-shadow: -12px 0 32px rgba(0, 0, 0, 0.35);
+  color: #d5d5de;
+  animation: code-quality-slide-in 0.22s ease-out;
+}
+
+@keyframes code-quality-slide-in {
+  from {
+    transform: translateX(100%);
+    opacity: 0.6;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+.code-quality-drawer-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 18px 18px 14px;
+  border-bottom: 1px solid #2f4a3a;
+  background: #0f1a14;
+}
+
+.code-quality-drawer-title {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #f8fafc;
+  line-height: 1.4;
+}
+
+.code-quality-drawer-subtitle {
+  margin: 4px 0 0;
+  font-size: 0.85rem;
+  color: #9ca3af;
+}
+
+.code-quality-drawer-close {
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  border: 1px solid #4b5563;
+  border-radius: 8px;
+  background: #1f3a2e;
+  color: #f8fafc;
+  font-size: 1.4rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.code-quality-drawer-close:hover {
+  background: #274a3a;
+}
+
+.code-quality-drawer-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.code-quality-loading,
+.code-quality-error {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 16px;
+  border-radius: 8px;
+}
+
+.code-quality-loading {
+  background: rgba(52, 211, 153, 0.1);
+  border: 1px solid rgba(52, 211, 153, 0.28);
+  color: #6ee7b7;
+}
+
+.code-quality-error {
+  background: rgba(239, 68, 68, 0.12);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  color: #fca5a5;
+}
+
+.code-quality-score-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  padding: 8px 0 4px;
+}
+
+.code-quality-section-label {
+  margin: 0 0 10px;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #f8fafc;
+}
+
+.code-quality-score-section .code-quality-section-label {
+  margin-bottom: 0;
+}
+
+.code-quality-score-ring {
+  width: 128px;
+  height: 128px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  padding: 10px;
+}
+
+.code-quality-score-inner {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background: #0a0a23;
+  display: grid;
+  place-items: center;
+  border: 1px solid #2f4a3a;
+}
+
+.code-quality-score-value {
+  font-size: 1.85rem;
+  font-weight: 800;
+  color: #f8fafc;
+}
+
+.code-quality-section {
+  padding-top: 4px;
+  border-top: 1px solid #2a3f34;
+}
+
+.code-quality-summary {
+  margin: 0;
+  line-height: 1.7;
+  color: #d5d5de;
+  background: #0a0a23;
+  border: 1px solid #2f4a3a;
+  border-radius: 8px;
+  padding: 12px 14px;
+}
+
+.code-quality-complexity-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+}
+
+.code-quality-complexity-card {
+  padding: 12px 14px;
+  border-radius: 8px;
+  border: 1px solid #2f4a3a;
+  background: #0a0a23;
+}
+
+.code-quality-complexity-card h4 {
+  margin: 0 0 6px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #6ee7b7;
+}
+
+.code-quality-complexity-card p {
+  margin: 0;
+  line-height: 1.65;
+  color: #d5d5de;
+}
+
+.code-quality-list {
+  margin: 0;
+  padding: 0 0 0 1.2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.code-quality-list li {
+  line-height: 1.6;
+  color: #bbf7d0;
+}
+
+.code-quality-list.is-tips li {
+  color: #e2e8f0;
+}
+
+.code-quality-list.is-performance li {
+  color: #fde68a;
+}
+
+.code-quality-empty-note {
+  margin: 0;
+  color: #9ca3af;
+  font-size: 0.9rem;
+}
+
+.fcc-quality-review-btn {
+  min-width: 180px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: #15803d;
+  border: 3px solid #15803d;
+  color: #f8fafc;
+  font-weight: 700;
+}
+
+.fcc-quality-review-btn:hover:not(:disabled) {
+  background: #16a34a;
+  border-color: #16a34a;
+}
+
+.project-quality-review-btn {
+  margin-top: 12px;
+  min-width: 200px;
+}
+
+@media (max-width: 720px) {
+  .code-quality-drawer {
+    width: 100vw;
+  }
+}

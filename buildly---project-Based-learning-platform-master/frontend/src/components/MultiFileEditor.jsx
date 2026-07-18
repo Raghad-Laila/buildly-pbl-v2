@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import Editor from '@monaco-editor/react'
 import {
   deleteFile,
@@ -22,6 +22,27 @@ const MultiFileEditor = ({
 
   const activeFile = getActiveFile(workspace)
 
+  const workspaceRef = useRef(workspace)
+  const activeFileRef = useRef(activeFile)
+  const onChangeRef = useRef(onChange)
+  const onRunRef = useRef(onRun)
+
+  useEffect(() => {
+    workspaceRef.current = workspace
+  }, [workspace])
+
+  useEffect(() => {
+    activeFileRef.current = activeFile
+  }, [activeFile])
+
+  useEffect(() => {
+    onChangeRef.current = onChange
+  }, [onChange])
+
+  useEffect(() => {
+    onRunRef.current = onRun
+  }, [onRun])
+
   useEffect(() => {
     if (!renamingFileId) return
 
@@ -44,6 +65,15 @@ const MultiFileEditor = ({
   const handleContentChange = (value) => {
     if (!activeFile || readOnly) return
     emitChange(updateFileContent(workspace, activeFile.id, value || ''))
+  }
+
+  const flushEditorToWorkspace = (editor) => {
+    const file = activeFileRef.current
+    const currentWorkspace = workspaceRef.current
+    if (!file || !currentWorkspace || !onChangeRef.current) return
+
+    const value = editor.getValue()
+    onChangeRef.current(updateFileContent(currentWorkspace, file.id, value || ''))
   }
 
   const startRename = (file) => {
@@ -95,7 +125,7 @@ const MultiFileEditor = ({
 
   const monacoLanguage = activeFile
     ? getMonacoLanguageFromFileName(activeFile.name)
-  : defaultMonacoLanguage
+    : defaultMonacoLanguage
 
   return (
     <div className="multi-file-editor">
@@ -181,12 +211,15 @@ const MultiFileEditor = ({
           onChange={handleContentChange}
           theme="vs-dark"
           onMount={(editor, monaco) => {
-            if (!readOnly && onRun) {
-              editor.addCommand(
-                monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter,
-                () => onRun()
-              )
-            }
+            if (readOnly) return
+
+            editor.addCommand(
+              monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter,
+              () => {
+                flushEditorToWorkspace(editor)
+                onRunRef.current?.()
+              }
+            )
           }}
           options={{
             readOnly,

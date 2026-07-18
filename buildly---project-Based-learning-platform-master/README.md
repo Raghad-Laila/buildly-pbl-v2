@@ -23,7 +23,7 @@ Traditional programming education often lacks practical depth. Buildly addresses
 
 ## 🚀 How to Run Locally
 
-### 1. Docker buil
+### 1. Docker build
 
 - cd docker\python-runner
 - docker build -t python-runner-image .

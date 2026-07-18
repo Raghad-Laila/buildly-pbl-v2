@@ -1,7 +1,7 @@
 # projects/serializers.py
 from rest_framework import serializers
 from django.utils.translation import gettext_lazy as _
-from .models import Project, ProjectStarterFile, ProjectTask, TaskSubmission, Tests
+from .models import Project, ProjectStarterFile, ProjectTask, TaskSubmission, Tests, WorkspaceBranch
 from .language_utils import normalize_project_languages
 from courses.models import Course
 
@@ -473,3 +473,45 @@ class TaskSubmissionSerializer(serializers.ModelSerializer):
             'last_saved_at',
             'updated_at',
         ]
+
+
+class WorkspaceBranchListSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = WorkspaceBranch
+        fields = ['id', 'name', 'is_main', 'created_at']
+        read_only_fields = fields
+
+
+class WorkspaceBranchDetailSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = WorkspaceBranch
+        fields = ['id', 'name', 'is_main', 'files_json', 'created_at', 'updated_at']
+        read_only_fields = fields
+
+
+class WorkspaceBranchCreateSerializer(serializers.Serializer):
+    name = serializers.CharField(max_length=100, trim_whitespace=True)
+
+    def validate_name(self, value):
+        name = (value or '').strip()
+        if not name:
+            raise serializers.ValidationError(_('Branch name is required.'))
+        return name
+
+
+class WorkspaceBranchUpdateSerializer(serializers.Serializer):
+    name = serializers.CharField(max_length=100, trim_whitespace=True, required=False)
+    files_json = serializers.CharField(required=False, allow_blank=True)
+
+    def validate_name(self, value):
+        name = (value or '').strip()
+        if not name:
+            raise serializers.ValidationError(_('Branch name is required.'))
+        return name
+
+    def validate(self, attrs):
+        if 'name' not in attrs and 'files_json' not in attrs:
+            raise serializers.ValidationError(
+                _('Provide name and/or files_json to update.')
+            )
+        return attrs

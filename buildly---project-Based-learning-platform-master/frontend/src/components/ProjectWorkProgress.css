@@ -35,6 +35,11 @@
   line-height: 1.5;
 }
 
+.project-completed-banner-content {
+  flex: 1;
+  min-width: 0;
+}
+
 .project-progress-card {
   padding: 16px 18px;
   border-radius: 10px;

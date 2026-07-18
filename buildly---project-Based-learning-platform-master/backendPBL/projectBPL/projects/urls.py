@@ -3,6 +3,8 @@ from django.urls import path
 from .views import (
     AdminGetStudentSubmissionView,
     AdminTaskFeedbackView,
+    AIReviewView,
+    CodeQualityReviewView,
     CreateProjectTaskView,
     CreateProjectView,
     CreateTestsView,
@@ -26,6 +28,9 @@ from .views import (
     ConfirmDeleteProjectView,
     StartProjectView,
     UploadStarterFileView,
+    WorkspaceBranchDetailView,
+    WorkspaceBranchListCreateView,
+    WorkspaceBranchMergeView,
 )
 
 app_name = 'projects'
@@ -42,7 +47,12 @@ urlpatterns = [
     path('<int:pk>/starter-file/', UploadStarterFileView.as_view(), name='upload-starter-file'),
     path('tasks/create/', CreateProjectTaskView.as_view(), name='create-task'),
     path('<int:project_id>/tasks/', ProjectTasksListView.as_view(), name='project-tasks'),
+    path('<int:project_id>/branches/', WorkspaceBranchListCreateView.as_view(), name='project-branches'),
+    path('branches/<int:branch_id>/merge/', WorkspaceBranchMergeView.as_view(), name='branch-merge'),
+    path('branches/<int:branch_id>/', WorkspaceBranchDetailView.as_view(), name='branch-detail'),
     path('code/execute/', ExecuteCodeView.as_view(), name='execute-code'),
+    path('code/ai-review/', AIReviewView.as_view(), name='ai-review'),
+    path('code/quality-review/', CodeQualityReviewView.as_view(), name='quality-review'),
     path('tasks/<int:task_id>/save/', SaveTaskSubmissionView.as_view(), name='save-task-progress'),
     path('tasks/<int:task_id>/get/', GetTaskSubmissionView.as_view(), name='get-task'),
     path('tasks/<int:id>/delete/', ProjectTaskDeleteView.as_view(), name='delete-task'),

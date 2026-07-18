@@ -7,8 +7,22 @@ from rest_framework.exceptions import PermissionDenied, ValidationError
 from django.utils.translation import gettext_lazy as _
 from django.db import transaction
 from django.shortcuts import get_object_or_404
-from .models import Project, ProjectStarterFile, ProjectTask, TaskSubmission, Tests
-from .serializers import ProjectCreateSerializer, ProjectListSerializer, ProjectDetailSerializer, ProjectTaskSerializer, ProjectUpdateSerializer, ProjectDeleteConfirmationSerializer, ProjectStarterFileSerializer, TaskSubmissionSerializer, TestsSerializer
+from .models import Project, ProjectStarterFile, ProjectTask, TaskSubmission, Tests, WorkspaceBranch
+from .serializers import (
+    ProjectCreateSerializer,
+    ProjectListSerializer,
+    ProjectDetailSerializer,
+    ProjectTaskSerializer,
+    ProjectUpdateSerializer,
+    ProjectDeleteConfirmationSerializer,
+    ProjectStarterFileSerializer,
+    TaskSubmissionSerializer,
+    TestsSerializer,
+    WorkspaceBranchListSerializer,
+    WorkspaceBranchDetailSerializer,
+    WorkspaceBranchCreateSerializer,
+    WorkspaceBranchUpdateSerializer,
+)
 from courses.models import Course
 from progress.models import ProjectProgress
 from account.notifications import create_project_started_notification
@@ -18,7 +32,13 @@ import reversion
 from reversion.models import Version
 from .test_runner import run_python_in_docker, run_project_tests
 from .starter_utils import build_starter_zip_from_uploads
+from .ai_review import AIReviewService
+from .ai_review.schemas import AIReviewRequestSchema
+from .code_quality import CodeQualityReviewService
+from .code_quality.schemas import CodeQualityRequestSchema
+from .workspace_branch_utils import ensure_main_branch
 import subprocess
+from django.db import IntegrityError
 
 
 def get_learner_projects_queryset(user):
@@ -897,8 +917,61 @@ class ExecuteCodeView(APIView):
             return Response({
                 "error": str(e)
             }, status=500)
-            
-            
+
+
+class AIReviewView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request):
+        serializer = AIReviewRequestSchema(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        project_id = serializer.validated_data['project_id']
+        files = serializer.validated_data['files']
+        test_summary = serializer.validated_data.get('test_summary')
+        failed_tests = serializer.validated_data.get('failed_tests')
+        test_error = serializer.validated_data.get('test_error')
+
+        try:
+            project = Project.objects.get(id=project_id)
+        except Project.DoesNotExist:
+            return Response({'error': 'المشروع غير موجود'}, status=status.HTTP_404_NOT_FOUND)
+
+        result = AIReviewService().review(
+            project=project,
+            files=files,
+            test_summary=test_summary,
+            failed_tests=failed_tests,
+            test_error=test_error,
+        )
+        return Response(result)
+
+
+class CodeQualityReviewView(APIView):
+    """Post-success code quality review (FR-2). Separate from AI Assistant (FR-1)."""
+
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request):
+        serializer = CodeQualityRequestSchema(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        project_id = serializer.validated_data['project_id']
+        files = serializer.validated_data['files']
+        test_summary = serializer.validated_data.get('test_summary')
+
+        try:
+            project = Project.objects.get(id=project_id)
+        except Project.DoesNotExist:
+            return Response({'error': 'المشروع غير موجود'}, status=status.HTTP_404_NOT_FOUND)
+
+        result = CodeQualityReviewService().review(
+            project=project,
+            files=files,
+            test_summary=test_summary,
+        )
+        return Response(result)
+
 
 class SaveTaskSubmissionView(APIView):
     permission_classes = [permissions.IsAuthenticated]
@@ -1040,3 +1113,197 @@ class ProjectRollbackView(APIView):
         version = get_object_or_404(Version, id=version_id)
         version.revision.revert() 
         return Response({"message": "تم استعادة النسخة بنجاح"})
+
+
+class WorkspaceBranchListCreateView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request, project_id):
+        project = get_object_or_404(Project, id=project_id)
+        ensure_main_branch(request.user, project)
+
+        branches = WorkspaceBranch.objects.filter(
+            user=request.user,
+            project=project,
+        ).order_by('-is_main', 'name')
+
+        serializer = WorkspaceBranchListSerializer(branches, many=True)
+        return Response({
+            'success': True,
+            'branches': serializer.data,
+            'count': len(serializer.data),
+        })
+
+    def post(self, request, project_id):
+        project = get_object_or_404(Project, id=project_id)
+        main_branch = ensure_main_branch(request.user, project)
+
+        serializer = WorkspaceBranchCreateSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        name = serializer.validated_data['name']
+
+        if WorkspaceBranch.objects.filter(
+            user=request.user,
+            project=project,
+            name=name,
+        ).exists():
+            return Response(
+                {
+                    'success': False,
+                    'message': _('A branch with this name already exists.'),
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
+            branch = WorkspaceBranch.objects.create(
+                user=request.user,
+                project=project,
+                name=name,
+                files_json=main_branch.files_json,
+                is_main=False,
+            )
+        except IntegrityError:
+            return Response(
+                {
+                    'success': False,
+                    'message': _('A branch with this name already exists.'),
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        return Response(
+            {
+                'success': True,
+                'branch': WorkspaceBranchDetailSerializer(branch).data,
+            },
+            status=status.HTTP_201_CREATED,
+        )
+
+
+class WorkspaceBranchDetailView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def _get_owned_branch(self, request, branch_id):
+        branch = get_object_or_404(WorkspaceBranch, id=branch_id)
+        if branch.user_id != request.user.id:
+            raise PermissionDenied(_('You do not have access to this branch.'))
+        return branch
+
+    def get(self, request, branch_id):
+        branch = self._get_owned_branch(request, branch_id)
+        return Response({
+            'success': True,
+            'branch': WorkspaceBranchDetailSerializer(branch).data,
+        })
+
+    def patch(self, request, branch_id):
+        branch = self._get_owned_branch(request, branch_id)
+        serializer = WorkspaceBranchUpdateSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        data = serializer.validated_data
+
+        if 'name' in data:
+            name = data['name']
+            conflict = WorkspaceBranch.objects.filter(
+                user=request.user,
+                project=branch.project,
+                name=name,
+            ).exclude(id=branch.id)
+            if conflict.exists():
+                return Response(
+                    {
+                        'success': False,
+                        'message': _('A branch with this name already exists.'),
+                    },
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            branch.name = name
+
+        if 'files_json' in data:
+            branch.files_json = data['files_json']
+
+        try:
+            branch.save()
+        except IntegrityError:
+            return Response(
+                {
+                    'success': False,
+                    'message': _('A branch with this name already exists.'),
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        return Response({
+            'success': True,
+            'branch': WorkspaceBranchDetailSerializer(branch).data,
+        })
+
+    def delete(self, request, branch_id):
+        branch = self._get_owned_branch(request, branch_id)
+
+        if branch.is_main:
+            return Response(
+                {
+                    'success': False,
+                    'message': _('The Main branch cannot be deleted.'),
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        branch.delete()
+        return Response({
+            'success': True,
+            'message': _('Branch deleted successfully.'),
+        })
+
+
+class WorkspaceBranchMergeView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request, branch_id):
+        source_branch = get_object_or_404(WorkspaceBranch, id=branch_id)
+
+        if source_branch.user_id != request.user.id:
+            raise PermissionDenied(_('You do not have access to this branch.'))
+
+        if source_branch.is_main:
+            return Response(
+                {
+                    'message': _('Main branch cannot be merged into itself.'),
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        main_branch = WorkspaceBranch.objects.filter(
+            user=request.user,
+            project=source_branch.project,
+            is_main=True,
+        ).first()
+
+        if not main_branch:
+            return Response(
+                {
+                    'message': _('Main branch was not found for this project.'),
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        with transaction.atomic():
+            main_branch.files_json = source_branch.files_json
+            main_branch.save(update_fields=['files_json', 'updated_at'])
+
+            code_task_ids = ProjectTask.objects.filter(
+                project=source_branch.project,
+                task_type='code',
+            ).values_list('id', flat=True)
+
+            TaskSubmission.objects.filter(
+                user=request.user,
+                project=source_branch.project,
+                task_id__in=code_task_ids,
+            ).update(answer=source_branch.files_json)
+
+        return Response({
+            'message': 'Branch merged successfully.',
+        })

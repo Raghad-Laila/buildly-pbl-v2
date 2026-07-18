@@ -197,6 +197,35 @@
   white-space: pre-wrap;
 }
 
+.project-work-sidebar-hint-locked {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.project-work-sidebar-hint-placeholder {
+  margin: 0;
+  color: #9ca3af;
+  font-size: 14px;
+  font-style: italic;
+}
+
+.project-work-sidebar-show-hint-btn {
+  padding: 6px 12px;
+  border-radius: 6px;
+  border: 1px solid rgba(241, 163, 58, 0.55);
+  background: rgba(241, 163, 58, 0.15);
+  color: #f1a33a;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.project-work-sidebar-show-hint-btn:hover {
+  background: rgba(241, 163, 58, 0.28);
+}
+
 @media (max-width: 1100px) {
   .project-work-sidebar {
     width: 100%;

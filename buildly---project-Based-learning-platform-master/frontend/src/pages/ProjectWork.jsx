@@ -7,6 +7,9 @@ import ExecutionPanel from '../components/ExecutionPanel'
 import RunningTestsPanel from '../components/RunningTestsPanel'
 import ProjectWorkProgress from '../components/ProjectWorkProgress'
 import ProjectWorkSidebar from '../components/ProjectWorkSidebar'
+import AiReviewDrawer from '../components/AiReviewDrawer'
+import CodeQualityDrawer from '../components/CodeQualityDrawer'
+import '../components/CodeQualityDrawer.css'
 import { projectsAPI } from '../services/api'
 import {
     addFile,
@@ -53,39 +56,6 @@ import './ProjectWork.css'
 
 const RESIZE_BREAKPOINT = 1100
 
-async function loadSharedProjectWorkspace(taskList, projectLanguage) {
-    const codeTasks = taskList.filter((item) => item.task_type === 'code')
-    if (!codeTasks.length) {
-        return null
-    }
-
-    let bestWorkspace = null
-    let bestScore = -1
-
-    for (const codeTask of codeTasks) {
-        try {
-            const res = await projectsAPI.getTaskSubmission(codeTask.id)
-            const answer = res.data.progress?.answer || ''
-            if (!answer.trim()) continue
-
-            const parsed = parseWorkspace(answer, projectLanguage)
-            const score = parsed.files?.reduce(
-                (sum, file) => sum + (file.content?.length || 0),
-                0
-            ) || 0
-
-            if (score > bestScore) {
-                bestScore = score
-                bestWorkspace = parsed
-            }
-        } catch {
-            // ignore missing submissions
-        }
-    }
-
-    return bestWorkspace || getDefaultWorkspace(projectLanguage)
-}
-
 const ProjectWork = () => {
     const { id } = useParams()
     const navigate = useNavigate()
@@ -96,6 +66,8 @@ const ProjectWork = () => {
 
     const [workspace, setWorkspace] = useState(null)
     const [textAnswer, setTextAnswer] = useState('')
+    const [branches, setBranches] = useState([])
+    const [selectedBranch, setSelectedBranch] = useState(null)
 
     const [loading, setLoading] = useState(true)
     const [execution, setExecution] = useState(createExecutionState())
@@ -103,9 +75,21 @@ const ProjectWork = () => {
     const [runningTests, setRunningTests] = useState(false)
     const [testResults, setTestResults] = useState(null)
     const [testError, setTestError] = useState('')
+    const [aiReviewOpen, setAiReviewOpen] = useState(false)
+    const [aiReviewing, setAiReviewing] = useState(false)
+    const [aiReviewResult, setAiReviewResult] = useState(null)
+    const [aiReviewError, setAiReviewError] = useState('')
+    const [qualityReviewOpen, setQualityReviewOpen] = useState(false)
+    const [qualityReviewing, setQualityReviewing] = useState(false)
+    const [qualityReviewResult, setQualityReviewResult] = useState(null)
+    const [qualityReviewError, setQualityReviewError] = useState('')
+    const [revealedHintIds, setRevealedHintIds] = useState([])
 
     const workspaceRef = useRef('')
+    const workspaceStateRef = useRef(null)
+    const runningRef = useRef(false)
     const textRef = useRef('')
+    const selectedBranchRef = useRef(null)
     const streamBlocksRef = useRef([])
     const workspaceLayoutRef = useRef(null)
     const resizeDragRef = useRef(null)
@@ -275,8 +259,9 @@ const ProjectWork = () => {
         if (!exists || workspace.activeFileId === pendingId) return
 
         const nextWorkspace = setActiveFile(workspace, pendingId)
-        setWorkspace(nextWorkspace)
+        workspaceStateRef.current = nextWorkspace
         workspaceRef.current = serializeWorkspace(nextWorkspace)
+        setWorkspace(nextWorkspace)
     }, [workspace])
 
     useEffect(() => {
@@ -328,6 +313,7 @@ const ProjectWork = () => {
     }, [workspace, uiHydrated])
 
     useEffect(() => {
+        setRevealedHintIds([])
         fetchData()
     }, [id])
 
@@ -339,7 +325,7 @@ const ProjectWork = () => {
         }, 5000)
 
         return () => clearInterval(interval)
-    }, [tasks, workspace, textAnswer])
+    }, [tasks, workspace, textAnswer, selectedBranch])
 
     useEffect(() => {
         if (!tasks.length || !project) return
@@ -363,8 +349,9 @@ const ProjectWork = () => {
     }, [tasks, project])
 
     const handleWorkspaceChange = (nextWorkspace) => {
-        setWorkspace(nextWorkspace)
+        workspaceStateRef.current = nextWorkspace
         workspaceRef.current = serializeWorkspace(nextWorkspace)
+        setWorkspace(nextWorkspace)
     }
 
     const handleExplorerSelectFile = (fileId) => {
@@ -387,19 +374,49 @@ const ProjectWork = () => {
         handleWorkspaceChange(deleteFile(workspace, fileId))
     }
 
-    const saveProjectWork = async () => {
-        const codeTasks = tasks.filter((item) => item.task_type === 'code')
+    const applyWorkspaceToEditor = (nextWorkspace) => {
+        workspaceStateRef.current = nextWorkspace
+        workspaceRef.current = serializeWorkspace(nextWorkspace)
+        setWorkspace(nextWorkspace)
+    }
 
+    const setActiveBranch = (branchSummary) => {
+        setSelectedBranch(branchSummary)
+        selectedBranchRef.current = branchSummary
+    }
+
+    const refreshBranches = async (projectId) => {
+        const res = await projectsAPI.getBranches(projectId)
+        const list = res.data.branches || []
+        setBranches(list)
+        return list
+    }
+
+    const loadBranchIntoEditor = async (branchSummary, language) => {
+        const res = await projectsAPI.getBranch(branchSummary.id)
+        const branch = res.data.branch
+        const summary = {
+            id: branch.id,
+            name: branch.name,
+            is_main: branch.is_main,
+            created_at: branch.created_at,
+        }
+        setActiveBranch(summary)
+        applyWorkspaceToEditor(parseWorkspace(branch.files_json || '', language))
+        return summary
+    }
+
+    const persistCurrentBranch = async () => {
+        const currentBranch = selectedBranchRef.current
+        if (!currentBranch?.id || !workspaceRef.current.trim()) return
+        await projectsAPI.updateBranch(currentBranch.id, {
+            files_json: workspaceRef.current,
+        })
+    }
+
+    const saveProjectWork = async () => {
         try {
-            if (codeTasks.length && workspaceRef.current.trim()) {
-                await Promise.all(
-                    codeTasks.map((codeTask) =>
-                        projectsAPI.saveTaskSubmission(codeTask.id, {
-                            answer: workspaceRef.current,
-                        })
-                    )
-                )
-            }
+            await persistCurrentBranch()
 
             const textTask = tasks.find((item) => item.task_type === 'text')
             if (textTask && textRef.current.trim()) {
@@ -412,12 +429,109 @@ const ProjectWork = () => {
         }
     }
 
-    const runCode = async () => {
-        if (!workspace || running) return
+    const handleSelectBranch = async (event) => {
+        const nextId = Number(event.target.value)
+        if (!nextId || selectedBranchRef.current?.id === nextId) return
 
-        const currentWorkspace = getWorkspaceSnapshot(workspaceRef, workspace)
+        const summary = branches.find((branch) => branch.id === nextId)
+        if (!summary) return
+
+        try {
+            await persistCurrentBranch()
+            await loadBranchIntoEditor(summary, projectLanguage)
+        } catch (err) {
+            console.error('Branch switch error:', err)
+            alert(err.response?.data?.message || 'Failed to switch branch.')
+        }
+    }
+
+    const handleCreateBranch = async () => {
+        const name = window.prompt('New branch name')
+        if (!name?.trim()) return
+
+        try {
+            await persistCurrentBranch()
+            const res = await projectsAPI.createBranch(id, { name: name.trim() })
+            const created = res.data.branch
+            const list = await refreshBranches(id)
+            const summary =
+                list.find((branch) => branch.id === created.id) || {
+                    id: created.id,
+                    name: created.name,
+                    is_main: created.is_main,
+                    created_at: created.created_at,
+                }
+            await loadBranchIntoEditor(summary, projectLanguage)
+        } catch (err) {
+            console.error('Create branch error:', err)
+            alert(err.response?.data?.message || 'Failed to create branch.')
+        }
+    }
+
+    const handleDeleteBranch = async () => {
+        const current = selectedBranchRef.current
+        if (!current?.id || current.is_main) return
+        if (!window.confirm(`Delete branch "${current.name}"?`)) return
+
+        try {
+            await projectsAPI.deleteBranch(current.id)
+            const list = await refreshBranches(id)
+            const main = list.find((branch) => branch.is_main) || list[0]
+            if (main) {
+                await loadBranchIntoEditor(main, projectLanguage)
+            } else {
+                setActiveBranch(null)
+                applyWorkspaceToEditor(getDefaultWorkspace(projectLanguage))
+            }
+        } catch (err) {
+            console.error('Delete branch error:', err)
+            alert(err.response?.data?.message || 'Failed to delete branch.')
+        }
+    }
+
+    const handleMergeIntoMain = async () => {
+        const current = selectedBranchRef.current
+        if (!current?.id || current.is_main) return
+
+        const confirmed = window.confirm(
+            'Merge this branch into Main?\n\nThis will replace the current Main branch.'
+        )
+        if (!confirmed) return
+
+        try {
+            await persistCurrentBranch()
+            const res = await projectsAPI.mergeBranch(current.id)
+            alert(res.data?.message || 'Branch merged successfully.')
+
+            const list = await refreshBranches(id)
+            const main = list.find((branch) => branch.is_main) || list[0]
+            if (main) {
+                await loadBranchIntoEditor(main, projectLanguage)
+            }
+        } catch (err) {
+            console.error('Merge branch error:', err)
+            alert(err.response?.data?.message || 'Failed to merge branch.')
+        }
+    }
+
+    useEffect(() => {
+        workspaceStateRef.current = workspace
+    }, [workspace])
+
+    useEffect(() => {
+        runningRef.current = running
+    }, [running])
+
+    const runCode = async () => {
+        const currentWorkspace = getWorkspaceSnapshot(
+            workspaceRef,
+            workspaceStateRef.current || workspace
+        )
+        if (!currentWorkspace || runningRef.current) return
+
         const runId = Date.now()
 
+        runningRef.current = true
         setRunning(true)
         streamBlocksRef.current = []
 
@@ -514,6 +628,7 @@ const ProjectWork = () => {
                 ],
             })
         } finally {
+            runningRef.current = false
             setRunning(false)
         }
     }
@@ -600,6 +715,164 @@ const ProjectWork = () => {
         }
     }
 
+    const runAiReview = async () => {
+        const hasCodeTasks = tasks.some((item) => item.task_type === 'code')
+        const hintIds = tasks
+            .filter((item) => item.hint?.trim())
+            .map((item) => item.id)
+        const hintsUnlocked =
+            hintIds.length === 0 ||
+            hintIds.every((hintId) => revealedHintIds.includes(hintId))
+        const testsExist = tests.length > 0
+        const latestCheckFailed = (testResults?.summary?.failed ?? 0) > 0
+        const aiUnlocked = hintsUnlocked && (!testsExist || latestCheckFailed)
+
+        if (!workspace || aiReviewing || !hasCodeTasks || !aiUnlocked) return
+
+        const currentWorkspace = getWorkspaceSnapshot(workspaceRef, workspace)
+        const files = (currentWorkspace?.files || [])
+            .filter((file) => file?.name)
+            .map((file) => ({
+                name: file.name,
+                content: file.content ?? '',
+            }))
+
+        if (!files.length || !files.some((file) => String(file.content || '').trim())) {
+            setAiReviewOpen(true)
+            setAiReviewResult(null)
+            setAiReviewError('اكتب بعض الكود أولاً قبل طلب المراجعة الذكية.')
+            return
+        }
+
+        setAiReviewOpen(true)
+        setAiReviewing(true)
+        setAiReviewError('')
+        setAiReviewResult(null)
+
+        const payload = {
+            project_id: Number(id),
+            files,
+        }
+
+        if (testResults?.summary) {
+            payload.test_summary = {
+                total: testResults.summary.total ?? 0,
+                passed: testResults.summary.passed ?? 0,
+                failed: testResults.summary.failed ?? 0,
+            }
+        }
+
+        const storiesByIndex = tasks.map((task, index) => ({
+            index,
+            title: task.title || '',
+            text: task.description?.trim() || task.title || '',
+        }))
+
+        const failedTests = (testResults?.results || [])
+            .map((result, index) => ({ result, index }))
+            .filter(({ result }) => !result?.passed)
+            .map(({ result, index }) => {
+                const meta =
+                    (result.id != null
+                        ? tests.find((test) => test.id === result.id)
+                        : null) || tests[index] || null
+                const story = storiesByIndex[index] || null
+                const requirementParts = [
+                    story?.title,
+                    story?.text && story.text !== story.title ? story.text : null,
+                    meta?.description,
+                ].filter(Boolean)
+
+                const item = {
+                    message: result.message || '',
+                    error: result.error || '',
+                    stderr: result.stderr || '',
+                    name: result.name || meta?.name || '',
+                    requirement: requirementParts.join(' — ') || '',
+                }
+
+                if (result.id != null) {
+                    item.id = result.id
+                } else if (meta?.id != null) {
+                    item.id = meta.id
+                }
+
+                return item
+            })
+
+        if (failedTests.length) {
+            payload.failed_tests = failedTests
+        }
+
+        if (testError?.trim()) {
+            payload.test_error = testError.trim()
+        }
+
+        try {
+            const response = await projectsAPI.aiReview(payload)
+            setAiReviewResult(response.data?.review || null)
+        } catch {
+            setAiReviewResult(null)
+            setAiReviewError(
+                'تعذّر إكمال المراجعة الذكية حالياً. حاول مرة أخرى بعد قليل.'
+            )
+        } finally {
+            setAiReviewing(false)
+        }
+    }
+
+    const runCodeQualityReview = async () => {
+        const hasCodeTasks = tasks.some((item) => item.task_type === 'code')
+        const progress = getProjectTestProgress(tests, testResults)
+
+        if (!workspace || qualityReviewing || !hasCodeTasks || !progress.allPassed) return
+
+        const currentWorkspace = getWorkspaceSnapshot(workspaceRef, workspace)
+        const files = (currentWorkspace?.files || [])
+            .filter((file) => file?.name)
+            .map((file) => ({
+                name: file.name,
+                content: file.content ?? '',
+            }))
+
+        if (!files.length || !files.some((file) => String(file.content || '').trim())) {
+            setQualityReviewOpen(true)
+            setQualityReviewResult(null)
+            setQualityReviewError('اكتب بعض الكود أولاً قبل طلب تقرير جودة الكود.')
+            return
+        }
+
+        setQualityReviewOpen(true)
+        setQualityReviewing(true)
+        setQualityReviewError('')
+        setQualityReviewResult(null)
+
+        const payload = {
+            project_id: Number(id),
+            files,
+        }
+
+        if (testResults?.summary) {
+            payload.test_summary = {
+                total: testResults.summary.total ?? 0,
+                passed: testResults.summary.passed ?? 0,
+                failed: testResults.summary.failed ?? 0,
+            }
+        }
+
+        try {
+            const response = await projectsAPI.qualityReview(payload)
+            setQualityReviewResult(response.data?.review || null)
+        } catch {
+            setQualityReviewResult(null)
+            setQualityReviewError(
+                'تعذّر إكمال تقرير جودة الكود حالياً. حاول مرة أخرى بعد قليل.'
+            )
+        } finally {
+            setQualityReviewing(false)
+        }
+    }
+
     const clearExecution = () => {
         setExecution(createExecutionState())
         streamBlocksRef.current = []
@@ -627,10 +900,22 @@ const ProjectWork = () => {
             setTasks(taskList)
             setTests(testsRes.data || [])
 
-            const sharedWorkspace = await loadSharedProjectWorkspace(taskList, lang)
-            if (sharedWorkspace) {
-                setWorkspace(sharedWorkspace)
-                workspaceRef.current = serializeWorkspace(sharedWorkspace)
+            const hasCodeTasks = taskList.some((item) => item.task_type === 'code')
+            if (hasCodeTasks) {
+                const list = await refreshBranches(id)
+                const main = list.find((branch) => branch.is_main) || list[0]
+                if (main) {
+                    await loadBranchIntoEditor(main, lang)
+                } else {
+                    setActiveBranch(null)
+                    applyWorkspaceToEditor(getDefaultWorkspace(lang))
+                }
+            } else {
+                setBranches([])
+                setActiveBranch(null)
+                setWorkspace(null)
+                workspaceStateRef.current = null
+                workspaceRef.current = ''
             }
 
             setLoading(false)
@@ -688,6 +973,25 @@ const ProjectWork = () => {
         .map((t, index) => ({ id: t.id, index, title: t.title, hint: t.hint }))
         .filter((item) => item.hint?.trim())
 
+    const allStaticHintsRevealed =
+        availableHints.length === 0 ||
+        availableHints.every((hint) => revealedHintIds.includes(hint.id))
+
+    const hasProjectTests = tests.length > 0
+    const checkCodeFailed = (testResults?.summary?.failed ?? 0) > 0
+    const aiAssistantUnlocked =
+        allStaticHintsRevealed && (!hasProjectTests || checkCodeFailed)
+
+    const aiLockedMessage = !allStaticHintsRevealed
+        ? 'Reveal all available hints to unlock the AI Assistant.'
+        : 'Run Check Code and fix failing tests to unlock the AI Assistant.'
+
+    const handleRevealHint = (hintId) => {
+        setRevealedHintIds((prev) =>
+            prev.includes(hintId) ? prev : [...prev, hintId]
+        )
+    }
+
     const testProgress = getProjectTestProgress(tests, testResults)
 
     if (loading) return <div className="loading">Loading...</div>
@@ -716,13 +1020,69 @@ const ProjectWork = () => {
                     objective={objective}
                     userStoriesWithStatus={userStoriesWithStatus}
                     availableHints={availableHints}
+                    revealedHintIds={revealedHintIds}
+                    onRevealHint={handleRevealHint}
                 />
 
                 <div className="fcc-main">
-                    <ProjectWorkProgress progress={testProgress} />
+                    <ProjectWorkProgress
+                        progress={testProgress}
+                        showImproveCode={
+                            testProgress.allPassed &&
+                            tasks.some((item) => item.task_type === 'code')
+                        }
+                        onImproveCode={runCodeQualityReview}
+                        improveCodeLoading={qualityReviewing}
+                    />
 
                     <section className="fcc-section fcc-editor-section">
-                        <h2 className="fcc-section-title">Code Editor</h2>
+                        <div className="fcc-section-title-row">
+                            <h2 className="fcc-section-title">Code Editor</h2>
+                            {tasks.some((item) => item.task_type === 'code') && (
+                                <div className="branch-toolbar">
+                                    <label className="branch-toolbar-label" htmlFor="workspace-branch-select">
+                                        Branch
+                                    </label>
+                                    <select
+                                        id="workspace-branch-select"
+                                        className="branch-select"
+                                        value={selectedBranch?.id || ''}
+                                        onChange={handleSelectBranch}
+                                        disabled={!branches.length}
+                                    >
+                                        {branches.map((branch) => (
+                                            <option key={branch.id} value={branch.id}>
+                                                {branch.is_main ? `${branch.name} (Main)` : branch.name}
+                                            </option>
+                                        ))}
+                                    </select>
+                                    <button
+                                        type="button"
+                                        className="btn branch-toolbar-btn"
+                                        onClick={handleCreateBranch}
+                                    >
+                                        New Branch
+                                    </button>
+                                    <button
+                                        type="button"
+                                        className="btn branch-toolbar-btn branch-toolbar-btn-danger"
+                                        onClick={handleDeleteBranch}
+                                        disabled={!selectedBranch || selectedBranch.is_main}
+                                    >
+                                        Delete
+                                    </button>
+                                    {!selectedBranch?.is_main && (
+                                        <button
+                                            type="button"
+                                            className="btn branch-toolbar-btn branch-toolbar-btn-merge"
+                                            onClick={handleMergeIntoMain}
+                                        >
+                                            Merge into Main
+                                        </button>
+                                    )}
+                                </div>
+                            )}
+                        </div>
                         <div className="fcc-section-body">
                             {tasks.some((item) => item.task_type === 'code') && workspace && (
                                 <div ref={workspaceLayoutRef} className="deepnote-workspace">
@@ -828,6 +1188,54 @@ const ProjectWork = () => {
                                     )}
                                 </button>
 
+                                {aiAssistantUnlocked ? (
+                                    <button
+                                        type="button"
+                                        className="btn fcc-ai-review-btn"
+                                        onClick={runAiReview}
+                                        disabled={
+                                            aiReviewing ||
+                                            !workspace ||
+                                            !tasks.some((item) => item.task_type === 'code')
+                                        }
+                                    >
+                                        {aiReviewing ? (
+                                            <>
+                                                <span className="execution-spinner" />
+                                                جاري المراجعة...
+                                            </>
+                                        ) : (
+                                            '🤖 Ask AI Assistant'
+                                        )}
+                                    </button>
+                                ) : (
+                                    <span className="fcc-ai-locked-hint">
+                                        {aiLockedMessage}
+                                    </span>
+                                )}
+
+                                {testProgress.allPassed &&
+                                    tasks.some((item) => item.task_type === 'code') && (
+                                    <button
+                                        type="button"
+                                        className="btn fcc-quality-review-btn"
+                                        onClick={runCodeQualityReview}
+                                        disabled={
+                                            qualityReviewing ||
+                                            !workspace
+                                        }
+                                    >
+                                        {qualityReviewing ? (
+                                            <>
+                                                <span className="execution-spinner" />
+                                                Analyzing...
+                                            </>
+                                        ) : (
+                                            '✨ Improve Code with AI'
+                                        )}
+                                    </button>
+                                )}
+
                                 {tasks.some((item) => item.task_type === 'code') && (
                                     <span className="fcc-check-hint">
                                         أو استخدم <kbd>Ctrl</kbd> + <kbd>Enter</kbd> لتشغيل الكود
@@ -838,6 +1246,23 @@ const ProjectWork = () => {
                     </section>
                 </div>
             </div>
+
+            <AiReviewDrawer
+                open={aiReviewOpen}
+                loading={aiReviewing}
+                error={aiReviewError}
+                review={aiReviewResult}
+                failedTestsCount={testResults?.summary?.failed ?? 0}
+                onClose={() => setAiReviewOpen(false)}
+            />
+
+            <CodeQualityDrawer
+                open={qualityReviewOpen}
+                loading={qualityReviewing}
+                error={qualityReviewError}
+                review={qualityReviewResult}
+                onClose={() => setQualityReviewOpen(false)}
+            />
         </div>
     )
 }

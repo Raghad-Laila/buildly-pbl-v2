@@ -7,6 +7,8 @@ const ProjectWorkSidebar = ({
   objective,
   userStoriesWithStatus,
   availableHints,
+  revealedHintIds = [],
+  onRevealHint,
 }) => {
   const [hintsOpen, setHintsOpen] = useState(false)
 
@@ -77,12 +79,29 @@ const ProjectWorkSidebar = ({
           {hintsOpen && (
             <div className="project-work-sidebar-hints-panel">
               {availableHints.length > 0 ? (
-                availableHints.map((item) => (
-                  <div key={item.id} className="project-work-sidebar-hint-card">
-                    <h4>{item.title}</h4>
-                    <p>{item.hint}</p>
-                  </div>
-                ))
+                availableHints.map((item) => {
+                  const isRevealed = revealedHintIds.includes(item.id)
+
+                  return (
+                    <div key={item.id} className="project-work-sidebar-hint-card">
+                      <h4>{item.title || 'Hint'}</h4>
+                      {isRevealed ? (
+                        <p>{item.hint}</p>
+                      ) : (
+                        <div className="project-work-sidebar-hint-locked">
+                          <p className="project-work-sidebar-hint-placeholder">Hint</p>
+                          <button
+                            type="button"
+                            className="project-work-sidebar-show-hint-btn"
+                            onClick={() => onRevealHint?.(item.id)}
+                          >
+                            Show Hint
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  )
+                })
               ) : (
                 <p className="project-work-sidebar-empty">لا توجد تلميحات متاحة حالياً.</p>
               )}

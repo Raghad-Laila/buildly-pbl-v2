@@ -1,7 +1,12 @@
 import React from 'react'
 import './ProjectWorkProgress.css'
 
-const ProjectWorkProgress = ({ progress }) => {
+const ProjectWorkProgress = ({
+  progress,
+  onImproveCode,
+  improveCodeLoading = false,
+  showImproveCode = false,
+}) => {
   const { percentage, passed, total, allPassed, hasTests } = progress
 
   if (!hasTests) {
@@ -15,9 +20,26 @@ const ProjectWorkProgress = ({ progress }) => {
           <span className="project-completed-icon" aria-hidden="true">
             🎉
           </span>
-          <div>
+          <div className="project-completed-banner-content">
             <strong>Project Completed</strong>
             <p>لقد نجحت في جميع الاختبارات! يمكنك الآن تسليم المشروع.</p>
+            {showImproveCode && (
+              <button
+                type="button"
+                className="btn fcc-quality-review-btn project-quality-review-btn"
+                onClick={onImproveCode}
+                disabled={improveCodeLoading}
+              >
+                {improveCodeLoading ? (
+                  <>
+                    <span className="execution-spinner" />
+                    Analyzing...
+                  </>
+                ) : (
+                  '✨ Improve Code with AI'
+                )}
+              </button>
+            )}
           </div>
         </div>
       )}

@@ -287,6 +287,42 @@ export const projectsAPI = {
       language,
     }),
 
+  aiReview: ({ project_id, files, test_summary, failed_tests, test_error } = {}) =>
+    api.post('/projects/code/ai-review/', {
+      project_id,
+      files,
+      ...(test_summary != null ? { test_summary } : {}),
+      ...(failed_tests != null ? { failed_tests } : {}),
+      ...(test_error != null && String(test_error).trim()
+        ? { test_error: String(test_error).trim() }
+        : {}),
+    }),
+
+  qualityReview: ({ project_id, files, test_summary } = {}) =>
+    api.post('/projects/code/quality-review/', {
+      project_id,
+      files,
+      ...(test_summary != null ? { test_summary } : {}),
+    }),
+
+  getBranches: (projectId) =>
+    api.get(`/projects/${projectId}/branches/`),
+
+  createBranch: (projectId, data) =>
+    api.post(`/projects/${projectId}/branches/`, data),
+
+  getBranch: (branchId) =>
+    api.get(`/projects/branches/${branchId}/`),
+
+  updateBranch: (branchId, data) =>
+    api.patch(`/projects/branches/${branchId}/`, data),
+
+  deleteBranch: (branchId) =>
+    api.delete(`/projects/branches/${branchId}/`),
+
+  mergeBranch: (branchId) =>
+    api.post(`/projects/branches/${branchId}/merge/`),
+
   saveTaskSubmission: (taskId, data) =>
     api.post(`/projects/tasks/${taskId}/save/`, data),
 

@@ -1,5 +1,6 @@
 # projects/models.py
 from django.db import models
+from django.db.models import Q
 from django.utils.translation import gettext_lazy as _
 from courses.models import Course
 from account.models import CustomUser
@@ -394,3 +395,43 @@ class TaskSubmission(models.Model):
 
     class Meta:
         unique_together = ('user', 'task')
+
+
+class WorkspaceBranch(models.Model):
+    """Virtual branch for student workspace experiments (FR-7.3)."""
+
+    user = models.ForeignKey(
+        CustomUser,
+        on_delete=models.CASCADE,
+        related_name='workspace_branches',
+    )
+    project = models.ForeignKey(
+        Project,
+        on_delete=models.CASCADE,
+        related_name='workspace_branches',
+    )
+    name = models.CharField(max_length=100)
+    files_json = models.TextField(blank=True, default='')
+    is_main = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = _('Workspace Branch')
+        verbose_name_plural = _('Workspace Branches')
+        ordering = ['-is_main', 'name']
+        constraints = [
+            models.UniqueConstraint(
+                fields=['user', 'project', 'name'],
+                name='unique_branch_name_per_user_project',
+            ),
+            models.UniqueConstraint(
+                fields=['user', 'project'],
+                condition=Q(is_main=True),
+                name='unique_main_branch_per_user_project',
+            ),
+        ]
+
+    def __str__(self):
+        branch_type = 'Main' if self.is_main else 'Sandbox'
+        return f'{self.project.title} - {self.name} ({branch_type})'
