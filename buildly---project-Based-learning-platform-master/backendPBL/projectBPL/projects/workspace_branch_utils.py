@@ -160,6 +160,22 @@ def _best_task_submission_answer(user, project) -> str:
     return best_answer or ''
 
 
+def get_main_branch_files_json(user, project) -> str | None:
+    """
+    Return Main branch files_json if it exists, else None.
+
+    Read-only: does not create or modify WorkspaceBranch rows.
+    """
+    main_branch = WorkspaceBranch.objects.filter(
+        user=user,
+        project=project,
+        is_main=True,
+    ).only('files_json').first()
+    if main_branch is None:
+        return None
+    return main_branch.files_json
+
+
 def ensure_main_branch(user, project) -> WorkspaceBranch:
     """
     Ensure the user has a Main branch for this project.

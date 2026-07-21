@@ -3,9 +3,10 @@ from rest_framework.views import APIView
 from django.utils import timezone
 from rest_framework import generics, permissions, status
 from rest_framework.response import Response
-from rest_framework.exceptions import PermissionDenied, ValidationError
+from rest_framework.exceptions import ValidationError
 from django.utils.translation import gettext_lazy as _
 from django.db import transaction
+from django.http import Http404
 from django.shortcuts import get_object_or_404
 from .models import Project, ProjectStarterFile, ProjectTask, TaskSubmission, Tests, WorkspaceBranch
 from .serializers import (
@@ -36,7 +37,7 @@ from .ai_review import AIReviewService
 from .ai_review.schemas import AIReviewRequestSchema
 from .code_quality import CodeQualityReviewService
 from .code_quality.schemas import CodeQualityRequestSchema
-from .workspace_branch_utils import ensure_main_branch
+from .workspace_branch_utils import ensure_main_branch, get_main_branch_files_json
 import subprocess
 from django.db import IntegrityError
 
@@ -57,30 +58,37 @@ def learner_can_access_course(user, course):
     return course.is_student_enrolled(user)
 
 
+def user_can_access_project(user, project):
+    """Admin or enrolled learner with access to the project's course."""
+    if user.is_admin:
+        return True
+    return get_learner_projects_queryset(user).filter(pk=project.pk).exists()
+
+
+def get_accessible_project_or_404(user, project_id):
+    """Return project if accessible; 404 when missing or unauthorized (no existence leak)."""
+    if user.is_admin:
+        return get_object_or_404(Project, pk=project_id)
+    return get_object_or_404(get_learner_projects_queryset(user), pk=project_id)
+
+
 class IsCourseInstructor(permissions.BasePermission):
     """التحقق من أن المستخدم هو مشرف (أي مشرف في النظام)"""
     
     def has_permission(self, request, view):
-        # السماح للجميع بالوصول للقراءة فقط
-        if request.method in permissions.SAFE_METHODS:
-            return True
-        
-        # لإنشاء/تعديل مشروع، يجب أن يكون المستخدم مشرفاً (أي مشرف في النظام)
-        if not request.user.is_admin:
-            return False
-        
-        return True
+        return bool(
+            request.user
+            and request.user.is_authenticated
+            and request.user.is_admin
+        )
     
     def has_object_permission(self, request, view, obj):
         """أي مشرف يستطيع تعديل أي مشروع"""
-        if request.method in permissions.SAFE_METHODS:
-            return True
-        
-        # فقط المشرفين يمكنهم التعديل
-        if not request.user.is_admin:
-            return False
-        
-        return True
+        return bool(
+            request.user
+            and request.user.is_authenticated
+            and request.user.is_admin
+        )
 
 
 class CreateProjectView(RevisionMixin, generics.CreateAPIView):
@@ -275,8 +283,8 @@ class CourseProjectsView(generics.ListAPIView):
                 return Project.objects.filter(course=self.course, is_active=True)
             if learner_can_access_course(user, self.course):
                 return Project.objects.filter(course=self.course, is_active=True)
-            
-            return Project.objects.none()
+
+            raise Http404
             
         except Course.DoesNotExist:
             raise ValidationError(_('المسار التعليمي غير موجود'))
@@ -764,6 +772,7 @@ class ProjectTasksListView(generics.ListAPIView):
 
     def get_queryset(self):
         project_id = self.kwargs.get('project_id')
+        get_accessible_project_or_404(self.request.user, project_id)
 
         return ProjectTask.objects.filter(
             project_id=project_id
@@ -799,14 +808,20 @@ class ProjectTestsListView(generics.ListAPIView):
 
     def get_queryset(self):
         project_id = self.kwargs.get('project_id')
+        get_accessible_project_or_404(self.request.user, project_id)
         return Tests.objects.filter(project_id=project_id).order_by('id')
 
 
 class ProjectTestDetailView(generics.RetrieveAPIView):
-    queryset = Tests.objects.all()
     serializer_class = TestsSerializer
     permission_classes = [permissions.IsAuthenticated]
     lookup_field = 'id'
+
+    def get_queryset(self):
+        user = self.request.user
+        if user.is_admin:
+            return Tests.objects.all()
+        return Tests.objects.filter(project__in=get_learner_projects_queryset(user))
 
 
 class UpdateTestsView(RevisionMixin, generics.UpdateAPIView):
@@ -836,6 +851,9 @@ class RunProjectTestsView(APIView):
         try:
             project = Project.objects.get(id=project_id)
         except Project.DoesNotExist:
+            return Response({'error': 'المشروع غير موجود'}, status=status.HTTP_404_NOT_FOUND)
+
+        if not user_can_access_project(request.user, project):
             return Response({'error': 'المشروع غير موجود'}, status=status.HTTP_404_NOT_FOUND)
 
         tests = Tests.objects.filter(project=project).order_by('id')
@@ -937,6 +955,9 @@ class AIReviewView(APIView):
         except Project.DoesNotExist:
             return Response({'error': 'المشروع غير موجود'}, status=status.HTTP_404_NOT_FOUND)
 
+        if not user_can_access_project(request.user, project):
+            return Response({'error': 'المشروع غير موجود'}, status=status.HTTP_404_NOT_FOUND)
+
         result = AIReviewService().review(
             project=project,
             files=files,
@@ -965,6 +986,9 @@ class CodeQualityReviewView(APIView):
         except Project.DoesNotExist:
             return Response({'error': 'المشروع غير موجود'}, status=status.HTTP_404_NOT_FOUND)
 
+        if not user_can_access_project(request.user, project):
+            return Response({'error': 'المشروع غير موجود'}, status=status.HTTP_404_NOT_FOUND)
+
         result = CodeQualityReviewService().review(
             project=project,
             files=files,
@@ -979,6 +1003,8 @@ class SaveTaskSubmissionView(APIView):
     def post(self, request, task_id):
         try:
             task = ProjectTask.objects.get(id=task_id)
+            if not user_can_access_project(request.user, task.project):
+                raise Http404
 
             progress, created = TaskSubmission.objects.get_or_create(
                 user=request.user,
@@ -1020,6 +1046,9 @@ class SaveTaskSubmissionView(APIView):
                 'message': _('المهمة غير موجودة')
             }, status=404)
 
+        except Http404:
+            raise
+
         except Exception as e:
             return Response({
                 'success': False,
@@ -1032,6 +1061,17 @@ class GetTaskSubmissionView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request, task_id):
+        try:
+            task = ProjectTask.objects.get(id=task_id)
+        except ProjectTask.DoesNotExist:
+            return Response({
+                'success': True,
+                'progress': None
+            })
+
+        if not user_can_access_project(request.user, task.project):
+            raise Http404
+
         try:
             progress = TaskSubmission.objects.get(
                 user=request.user,
@@ -1080,9 +1120,35 @@ class AdminGetStudentSubmissionView(APIView):
     permission_classes = [permissions.IsAuthenticated, IsCourseInstructor]
 
     def get(self, request, task_id, user_id):
-        
-        submission = get_object_or_404(TaskSubmission, task_id=task_id, user_id=user_id)
-        
+        task = get_object_or_404(ProjectTask, id=task_id)
+        submission = TaskSubmission.objects.filter(
+            task_id=task_id,
+            user_id=user_id,
+        ).first()
+
+        if task.task_type == 'code':
+            main_files_json = get_main_branch_files_json(user_id, task.project)
+            if main_files_json is not None:
+                answer = main_files_json
+            elif submission is not None:
+                answer = submission.answer
+            else:
+                raise Http404
+
+            return Response({
+                'id': submission.id if submission else None,
+                'answer': answer,
+                'admin_feedback': submission.admin_feedback if submission else None,
+                'is_correct': submission.is_correct if submission else None,
+                'status': submission.status if submission else None,
+                'is_completed': submission.is_completed if submission else None,
+                'last_saved_at': submission.last_saved_at if submission else None,
+                'reviewed_at': submission.reviewed_at if submission else None,
+            })
+
+        if submission is None:
+            raise Http404
+
         return Response({
             'id': submission.id,
             'answer': submission.answer,
@@ -1095,6 +1161,8 @@ class AdminGetStudentSubmissionView(APIView):
         })
 
 class ProjectVersionHistoryView(APIView):
+    permission_classes = [permissions.IsAuthenticated, IsCourseInstructor]
+
     def get(self, request, project_id):
         project = get_object_or_404(Project, pk=project_id)
         versions = Version.objects.get_for_object(project)
@@ -1109,6 +1177,8 @@ class ProjectVersionHistoryView(APIView):
         return Response(data)
 
 class ProjectRollbackView(APIView):
+    permission_classes = [permissions.IsAuthenticated, IsCourseInstructor]
+
     def get(self, request, project_id, version_id):
         version = get_object_or_404(Version, id=version_id)
         version.revision.revert() 
@@ -1119,7 +1189,7 @@ class WorkspaceBranchListCreateView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request, project_id):
-        project = get_object_or_404(Project, id=project_id)
+        project = get_accessible_project_or_404(request.user, project_id)
         ensure_main_branch(request.user, project)
 
         branches = WorkspaceBranch.objects.filter(
@@ -1135,7 +1205,7 @@ class WorkspaceBranchListCreateView(APIView):
         })
 
     def post(self, request, project_id):
-        project = get_object_or_404(Project, id=project_id)
+        project = get_accessible_project_or_404(request.user, project_id)
         main_branch = ensure_main_branch(request.user, project)
 
         serializer = WorkspaceBranchCreateSerializer(data=request.data)
@@ -1185,9 +1255,13 @@ class WorkspaceBranchDetailView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def _get_owned_branch(self, request, branch_id):
-        branch = get_object_or_404(WorkspaceBranch, id=branch_id)
-        if branch.user_id != request.user.id:
-            raise PermissionDenied(_('You do not have access to this branch.'))
+        branch = get_object_or_404(
+            WorkspaceBranch,
+            id=branch_id,
+            user=request.user,
+        )
+        if not user_can_access_project(request.user, branch.project):
+            raise Http404
         return branch
 
     def get(self, request, branch_id):
@@ -1262,10 +1336,13 @@ class WorkspaceBranchMergeView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def post(self, request, branch_id):
-        source_branch = get_object_or_404(WorkspaceBranch, id=branch_id)
-
-        if source_branch.user_id != request.user.id:
-            raise PermissionDenied(_('You do not have access to this branch.'))
+        source_branch = get_object_or_404(
+            WorkspaceBranch,
+            id=branch_id,
+            user=request.user,
+        )
+        if not user_can_access_project(request.user, source_branch.project):
+            raise Http404
 
         if source_branch.is_main:
             return Response(

@@ -77,19 +77,34 @@ export function detectWorkspaceType(workspace, projectLanguage = null) {
   return 'unknown'
 }
 
+function findWorkspaceFileByName(workspace, fileName) {
+  if (!fileName) return null
+  const target = String(fileName).toLowerCase()
+  return (
+    (workspace?.files || []).find(
+      (file) => (file.name || '').toLowerCase() === target
+    ) || null
+  )
+}
+
 export async function executeWorkspace(workspace, projectLanguage, options = {}) {
-  const { onStream, runServerPython } = options
+  const { onStream, runServerPython, entryFileName } = options
   const workspaceType = detectWorkspaceType(workspace, projectLanguage)
-  const mainFile = getMainExecutableFile(workspace, projectLanguage)
-  const mainContent = mainFile?.content || ''
+  const projectEntryFile = getMainExecutableFile(workspace, projectLanguage)
+  // Optional Run Code override; missing/unknown name → project entry (getMainExecutableFile).
+  const pythonEntryFile =
+    findWorkspaceFileByName(workspace, entryFileName) || projectEntryFile
+  const mainContent = projectEntryFile?.content || ''
 
   onStream?.('status', 'Executing workspace...')
 
   if (workspaceType === 'python') {
+    const entryName = pythonEntryFile?.name || 'main.py'
+    const entryContent = pythonEntryFile?.content || ''
     try {
       return await runPythonKernel({
         files: workspace.files || [],
-        entryFileName: mainFile?.name || 'main.py',
+        entryFileName: entryName,
         onStream,
       })
     } catch (kernelError) {
@@ -97,8 +112,8 @@ export async function executeWorkspace(workspace, projectLanguage, options = {})
         onStream?.('status', 'Falling back to server Python...')
         return runServerPython({
           files: workspace.files || [],
-          entryFileName: mainFile?.name || 'main.py',
-          code: mainContent,
+          entryFileName: entryName,
+          code: entryContent,
         })
       }
 
@@ -134,10 +149,12 @@ export async function executeWorkspace(workspace, projectLanguage, options = {})
   }
 
   if (projectLanguage === 'python' || executionLanguage === 'python') {
+    const entryName = pythonEntryFile?.name || 'main.py'
+    const entryContent = pythonEntryFile?.content || ''
     try {
       return await runPythonKernel({
         files: workspace.files || [],
-        entryFileName: mainFile?.name || 'main.py',
+        entryFileName: entryName,
         onStream,
       })
     } catch (kernelError) {
@@ -145,8 +162,8 @@ export async function executeWorkspace(workspace, projectLanguage, options = {})
         onStream?.('status', 'Falling back to server Python...')
         return runServerPython({
           files: workspace.files || [],
-          entryFileName: mainFile?.name || 'main.py',
-          code: mainContent,
+          entryFileName: entryName,
+          code: entryContent,
         })
       }
 
@@ -157,7 +174,7 @@ export async function executeWorkspace(workspace, projectLanguage, options = {})
   if (runServerPython) {
     return runServerPython({
       files: workspace.files || [],
-      entryFileName: mainFile?.name || 'main.py',
+      entryFileName: projectEntryFile?.name || 'main.py',
       code: mainContent,
     })
   }

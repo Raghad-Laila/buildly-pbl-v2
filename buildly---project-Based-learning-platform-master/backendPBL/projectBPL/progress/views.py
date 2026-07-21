@@ -1,7 +1,10 @@
 from rest_framework import permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from projects.models import Project
+from projects.views import (
+    IsCourseInstructor,
+    get_accessible_project_or_404,
+)
 from progress.models import ProjectProgress
 from django.utils import timezone
 from rest_framework.generics import get_object_or_404
@@ -9,31 +12,6 @@ from account.notifications import (
     create_project_graded_notification,
     create_project_submitted_notification,
 )
-
-class IsCourseInstructor(permissions.BasePermission):
-    """التحقق من أن المستخدم هو مشرف (أي مشرف في النظام)"""
-    
-    def has_permission(self, request, view):
-        # السماح للجميع بالوصول للقراءة فقط
-        if request.method in permissions.SAFE_METHODS:
-            return True
-        
-        # لإنشاء/تعديل مشروع، يجب أن يكون المستخدم مشرفاً (أي مشرف في النظام)
-        if not request.user.is_admin:
-            return False
-        
-        return True
-    
-    def has_object_permission(self, request, view, obj):
-        """أي مشرف يستطيع تعديل أي مشروع"""
-        if request.method in permissions.SAFE_METHODS:
-            return True
-        
-        # فقط المشرفين يمكنهم التعديل
-        if not request.user.is_admin:
-            return False
-        
-        return True
 
 class UserProjectProgressView(APIView):
     permission_classes = [permissions.IsAuthenticated]
@@ -56,9 +34,11 @@ class CompleteProjectView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def post(self, request, project_id):
+        project = get_accessible_project_or_404(request.user, project_id)
+
         progress, created = ProjectProgress.objects.get_or_create(
-            user=request.user, 
-            project_id=project_id
+            user=request.user,
+            project=project,
         )
 
         was_already_completed = progress.status == 'completed'
@@ -69,7 +49,6 @@ class CompleteProjectView(APIView):
         progress.save()
 
         if not was_already_completed:
-            project = get_object_or_404(Project, id=project_id)
             create_project_submitted_notification(user=request.user, project=project)
         
         return Response({'status': 'project completed successfully'})

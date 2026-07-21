@@ -14,6 +14,8 @@ import { projectsAPI } from '../services/api'
 import {
     addFile,
     deleteFile,
+    detectLanguageFromFile,
+    getActiveFile,
     getDefaultWorkspace,
     getMainExecutableFile,
     parseWorkspace,
@@ -35,13 +37,15 @@ import { getMonacoLanguage } from '../utils/frontendCodeRunner'
 import { resetJsKernel } from '../utils/jsKernel'
 import { resetPythonKernel } from '../utils/pythonKernel'
 import {
-    canRunTestsOnClient,
     runClientTests,
-    shouldUseWorkspaceFileTests,
+    resolveCheckCodePlan,
 } from '../utils/testRunner'
 import { linkResultsByIndex } from '../utils/testResultLinking'
 import { getProjectTestProgress } from '../utils/projectProgress'
-import { getPrimaryProjectLanguage } from '../utils/projectLanguages'
+import {
+    getPrimaryProjectLanguage,
+    getProjectLanguages,
+} from '../utils/projectLanguages'
 import {
     DOCK_HEIGHT_DEFAULT,
     DOCK_HEIGHT_MAX_RATIO,
@@ -572,7 +576,8 @@ const ProjectWork = () => {
         }
 
         try {
-            const raw = await executeWorkspace(currentWorkspace, projectLanguage, {
+            const activeFile = getActiveFile(currentWorkspace)
+            const executeOptions = {
                 onStream,
                 runServerPython: async ({ files, entryFileName, code } = {}) => {
                     const mountableFiles = (files || [])
@@ -601,7 +606,21 @@ const ProjectWork = () => {
                         hasPreview: false,
                     }
                 },
-            })
+            }
+
+            // Run Code only: execute the active Python tab when applicable.
+            if (
+                activeFile &&
+                detectLanguageFromFile(activeFile, projectLanguage) === 'python'
+            ) {
+                executeOptions.entryFileName = activeFile.name
+            }
+
+            const raw = await executeWorkspace(
+                currentWorkspace,
+                projectLanguage,
+                executeOptions
+            )
 
             const normalized = normalizeExecutionResult(raw, performance.now() - start)
             const streamed = finalizeStreamBlocks(streamBlocksRef.current)
@@ -644,16 +663,56 @@ const ProjectWork = () => {
         if (!workspace || runningTests || !hasCodeTasks) return
 
         const currentWorkspace = getWorkspaceSnapshot(workspaceRef, workspace)
-        const useWorkspaceTests = shouldUseWorkspaceFileTests(projectLanguage, tests)
+        const projectLanguages = getProjectLanguages(project)
 
-        if (useWorkspaceTests) {
-            const html = getWorkspaceFileContent(currentWorkspace, 'index.html').trim()
-            const css = getWorkspaceFileContent(currentWorkspace, 'style.css').trim()
+        // CHECK CODE ROUTING
+        const checkPlan = resolveCheckCodePlan({
+            languages: projectLanguages,
+            workspace: currentWorkspace,
+            tests,
+            projectLanguage,
+        })
 
-            if (projectLanguage === 'css' ? !css && !html : !html) {
-                setTestError('اكتب الكود أولاً قبل تشغيل الاختبارات.')
-                setTestResults(null)
-                return
+        if (checkPlan.mode === 'client') {
+            if (checkPlan.needsWorkspaceHtmlCss) {
+                const html = getWorkspaceFileContent(currentWorkspace, 'index.html').trim()
+                const css = getWorkspaceFileContent(currentWorkspace, 'style.css').trim()
+                if (!html && !css) {
+                    setTestError('اكتب الكود أولاً قبل تشغيل الاختبارات.')
+                    setTestResults(null)
+                    return
+                }
+            }
+
+            if (checkPlan.needsJsSource) {
+                const jsLanguageHint =
+                    projectLanguages.find((language) =>
+                        ['react', 'javascript', 'typescript'].includes(language)
+                    ) || 'javascript'
+                const jsFile = getMainExecutableFile(currentWorkspace, jsLanguageHint)
+                const extension = jsFile?.name?.split('.').pop()?.toLowerCase()
+                const jsLikeExtension = ['js', 'mjs', 'cjs', 'jsx', 'tsx', 'ts'].includes(
+                    extension
+                )
+                const jsContent = jsLikeExtension
+                    ? String(jsFile?.content || '').trim()
+                    : ''
+                const legacyCode = getStudentCode(currentWorkspace)
+
+                if (!jsContent && !legacyCode) {
+                    setTestError('اكتب الكود أولاً قبل تشغيل الاختبارات.')
+                    setTestResults(null)
+                    return
+                }
+            }
+
+            if (!checkPlan.needsWorkspaceHtmlCss && !checkPlan.needsJsSource) {
+                const code = getStudentCode(currentWorkspace)
+                if (!code) {
+                    setTestError('اكتب الكود أولاً قبل تشغيل الاختبارات.')
+                    setTestResults(null)
+                    return
+                }
             }
         } else {
             const code = getStudentCode(currentWorkspace)
@@ -680,16 +739,18 @@ const ProjectWork = () => {
         try {
             let payload
 
-            if (canRunTestsOnClient(projectLanguage)) {
+            // CHECK CODE ROUTING
+            if (checkPlan.mode === 'client') {
                 payload = runClientTests(getStudentCode(currentWorkspace), tests, {
                     workspace: currentWorkspace,
                     projectLanguage,
+                    languages: projectLanguages,
                 })
             } else {
                 const response = await projectsAPI.runTests(
                     id,
                     getStudentCode(currentWorkspace),
-                    projectLanguage
+                    checkPlan.mode === 'server-python' ? 'python' : projectLanguage
                 )
                 payload = {
                     results: response.data.results || [],
