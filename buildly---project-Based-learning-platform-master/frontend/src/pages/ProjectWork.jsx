@@ -999,8 +999,13 @@ const ProjectWork = () => {
         return false
     }
 
+    const testProgress = getProjectTestProgress(tests, testResults)
+    const canFinish =
+        isTaskCompleted() &&
+        (!testProgress.hasTests || testProgress.allPassed)
+
     const handleFinish = async () => {
-        if (!isTaskCompleted()) return
+        if (!canFinish) return
 
         try {
             await saveProjectWork()
@@ -1051,8 +1056,6 @@ const ProjectWork = () => {
         )
     }
 
-    const testProgress = getProjectTestProgress(tests, testResults)
-
     if (loading) return <div className="loading">Loading...</div>
     if (!project) return <div>Project not found</div>
 
@@ -1067,7 +1070,7 @@ const ProjectWork = () => {
                     type="button"
                     className="btn btn-success fcc-submit-btn"
                     onClick={handleFinish}
-                    disabled={!isTaskCompleted()}
+                    disabled={!canFinish}
                 >
                     تسليم المشروع
                 </button>
