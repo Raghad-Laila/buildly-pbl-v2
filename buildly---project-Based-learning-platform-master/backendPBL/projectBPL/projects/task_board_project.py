@@ -94,6 +94,7 @@ TASK_BOARD_PROJECT = {
 TASK_BOARD_TESTS = [
     {
         'name': '1. createTask returns a task object',
+        'story_index': 1,
         'description': 'createTask should return an object with id, title, status, and priority.',
         'test_code': (
             'const task = createTask(1, "Fix navbar", "todo", "high");\n'
@@ -105,6 +106,7 @@ TASK_BOARD_TESTS = [
     },
     {
         'name': '2. createTask validates status',
+        'story_index': 1,
         'description': 'createTask should reject invalid status values.',
         'test_code': (
             'let failed = false;\n'
@@ -116,6 +118,7 @@ TASK_BOARD_TESTS = [
     },
     {
         'name': '3. createTask validates priority',
+        'story_index': 1,
         'description': 'createTask should reject invalid priority values.',
         'test_code': (
             'let failed = false;\n'
@@ -127,6 +130,7 @@ TASK_BOARD_TESTS = [
     },
     {
         'name': '4. sortTasksByPriority orders tasks',
+        'story_index': 2,
         'description': 'sortTasksByPriority should order high before medium before low.',
         'test_code': (
             'const tasks = [\n'
@@ -143,6 +147,7 @@ TASK_BOARD_TESTS = [
     },
     {
         'name': '5. filterTasksByStatus filters tasks',
+        'story_index': 2,
         'description': 'filterTasksByStatus should return only matching tasks.',
         'test_code': (
             'const tasks = [\n'
@@ -159,6 +164,7 @@ TASK_BOARD_TESTS = [
     },
     {
         'name': '6. countTasksByStatus counts tasks',
+        'story_index': 3,
         'description': 'countTasksByStatus should return todo, doing, and done counts.',
         'test_code': (
             'const tasks = [\n'
@@ -176,6 +182,7 @@ TASK_BOARD_TESTS = [
     },
     {
         'name': '7. renderTaskCard includes task-card',
+        'story_index': 4,
         'description': 'renderTaskCard should return markup containing the task-card class.',
         'test_code': (
             'const markup = renderTaskCard(createTask(1, "Ship feature", "doing", "high"));\n'
@@ -186,6 +193,7 @@ TASK_BOARD_TESTS = [
     },
     {
         'name': '8. renderTaskCard shows title and priority',
+        'story_index': 4,
         'description': 'renderTaskCard should include the task title and priority.',
         'test_code': (
             'const markup = renderTaskCard(createTask(2, "Write tests", "todo", "medium"));\n'
@@ -197,6 +205,7 @@ TASK_BOARD_TESTS = [
     },
     {
         'name': '9. renderTaskCard shows status badge',
+        'story_index': 4,
         'description': 'renderTaskCard should include a status badge for the task.',
         'test_code': (
             'const markup = renderTaskCard(createTask(3, "Review PR", "done", "low"));\n'
@@ -208,6 +217,7 @@ TASK_BOARD_TESTS = [
     },
     {
         'name': '10. renderTaskBoard has task-board wrapper',
+        'story_index': 5,
         'description': 'renderTaskBoard should return markup with id task-board.',
         'test_code': (
             'const tasks = [createTask(1, "A", "todo", "high")];\n'
@@ -220,6 +230,7 @@ TASK_BOARD_TESTS = [
     },
     {
         'name': '11. renderTaskBoard has three columns',
+        'story_index': 5,
         'description': 'renderTaskBoard should include todo, doing, and done columns.',
         'test_code': (
             'const tasks = [createTask(1, "A", "todo", "low")];\n'
@@ -233,6 +244,7 @@ TASK_BOARD_TESTS = [
     },
     {
         'name': '12. renderTaskBoard renders multiple cards',
+        'story_index': 5,
         'description': 'renderTaskBoard should render a card for each task.',
         'test_code': (
             'const tasks = [\n'
@@ -247,6 +259,7 @@ TASK_BOARD_TESTS = [
     },
     {
         'name': '13. getBoardStyles uses flex layout',
+        'story_index': 6,
         'description': 'getBoardStyles should style the board with flexbox.',
         'test_code': (
             'const styles = getBoardStyles();\n'
@@ -258,6 +271,7 @@ TASK_BOARD_TESTS = [
     },
     {
         'name': '14. getBoardStyles styles task cards',
+        'story_index': 6,
         'description': 'getBoardStyles should include .task-card rules.',
         'test_code': (
             'const styles = getBoardStyles();\n'
@@ -268,6 +282,7 @@ TASK_BOARD_TESTS = [
     },
     {
         'name': '15. getBoardStyles includes priority classes',
+        'story_index': 6,
         'description': 'getBoardStyles should style high, medium, and low priorities.',
         'test_code': (
             'const styles = getBoardStyles();\n'
@@ -279,6 +294,7 @@ TASK_BOARD_TESTS = [
     },
     {
         'name': '16. formatPriorityLabel returns readable text',
+        'story_index': 7,
         'description': 'formatPriorityLabel should return a readable label.',
         'test_code': (
             'const label = formatPriorityLabel("high");\n'
@@ -289,6 +305,7 @@ TASK_BOARD_TESTS = [
     },
     {
         'name': '17. getTaskSummary returns summary text',
+        'story_index': 3,
         'description': 'getTaskSummary should return a non-empty summary string.',
         'test_code': (
             'const tasks = [\n'

@@ -1,4 +1,4 @@
-from django.core.management.base import BaseCommand
+from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
 
 from account.models import CustomUser
@@ -155,8 +155,17 @@ class Command(BaseCommand):
             ProjectTask.objects.filter(project=project).delete()
             Tests.objects.filter(project=project).delete()
 
-            for index, story in enumerate(data['stories'], start=1):
-                ProjectTask.objects.create(
+            stories = data['stories']
+            tests = data['tests']
+            if len(stories) != len(tests):
+                raise CommandError(
+                    f'Project "{data["title"]}": stories/tests count mismatch '
+                    f'({len(stories)} stories vs {len(tests)} tests).'
+                )
+
+            tasks_by_order = {}
+            for index, story in enumerate(stories, start=1):
+                task = ProjectTask.objects.create(
                     project=project,
                     title=story['title'],
                     description=story['description'],
@@ -166,10 +175,19 @@ class Command(BaseCommand):
                     expected_answer='',
                     teaching='',
                 )
+                tasks_by_order[index] = task
 
-            for test in data['tests']:
+            for index, test in enumerate(tests):
+                story_index = index + 1
+                task = tasks_by_order.get(story_index)
+                if task is None:
+                    raise CommandError(
+                        f'Project "{data["title"]}": test "{test.get("name", "<unknown>")}" '
+                        f'has position {story_index} but no ProjectTask with that order exists.'
+                    )
                 Tests.objects.create(
                     project=project,
+                    task=task,
                     name=test['name'],
                     description=test['description'],
                     test_code=test['test_code'],

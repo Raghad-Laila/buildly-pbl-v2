@@ -19,3 +19,37 @@ export function linkResultsByIndex(items, testResults) {
     }
   })
 }
+
+export function linkResultsByTask(stories, tests, testResults) {
+  const results = testResults?.results || []
+  const resultsByTestId = new Map()
+
+  for (const result of results) {
+    if (result?.id != null) {
+      resultsByTestId.set(result.id, result)
+    }
+  }
+
+  const storyList = stories || []
+  const testList = tests || []
+
+  return storyList.map((story) => {
+    const linkedTests = testList.filter((test) => test?.task === story.id)
+
+    if (!linkedTests.length) {
+      return { ...story, testStatus: null }
+    }
+
+    const linkedResults = linkedTests.map((test) => resultsByTestId.get(test.id))
+
+    if (linkedResults.some((result) => result == null)) {
+      return { ...story, testStatus: null }
+    }
+
+    if (linkedResults.some((result) => !result.passed)) {
+      return { ...story, testStatus: 'failed' }
+    }
+
+    return { ...story, testStatus: 'passed' }
+  })
+}

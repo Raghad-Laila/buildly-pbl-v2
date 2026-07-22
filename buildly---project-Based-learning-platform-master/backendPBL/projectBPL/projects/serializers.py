@@ -439,6 +439,7 @@ class TestsSerializer(serializers.ModelSerializer):
         fields = [
             'id',
             'project',
+            'task',
             'name',
             'description',
             'test_code',
@@ -448,7 +449,35 @@ class TestsSerializer(serializers.ModelSerializer):
             'updated_at',
         ]
         read_only_fields = ['id', 'created_at', 'updated_at']
-           
+
+    def validate(self, attrs):
+        task = attrs.get('task', serializers.empty)
+        if task is serializers.empty:
+            task = getattr(self.instance, 'task', None) if self.instance else None
+
+        if task is None:
+            return attrs
+
+        project = attrs.get('project', serializers.empty)
+        if project is serializers.empty:
+            if self.instance is not None:
+                project = self.instance.project
+            else:
+                project = None
+
+        if project is None:
+            raise serializers.ValidationError({
+                'task': _('Cannot validate task without a project.'),
+            })
+
+        project_id = project.pk if hasattr(project, 'pk') else project
+        if task.project_id != project_id:
+            raise serializers.ValidationError({
+                'task': _('Task must belong to the same project as the test.'),
+            })
+
+        return attrs
+
 
 class TaskSubmissionSerializer(serializers.ModelSerializer):
     class Meta:

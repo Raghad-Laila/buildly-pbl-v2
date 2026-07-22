@@ -40,7 +40,7 @@ import {
     runClientTests,
     resolveCheckCodePlan,
 } from '../utils/testRunner'
-import { linkResultsByIndex } from '../utils/testResultLinking'
+import { linkResultsByTask } from '../utils/testResultLinking'
 import { getProjectTestProgress } from '../utils/projectProgress'
 import {
     getPrimaryProjectLanguage,
@@ -823,24 +823,22 @@ const ProjectWork = () => {
             }
         }
 
-        const storiesByIndex = tasks.map((task, index) => ({
-            index,
-            title: task.title || '',
-            text: task.description?.trim() || task.title || '',
-        }))
-
         const failedTests = (testResults?.results || [])
-            .map((result, index) => ({ result, index }))
-            .filter(({ result }) => !result?.passed)
-            .map(({ result, index }) => {
+            .filter((result) => !result?.passed)
+            .map((result) => {
                 const meta =
-                    (result.id != null
-                        ? tests.find((test) => test.id === result.id)
-                        : null) || tests[index] || null
-                const story = storiesByIndex[index] || null
+                    result.id != null
+                        ? tests.find((test) => test.id === result.id) || null
+                        : null
+                const story =
+                    meta?.task != null
+                        ? tasks.find((task) => task.id === meta.task) || null
+                        : null
+                const storyTitle = story?.title || ''
+                const storyText = story?.description?.trim() || story?.title || ''
                 const requirementParts = [
-                    story?.title,
-                    story?.text && story.text !== story.title ? story.text : null,
+                    storyTitle,
+                    storyText && storyText !== storyTitle ? storyText : null,
                     meta?.description,
                 ].filter(Boolean)
 
@@ -1028,7 +1026,7 @@ const ProjectWork = () => {
         }))
         : []
 
-    const userStoriesWithStatus = linkResultsByIndex(userStories, testResults)
+    const userStoriesWithStatus = linkResultsByTask(userStories, tests, testResults)
 
     const availableHints = tasks
         .map((t, index) => ({ id: t.id, index, title: t.title, hint: t.hint }))

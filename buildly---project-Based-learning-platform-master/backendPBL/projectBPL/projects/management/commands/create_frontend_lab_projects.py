@@ -1,4 +1,4 @@
-from django.core.management.base import BaseCommand
+from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
 from django.db.models import Max
 
@@ -94,8 +94,9 @@ class Command(BaseCommand):
         return project
 
     def _seed_tasks_and_tests(self, project, project_data, tests):
+        tasks_by_order = {}
         for index, story in enumerate(project_data['stories'], start=1):
-            ProjectTask.objects.create(
+            task = ProjectTask.objects.create(
                 project=project,
                 title=story['title'],
                 description=story['description'],
@@ -105,10 +106,24 @@ class Command(BaseCommand):
                 expected_answer='',
                 teaching='',
             )
+            tasks_by_order[index] = task
 
         for test in tests:
+            if 'story_index' not in test:
+                raise CommandError(
+                    f'Project "{project.title}": test "{test.get("name", "<unknown>")}" '
+                    f'is missing story_index.'
+                )
+            story_index = test['story_index']
+            task = tasks_by_order.get(story_index)
+            if task is None:
+                raise CommandError(
+                    f'Project "{project.title}": test "{test.get("name", "<unknown>")}" '
+                    f'has story_index={story_index} but no ProjectTask with that order exists.'
+                )
             Tests.objects.create(
                 project=project,
+                task=task,
                 name=test['name'],
                 description=test['description'],
                 test_code=test['test_code'],

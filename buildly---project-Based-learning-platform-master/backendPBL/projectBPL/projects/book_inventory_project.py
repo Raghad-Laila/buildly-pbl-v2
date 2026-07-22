@@ -158,6 +158,7 @@ BOOK_INVENTORY_PROJECT = {
 BOOK_INVENTORY_TESTS = [
     {
         'name': '1. h1 text is Book Inventory',
+        'story_index': 1,
         'description': 'You should have an h1 element with the text Book Inventory.',
         'test_code': (
             'const h1 = getDoc().querySelector("h1");\n'
@@ -168,6 +169,7 @@ BOOK_INVENTORY_TESTS = [
     },
     {
         'name': '2. Only one h1 element',
+        'story_index': 1,
         'description': 'You should have only one h1 element.',
         'test_code': (
             'if (getDoc().querySelectorAll("h1").length !== 1) throw new Error("count");'
@@ -177,6 +179,7 @@ BOOK_INVENTORY_TESTS = [
     },
     {
         'name': '3. table element exists',
+        'story_index': 2,
         'description': 'You should have a table element.',
         'test_code': (
             'if (getDoc().querySelectorAll("table").length !== 1) throw new Error("table");'
@@ -186,6 +189,7 @@ BOOK_INVENTORY_TESTS = [
     },
     {
         'name': '4. thead and tbody inside table',
+        'story_index': 2,
         'description': 'You should have one thead element and one tbody element inside table.',
         'test_code': (
             'if (getDoc().querySelectorAll("table > thead").length !== 1) '
@@ -198,6 +202,7 @@ BOOK_INVENTORY_TESTS = [
     },
     {
         'name': '5. thead has one tr with 5 th elements',
+        'story_index': 2,
         'description': 'Inside thead there should be one tr with 5 th elements.',
         'test_code': (
             'if (getDoc().querySelectorAll("table > thead > tr").length !== 1) '
@@ -210,6 +215,7 @@ BOOK_INVENTORY_TESTS = [
     },
     {
         'name': '6. First column heading is Title',
+        'story_index': 2,
         'description': 'Your first column should have the text Title as the heading.',
         'test_code': (
             'const headings = getTableHeadings();\n'
@@ -220,6 +226,7 @@ BOOK_INVENTORY_TESTS = [
     },
     {
         'name': '7. Second column heading is Author',
+        'story_index': 2,
         'description': 'Your second column should have the text Author as the heading.',
         'test_code': (
             'const headings = getTableHeadings();\n'
@@ -230,6 +237,7 @@ BOOK_INVENTORY_TESTS = [
     },
     {
         'name': '8. Third column heading is Category',
+        'story_index': 2,
         'description': 'Your third column should have the text Category as the heading.',
         'test_code': (
             'const headings = getTableHeadings();\n'
@@ -240,6 +248,7 @@ BOOK_INVENTORY_TESTS = [
     },
     {
         'name': '9. Fourth column heading is Status',
+        'story_index': 2,
         'description': 'Your fourth column should have the text Status as the heading.',
         'test_code': (
             'const headings = getTableHeadings();\n'
@@ -250,6 +259,7 @@ BOOK_INVENTORY_TESTS = [
     },
     {
         'name': '10. Fifth column heading is Rate',
+        'story_index': 2,
         'description': 'Your fifth column should have the text Rate as the heading.',
         'test_code': (
             'const headings = getTableHeadings();\n'
@@ -260,6 +270,7 @@ BOOK_INVENTORY_TESTS = [
     },
     {
         'name': '11. Table has at least 4 rows',
+        'story_index': 3,
         'description': 'Your table should have at least four rows.',
         'test_code': (
             'if (getDoc().querySelectorAll("tr").length < 4) throw new Error("rows");'
@@ -269,6 +280,7 @@ BOOK_INVENTORY_TESTS = [
     },
     {
         'name': '12. Each tbody row has 5 columns',
+        'story_index': 3,
         'description': 'Each row should always have 5 columns.',
         'test_code': (
             'const rows = getTableBodyRows();\n'
@@ -282,6 +294,7 @@ BOOK_INVENTORY_TESTS = [
     },
     {
         'name': '13. tbody rows use read, to-read, or in-progress',
+        'story_index': 4,
         'description': (
             'Each table row inside the table body should have either the class read, '
             'to-read, or in-progress.'
@@ -302,6 +315,7 @@ BOOK_INVENTORY_TESTS = [
     },
     {
         'name': '14. Status column cells contain span elements',
+        'story_index': 5,
         'description': 'td elements of the Status column should contain a span element.',
         'test_code': (
             'const cells = getDoc().querySelectorAll("tbody tr td:nth-child(4)");\n'
@@ -316,6 +330,7 @@ BOOK_INVENTORY_TESTS = [
     },
     {
         'name': '15. Status spans have class status',
+        'story_index': 5,
         'description': 'Each span element of the Status column should have the class of status.',
         'test_code': (
             'const spans = getDoc().querySelectorAll("tbody tr td:nth-child(4) > span");\n'
@@ -329,6 +344,7 @@ BOOK_INVENTORY_TESTS = [
     },
     {
         'name': '16. Status text matches row class',
+        'story_index': 5,
         'description': (
             'Each status element should have the text Read, To Read, or In Progress, '
             'depending on the class of its row.'
@@ -355,6 +371,7 @@ BOOK_INVENTORY_TESTS = [
     },
     {
         'name': '17. Rate column cells contain span elements',
+        'story_index': 6,
         'description': 'td elements of the Rate column should contain a span element.',
         'test_code': (
             'const cells = getDoc().querySelectorAll("tbody tr td:last-child");\n'
@@ -369,6 +386,7 @@ BOOK_INVENTORY_TESTS = [
     },
     {
         'name': '18. Rate spans use rate as first class',
+        'story_index': 6,
         'description': (
             'Each span element which is a direct child of a td element of the Rate column '
             'should have the class of rate as the first class.'
@@ -385,6 +403,7 @@ BOOK_INVENTORY_TESTS = [
     },
     {
         'name': '19. Each rate span has 3 empty child spans',
+        'story_index': 6,
         'description': 'Each rate element should contain three empty span elements.',
         'test_code': (
             'const rates = getDoc().getElementsByClassName("rate");\n'
@@ -404,6 +423,7 @@ BOOK_INVENTORY_TESTS = [
     },
     {
         'name': '20. Read row rate spans include one, two, or three',
+        'story_index': 7,
         'description': (
             'rate elements placed inside read rows should have an additional class after rate '
             'with the value of either one, two, or three.'
@@ -423,6 +443,7 @@ BOOK_INVENTORY_TESTS = [
     },
     {
         'name': '21. Attribute selector for read rows',
+        'story_index': 8,
         'description': 'You should have an attribute selector to target rows that have the class of read.',
         'test_code': (
             'if (!cssHasRowAttrSelector("read")) throw new Error("selector");'
@@ -432,6 +453,7 @@ BOOK_INVENTORY_TESTS = [
     },
     {
         'name': '22. Read rows use linear-gradient background-image',
+        'story_index': 8,
         'description': (
             'You should use an attribute selector to target rows that have the class of read '
             'and set their background-image property to a linear gradient.'
@@ -447,6 +469,7 @@ BOOK_INVENTORY_TESTS = [
     },
     {
         'name': '23. Attribute selector for to-read rows',
+        'story_index': 8,
         'description': (
             'You should have an attribute selector to target rows that have the class of to-read.'
         ),
@@ -458,6 +481,7 @@ BOOK_INVENTORY_TESTS = [
     },
     {
         'name': '24. to-read rows use linear-gradient background-image',
+        'story_index': 8,
         'description': (
             'You should use an attribute selector to target rows that have the class of to-read '
             'and set their background-image property to a linear gradient.'
@@ -473,6 +497,7 @@ BOOK_INVENTORY_TESTS = [
     },
     {
         'name': '25. Attribute selector for in-progress rows',
+        'story_index': 8,
         'description': (
             'You should have an attribute selector to target rows that have the class of in-progress.'
         ),
@@ -484,6 +509,7 @@ BOOK_INVENTORY_TESTS = [
     },
     {
         'name': '26. in-progress rows use linear-gradient background-image',
+        'story_index': 8,
         'description': (
             'You should use an attribute selector to target rows that have the class of '
             'in-progress and set their background-image property to a linear gradient.'
@@ -499,6 +525,7 @@ BOOK_INVENTORY_TESTS = [
     },
     {
         'name': '27. span display is inline-block',
+        'story_index': 9,
         'description': 'You should set the display property of each span element to inline-block.',
         'test_code': (
             'if (!cssHasDeclaration("span", "display", "inline-block")) throw new Error("display");'
@@ -508,6 +535,7 @@ BOOK_INVENTORY_TESTS = [
     },
     {
         'name': '28. to-read status descendant selector exists',
+        'story_index': 9,
         'description': (
             'You should have an attribute selector to target the span elements with the class '
             'of status that are descendants of tr elements with the class of to-read.'
@@ -523,6 +551,7 @@ BOOK_INVENTORY_TESTS = [
     },
     {
         'name': '29. to-read status spans have border',
+        'story_index': 9,
         'description': (
             'You should use an attribute selector to target status spans inside to-read rows '
             'and set their border property.'
@@ -536,6 +565,7 @@ BOOK_INVENTORY_TESTS = [
     },
     {
         'name': '30. to-read status spans have background-image',
+        'story_index': 9,
         'description': (
             'You should use an attribute selector to target status spans inside to-read rows '
             'and set their background-image property.'
@@ -549,6 +579,7 @@ BOOK_INVENTORY_TESTS = [
     },
     {
         'name': '31. read status descendant selector exists',
+        'story_index': 9,
         'description': (
             'You should have an attribute selector to target the span elements with the class '
             'of status that are descendants of tr elements with the class of read.'
@@ -562,6 +593,7 @@ BOOK_INVENTORY_TESTS = [
     },
     {
         'name': '32. read status spans have border',
+        'story_index': 9,
         'description': (
             'You should use an attribute selector to target status spans inside read rows '
             'and set their border property.'
@@ -575,6 +607,7 @@ BOOK_INVENTORY_TESTS = [
     },
     {
         'name': '33. read status spans have background-image',
+        'story_index': 9,
         'description': (
             'You should use an attribute selector to target status spans inside read rows '
             'and set their background-image property.'
@@ -588,6 +621,7 @@ BOOK_INVENTORY_TESTS = [
     },
     {
         'name': '34. in-progress status descendant selector exists',
+        'story_index': 9,
         'description': (
             'You should have an attribute selector to target the span elements with the class '
             'of status that are descendants of tr elements with the class of in-progress.'
@@ -603,6 +637,7 @@ BOOK_INVENTORY_TESTS = [
     },
     {
         'name': '35. in-progress status spans have border',
+        'story_index': 9,
         'description': (
             'You should use an attribute selector to target status spans inside in-progress rows '
             'and set their border property.'
@@ -616,6 +651,7 @@ BOOK_INVENTORY_TESTS = [
     },
     {
         'name': '36. in-progress status spans have background-image',
+        'story_index': 9,
         'description': (
             'You should use an attribute selector to target status spans inside in-progress rows '
             'and set their background-image property.'
@@ -631,6 +667,7 @@ BOOK_INVENTORY_TESTS = [
     },
     {
         'name': '37. status and rate attribute selectors exist',
+        'story_index': 10,
         'description': (
             'You should have an attribute selector to target span elements with the class of '
             'status and span elements with the class value starting with rate.'
@@ -649,6 +686,7 @@ BOOK_INVENTORY_TESTS = [
     },
     {
         'name': '38. status and rate spans have height',
+        'story_index': 10,
         'description': (
             'You should use an attribute selector to target status spans and rate spans '
             'and set their height property.'
@@ -665,6 +703,7 @@ BOOK_INVENTORY_TESTS = [
     },
     {
         'name': '39. status and rate spans have width',
+        'story_index': 10,
         'description': (
             'You should use an attribute selector to target status spans and rate spans '
             'and set their width property.'
@@ -681,6 +720,7 @@ BOOK_INVENTORY_TESTS = [
     },
     {
         'name': '40. status and rate spans have padding',
+        'story_index': 10,
         'description': (
             'You should use an attribute selector to target status spans and rate spans '
             'and set their padding property.'
@@ -697,6 +737,7 @@ BOOK_INVENTORY_TESTS = [
     },
     {
         'name': '41. rate child span attribute selector exists',
+        'story_index': 11,
         'description': (
             'You should have an attribute selector to target span elements which are direct '
             'children of span elements with the class value starting with rate.'
@@ -709,6 +750,7 @@ BOOK_INVENTORY_TESTS = [
     },
     {
         'name': '42. rate child spans have border',
+        'story_index': 11,
         'description': (
             'You should use an attribute selector to target direct child spans of rate spans '
             'and set their border property.'
@@ -722,6 +764,7 @@ BOOK_INVENTORY_TESTS = [
     },
     {
         'name': '43. rate child spans have border-radius',
+        'story_index': 11,
         'description': (
             'You should use an attribute selector to target direct child spans of rate spans '
             'and set their border-radius property.'
@@ -735,6 +778,7 @@ BOOK_INVENTORY_TESTS = [
     },
     {
         'name': '44. rate child spans have margin',
+        'story_index': 11,
         'description': (
             'You should use an attribute selector to target direct child spans of rate spans '
             'and set their margin property.'
@@ -748,6 +792,7 @@ BOOK_INVENTORY_TESTS = [
     },
     {
         'name': '45. rate child spans have height',
+        'story_index': 11,
         'description': (
             'You should use an attribute selector to target direct child spans of rate spans '
             'and set their height property.'
@@ -761,6 +806,7 @@ BOOK_INVENTORY_TESTS = [
     },
     {
         'name': '46. rate child spans have width',
+        'story_index': 11,
         'description': (
             'You should use an attribute selector to target direct child spans of rate spans '
             'and set their width property.'
@@ -774,6 +820,7 @@ BOOK_INVENTORY_TESTS = [
     },
     {
         'name': '47. rate child spans have background-color',
+        'story_index': 11,
         'description': (
             'You should use an attribute selector to target direct child spans of rate spans '
             'and set their background-color property.'
@@ -787,6 +834,7 @@ BOOK_INVENTORY_TESTS = [
     },
     {
         'name': '48. one rating first descendant selector exists',
+        'story_index': 12,
         'description': (
             'You should have an attribute selector to target the first descendant of span '
             'elements that have the word one as a part of their class value.'
@@ -819,6 +867,7 @@ BOOK_INVENTORY_TESTS = [
     },
     {
         'name': '49. one rating first descendant uses linear-gradient',
+        'story_index': 12,
         'description': (
             'You should use an attribute selector to target the first descendant of span '
             'elements that have the word one as a part of their class value and set its '
@@ -835,6 +884,7 @@ BOOK_INVENTORY_TESTS = [
     },
     {
         'name': '50. two rating first two descendants selector exists',
+        'story_index': 12,
         'description': (
             'You should have an attribute selector to target the first two descendants of span '
             'elements that have the word two as a part of their class value.'
@@ -871,6 +921,7 @@ BOOK_INVENTORY_TESTS = [
     },
     {
         'name': '51. two rating first two descendants use linear-gradient',
+        'story_index': 12,
         'description': (
             'You should use an attribute selector to target the first two descendants of span '
             'elements that have the word two as a part of their class value and set their '
@@ -887,6 +938,7 @@ BOOK_INVENTORY_TESTS = [
     },
     {
         'name': '52. three rating descendant selector exists',
+        'story_index': 12,
         'description': (
             'You should have an attribute selector to target the span elements that are '
             'descendants of span elements that have the word three as a part of their class value.'
@@ -903,6 +955,7 @@ BOOK_INVENTORY_TESTS = [
     },
     {
         'name': '53. three rating descendants use linear-gradient',
+        'story_index': 12,
         'description': (
             'You should use an attribute selector to target the span elements that are '
             'descendants of span elements that have the word three as a part of their class '

@@ -125,6 +125,7 @@ SURVEY_FORM_PROJECT = {
 SURVEY_FORM_TESTS = [
     {
         'name': '1. h1#title exists',
+        'story_index': 1,
         'description': 'You should have an h1 element with an id of title.',
         'test_code': (
             'const el = getEl("title");\n'
@@ -135,6 +136,7 @@ SURVEY_FORM_TESTS = [
     },
     {
         'name': '2. #title is not empty',
+        'story_index': 1,
         'description': 'Your #title should not be empty.',
         'test_code': (
             'const el = getEl("title");\n'
@@ -145,6 +147,7 @@ SURVEY_FORM_TESTS = [
     },
     {
         'name': '3. p#description exists',
+        'story_index': 2,
         'description': 'You should have a p element with an id of description.',
         'test_code': (
             'const el = getEl("description");\n'
@@ -155,6 +158,7 @@ SURVEY_FORM_TESTS = [
     },
     {
         'name': '4. #description is not empty',
+        'story_index': 2,
         'description': 'Your #description should not be empty.',
         'test_code': (
             'const el = getEl("description");\n'
@@ -165,6 +169,7 @@ SURVEY_FORM_TESTS = [
     },
     {
         'name': '5. form#survey-form exists',
+        'story_index': 3,
         'description': 'You should have a form element with an id of survey-form.',
         'test_code': (
             'const el = getEl("survey-form");\n'
@@ -175,6 +180,7 @@ SURVEY_FORM_TESTS = [
     },
     {
         'name': '6. input#name exists',
+        'story_index': 4,
         'description': 'You should have an input element with an id of name.',
         'test_code': (
             'const el = getEl("name");\n'
@@ -185,6 +191,7 @@ SURVEY_FORM_TESTS = [
     },
     {
         'name': '7. #name type is text',
+        'story_index': 4,
         'description': 'Your #name should have a type of text.',
         'test_code': (
             'const el = getEl("name");\n'
@@ -195,6 +202,7 @@ SURVEY_FORM_TESTS = [
     },
     {
         'name': '8. #name is required',
+        'story_index': 4,
         'description': 'Your #name should require input.',
         'test_code': (
             'const el = getEl("name");\n'
@@ -205,6 +213,7 @@ SURVEY_FORM_TESTS = [
     },
     {
         'name': '9. #name inside #survey-form',
+        'story_index': 4,
         'description': 'Your #name should be a descendant of #survey-form.',
         'test_code': (
             'if (!isDescendantOf("name", "survey-form")) throw new Error("descendant");'
@@ -214,6 +223,7 @@ SURVEY_FORM_TESTS = [
     },
     {
         'name': '10. input#email exists',
+        'story_index': 5,
         'description': 'You should have an input element with an id of email.',
         'test_code': (
             'const el = getEl("email");\n'
@@ -224,6 +234,7 @@ SURVEY_FORM_TESTS = [
     },
     {
         'name': '11. #email type is email',
+        'story_index': 5,
         'description': 'Your #email should have a type of email.',
         'test_code': (
             'const el = getEl("email");\n'
@@ -234,6 +245,7 @@ SURVEY_FORM_TESTS = [
     },
     {
         'name': '12. #email is required',
+        'story_index': 5,
         'description': 'Your #email should require input.',
         'test_code': (
             'const el = getEl("email");\n'
@@ -244,6 +256,7 @@ SURVEY_FORM_TESTS = [
     },
     {
         'name': '13. #email inside #survey-form',
+        'story_index': 5,
         'description': 'Your #email should be a descendant of #survey-form.',
         'test_code': (
             'if (!isDescendantOf("email", "survey-form")) throw new Error("descendant");'
@@ -253,6 +266,7 @@ SURVEY_FORM_TESTS = [
     },
     {
         'name': '14. input#number exists',
+        'story_index': 6,
         'description': 'You should have an input element with an id of number.',
         'test_code': (
             'const el = getEl("number");\n'
@@ -263,6 +277,7 @@ SURVEY_FORM_TESTS = [
     },
     {
         'name': '15. #number inside #survey-form',
+        'story_index': 6,
         'description': 'Your #number should be a descendant of #survey-form.',
         'test_code': (
             'if (!isDescendantOf("number", "survey-form")) throw new Error("descendant");'
@@ -272,6 +287,7 @@ SURVEY_FORM_TESTS = [
     },
     {
         'name': '16. #number type is number',
+        'story_index': 6,
         'description': 'Your #number should have a type of number.',
         'test_code': (
             'const el = getEl("number");\n'
@@ -282,6 +298,7 @@ SURVEY_FORM_TESTS = [
     },
     {
         'name': '17. #number has min',
+        'story_index': 6,
         'description': 'Your #number should have a min attribute with a numeric value.',
         'test_code': (
             'const el = getEl("number");\n'
@@ -292,6 +309,7 @@ SURVEY_FORM_TESTS = [
     },
     {
         'name': '18. #number has max',
+        'story_index': 6,
         'description': 'Your #number should have a max attribute with a numeric value.',
         'test_code': (
             'const el = getEl("number");\n'
@@ -302,6 +320,7 @@ SURVEY_FORM_TESTS = [
     },
     {
         'name': '19. label#name-label exists',
+        'story_index': 7,
         'description': 'You should have a label element with an id of name-label.',
         'test_code': (
             'const el = getEl("name-label");\n'
@@ -312,6 +331,7 @@ SURVEY_FORM_TESTS = [
     },
     {
         'name': '20. label#email-label exists',
+        'story_index': 7,
         'description': 'You should have a label element with an id of email-label.',
         'test_code': (
             'const el = getEl("email-label");\n'
@@ -322,6 +342,7 @@ SURVEY_FORM_TESTS = [
     },
     {
         'name': '21. label#number-label exists',
+        'story_index': 7,
         'description': 'You should have a label element with an id of number-label.',
         'test_code': (
             'const el = getEl("number-label");\n'
@@ -332,6 +353,7 @@ SURVEY_FORM_TESTS = [
     },
     {
         'name': '22. #name-label has text',
+        'story_index': 7,
         'description': 'Your #name-label should contain text that describes the input.',
         'test_code': (
             'const el = getEl("name-label");\n'
@@ -342,6 +364,7 @@ SURVEY_FORM_TESTS = [
     },
     {
         'name': '23. #email-label has text',
+        'story_index': 7,
         'description': 'Your #email-label should contain text that describes the input.',
         'test_code': (
             'const el = getEl("email-label");\n'
@@ -352,6 +375,7 @@ SURVEY_FORM_TESTS = [
     },
     {
         'name': '24. #number-label has text',
+        'story_index': 7,
         'description': 'Your #number-label should contain text that describes the input.',
         'test_code': (
             'const el = getEl("number-label");\n'
@@ -362,6 +386,7 @@ SURVEY_FORM_TESTS = [
     },
     {
         'name': '25. #name-label inside #survey-form',
+        'story_index': 7,
         'description': 'Your #name-label should be a descendant of #survey-form.',
         'test_code': (
             'if (!isDescendantOf("name-label", "survey-form")) throw new Error("descendant");'
@@ -371,6 +396,7 @@ SURVEY_FORM_TESTS = [
     },
     {
         'name': '26. #email-label inside #survey-form',
+        'story_index': 7,
         'description': 'Your #email-label should be a descendant of #survey-form.',
         'test_code': (
             'if (!isDescendantOf("email-label", "survey-form")) throw new Error("descendant");'
@@ -380,6 +406,7 @@ SURVEY_FORM_TESTS = [
     },
     {
         'name': '27. #number-label inside #survey-form',
+        'story_index': 7,
         'description': 'Your #number-label should be a descendant of #survey-form.',
         'test_code': (
             'if (!isDescendantOf("number-label", "survey-form")) throw new Error("descendant");'
@@ -389,6 +416,7 @@ SURVEY_FORM_TESTS = [
     },
     {
         'name': '28. #name has placeholder',
+        'story_index': 8,
         'description': 'Your #name should have a placeholder attribute and value.',
         'test_code': (
             'const el = getEl("name");\n'
@@ -400,6 +428,7 @@ SURVEY_FORM_TESTS = [
     },
     {
         'name': '29. #email has placeholder',
+        'story_index': 8,
         'description': 'Your #email should have a placeholder attribute and value.',
         'test_code': (
             'const el = getEl("email");\n'
@@ -411,6 +440,7 @@ SURVEY_FORM_TESTS = [
     },
     {
         'name': '30. #number has placeholder',
+        'story_index': 8,
         'description': 'Your #number should have a placeholder attribute and value.',
         'test_code': (
             'const el = getEl("number");\n'
@@ -422,6 +452,7 @@ SURVEY_FORM_TESTS = [
     },
     {
         'name': '31. select#dropdown exists',
+        'story_index': 9,
         'description': 'You should have a select field with an id of dropdown.',
         'test_code': (
             'const el = getEl("dropdown");\n'
@@ -432,6 +463,7 @@ SURVEY_FORM_TESTS = [
     },
     {
         'name': '32. #dropdown has 2+ options',
+        'story_index': 9,
         'description': (
             'Your #dropdown should have at least two selectable (not disabled) option elements.'
         ),
@@ -446,6 +478,7 @@ SURVEY_FORM_TESTS = [
     },
     {
         'name': '33. #dropdown inside #survey-form',
+        'story_index': 9,
         'description': 'Your #dropdown should be a descendant of #survey-form.',
         'test_code': (
             'if (!isDescendantOf("dropdown", "survey-form")) throw new Error("descendant");'
@@ -455,6 +488,7 @@ SURVEY_FORM_TESTS = [
     },
     {
         'name': '34. At least 2 radio inputs',
+        'story_index': 10,
         'description': 'You should have at least two input elements with a type of radio.',
         'test_code': (
             'if (getDoc().querySelectorAll(\'input[type="radio"]\').length < 2) '
@@ -465,6 +499,7 @@ SURVEY_FORM_TESTS = [
     },
     {
         'name': '35. 2+ radios inside #survey-form',
+        'story_index': 10,
         'description': (
             'You should have at least two radio buttons that are descendants of #survey-form.'
         ),
@@ -476,6 +511,7 @@ SURVEY_FORM_TESTS = [
     },
     {
         'name': '36. All radios have value',
+        'story_index': 10,
         'description': 'All your radio buttons should have a value attribute and value.',
         'test_code': (
             'const radios = getDoc().querySelectorAll(\'input[type="radio"]\');\n'
@@ -490,6 +526,7 @@ SURVEY_FORM_TESTS = [
     },
     {
         'name': '37. All radios have name',
+        'story_index': 10,
         'description': 'All your radio buttons should have a name attribute and value.',
         'test_code': (
             'const radios = getDoc().querySelectorAll(\'input[type="radio"]\');\n'
@@ -504,6 +541,7 @@ SURVEY_FORM_TESTS = [
     },
     {
         'name': '38. Each radio group has 2+ buttons',
+        'story_index': 10,
         'description': 'Every radio button group should have at least 2 radio buttons.',
         'test_code': (
             'const radios = getDoc().querySelectorAll(\'input[type="radio"]\');\n'
@@ -521,6 +559,7 @@ SURVEY_FORM_TESTS = [
     },
     {
         'name': '39. 2+ checkboxes inside #survey-form',
+        'story_index': 11,
         'description': (
             'You should have at least two input elements with a type of checkbox '
             'that are descendants of #survey-form.'
@@ -533,6 +572,7 @@ SURVEY_FORM_TESTS = [
     },
     {
         'name': '40. All checkboxes have value',
+        'story_index': 11,
         'description': (
             'All your checkboxes inside #survey-form should have a value attribute and value.'
         ),
@@ -549,6 +589,7 @@ SURVEY_FORM_TESTS = [
     },
     {
         'name': '41. textarea inside #survey-form',
+        'story_index': 12,
         'description': (
             'You should have at least one textarea element that is a descendant of #survey-form.'
         ),
@@ -561,6 +602,7 @@ SURVEY_FORM_TESTS = [
     },
     {
         'name': '42. #submit exists',
+        'story_index': 13,
         'description': 'You should have an input or button element with an id of submit.',
         'test_code': (
             'const el = getEl("submit");\n'
@@ -572,6 +614,7 @@ SURVEY_FORM_TESTS = [
     },
     {
         'name': '43. #submit type is submit',
+        'story_index': 13,
         'description': 'Your #submit should have a type of submit.',
         'test_code': (
             'const el = getEl("submit");\n'
@@ -582,6 +625,7 @@ SURVEY_FORM_TESTS = [
     },
     {
         'name': '44. #submit inside #survey-form',
+        'story_index': 13,
         'description': 'Your #submit should be a descendant of #survey-form.',
         'test_code': (
             'if (!isDescendantOf("submit", "survey-form")) throw new Error("descendant");'

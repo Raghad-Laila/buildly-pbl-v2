@@ -94,6 +94,7 @@ PRODUCT_CATALOG_PROJECT = {
 PRODUCT_CATALOG_TESTS = [
     {
         'name': '1. createProduct returns a product object',
+        'story_index': 1,
         'description': 'createProduct should return an object with the expected fields.',
         'test_code': (
             'const product = createProduct(1, "Notebook", 12.5, "stationery", true);\n'
@@ -107,6 +108,7 @@ PRODUCT_CATALOG_TESTS = [
     },
     {
         'name': '2. formatPrice formats values',
+        'story_index': 1,
         'description': 'formatPrice should return a formatted price string.',
         'test_code': (
             'const formatted = formatPrice(12.5);\n'
@@ -117,6 +119,7 @@ PRODUCT_CATALOG_TESTS = [
     },
     {
         'name': '3. filterProductsByCategory filters products',
+        'story_index': 2,
         'description': 'filterProductsByCategory should return only matching products.',
         'test_code': (
             'const products = [\n'
@@ -133,6 +136,7 @@ PRODUCT_CATALOG_TESTS = [
     },
     {
         'name': '4. sortProductsByPrice ascending',
+        'story_index': 2,
         'description': 'sortProductsByPrice should sort products ascending by price.',
         'test_code': (
             'const products = [\n'
@@ -148,6 +152,7 @@ PRODUCT_CATALOG_TESTS = [
     },
     {
         'name': '5. sortProductsByPrice descending',
+        'story_index': 2,
         'description': 'sortProductsByPrice should sort products descending by price.',
         'test_code': (
             'const products = [\n'
@@ -163,6 +168,7 @@ PRODUCT_CATALOG_TESTS = [
     },
     {
         'name': '6. getInStockCount counts in-stock products',
+        'story_index': 3,
         'description': 'getInStockCount should count only in-stock products.',
         'test_code': (
             'const products = [\n'
@@ -177,6 +183,7 @@ PRODUCT_CATALOG_TESTS = [
     },
     {
         'name': '7. ProductCard includes product-card class',
+        'story_index': 4,
         'description': 'ProductCard should return JSX containing product-card.',
         'test_code': (
             'const jsx = ProductCard({ name: "Notebook", price: 12.5, category: "stationery", inStock: true });\n'
@@ -187,6 +194,7 @@ PRODUCT_CATALOG_TESTS = [
     },
     {
         'name': '8. ProductCard shows product details',
+        'story_index': 4,
         'description': 'ProductCard should show name, price, and category.',
         'test_code': (
             'const jsx = ProductCard({ name: "Notebook", price: 12.5, category: "stationery", inStock: true });\n'
@@ -199,6 +207,7 @@ PRODUCT_CATALOG_TESTS = [
     },
     {
         'name': '9. ProductCard shows stock badge',
+        'story_index': 4,
         'description': 'ProductCard should render an in-stock or out-of-stock badge.',
         'test_code': (
             'const inStock = ProductCard({ name: "Pen", price: 2, category: "stationery", inStock: true });\n'
@@ -211,6 +220,7 @@ PRODUCT_CATALOG_TESTS = [
     },
     {
         'name': '10. ProductList renders product-list',
+        'story_index': 5,
         'description': 'ProductList should return JSX with class product-list.',
         'test_code': (
             'const products = [createProduct(1, "Pen", 2, "stationery", true)];\n'
@@ -222,6 +232,7 @@ PRODUCT_CATALOG_TESTS = [
     },
     {
         'name': '11. ProductList renders multiple cards',
+        'story_index': 5,
         'description': 'ProductList should render a card for each product.',
         'test_code': (
             'const products = [\n'
@@ -236,6 +247,7 @@ PRODUCT_CATALOG_TESTS = [
     },
     {
         'name': '12. CatalogHeader renders header classes',
+        'story_index': 6,
         'description': 'CatalogHeader should return the required header markup.',
         'test_code': (
             'const jsx = CatalogHeader({ title: "Shop", subtitle: "Fresh picks", productCount: 4 });\n'
@@ -248,6 +260,7 @@ PRODUCT_CATALOG_TESTS = [
     },
     {
         'name': '13. renderEmptyState renders empty state',
+        'story_index': 3,
         'description': 'renderEmptyState should return JSX for an empty catalog.',
         'test_code': (
             'const jsx = renderEmptyState("No products found");\n'
@@ -259,6 +272,7 @@ PRODUCT_CATALOG_TESTS = [
     },
     {
         'name': '14. CatalogPage composes the page',
+        'story_index': 7,
         'description': 'CatalogPage should return JSX with class catalog-page.',
         'test_code': (
             'const products = [createProduct(1, "Pen", 2, "stationery", true)];\n'
@@ -272,6 +286,7 @@ PRODUCT_CATALOG_TESTS = [
     },
     {
         'name': '15. getCatalogStyles styles catalog-page',
+        'story_index': 8,
         'description': 'getCatalogStyles should include catalog-page rules.',
         'test_code': (
             'const styles = getCatalogStyles();\n'
@@ -282,6 +297,7 @@ PRODUCT_CATALOG_TESTS = [
     },
     {
         'name': '16. getCatalogStyles styles product list',
+        'story_index': 8,
         'description': 'getCatalogStyles should include product-list and product-card rules.',
         'test_code': (
             'const styles = getCatalogStyles();\n'
@@ -293,6 +309,7 @@ PRODUCT_CATALOG_TESTS = [
     },
     {
         'name': '17. getCatalogStyles uses grid or flex layout',
+        'story_index': 8,
         'description': 'getCatalogStyles should use Grid or Flexbox for layout.',
         'test_code': (
             'const styles = getCatalogStyles();\n'
@@ -303,6 +320,7 @@ PRODUCT_CATALOG_TESTS = [
     },
     {
         'name': '18. getCatalogStyles styles stock badges',
+        'story_index': 8,
         'description': 'getCatalogStyles should style in-stock and out-of-stock badges.',
         'test_code': (
             'const styles = getCatalogStyles();\n'

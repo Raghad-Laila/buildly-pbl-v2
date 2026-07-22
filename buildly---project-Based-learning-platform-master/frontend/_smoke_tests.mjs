@@ -1,5 +1,5 @@
 import { testUsesHtmlCssWorkspace, shouldUseWorkspaceFileTests, getClientTestSourceCode, runClientTests } from './src/utils/testRunner.js'
-import { linkResultsByIndex } from './src/utils/testResultLinking.js'
+import { linkResultsByIndex, linkResultsByTask } from './src/utils/testResultLinking.js'
 
 function assert(cond, msg) {
   if (!cond) {
@@ -85,5 +85,61 @@ const linked = linkResultsByIndex(
 )
 assert(linked[0].testStatus === 'passed', 'fuzzy link story0')
 assert(linked[1].testStatus === 'failed', 'fuzzy link story1')
+
+const taskStories = [
+  { id: 10, title: 'Story with many tests' },
+  { id: 20, title: 'Story with no tests' },
+]
+const taskTests = [
+  { id: 1, task: 10, name: 'a' },
+  { id: 2, task: 10, name: 'b' },
+  { id: 3, task: 10, name: 'c' },
+  { id: 99, task: null, name: 'unlinked' },
+]
+
+const allPassedByTask = linkResultsByTask(taskStories, taskTests, {
+  results: [
+    { id: 1, passed: true },
+    { id: 2, passed: true },
+    { id: 3, passed: true },
+    { id: 99, passed: false },
+  ],
+})
+assert(allPassedByTask[0].testStatus === 'passed', 'all linked tests passed')
+assert(allPassedByTask[1].testStatus === null, 'story with no linked tests')
+
+const anyFailedByTask = linkResultsByTask(taskStories, taskTests, {
+  results: [
+    { id: 1, passed: true },
+    { id: 2, passed: false },
+    { id: 3, passed: true },
+    { id: 99, passed: true },
+  ],
+})
+assert(anyFailedByTask[0].testStatus === 'failed', 'any linked failure fails story')
+assert(anyFailedByTask[1].testStatus === null, 'unlinked story stays null')
+
+const missingResultByTask = linkResultsByTask(taskStories, taskTests, {
+  results: [
+    { id: 1, passed: true },
+    { id: 3, passed: true },
+  ],
+})
+assert(missingResultByTask[0].testStatus === null, 'missing linked result => null')
+
+const unlinkedIgnored = linkResultsByTask(
+  [{ id: 10, title: 'Only story' }],
+  [
+    { id: 1, task: 10, name: 'linked' },
+    { id: 99, task: null, name: 'orphan' },
+  ],
+  {
+    results: [
+      { id: 1, passed: true },
+      { id: 99, passed: false },
+    ],
+  }
+)
+assert(unlinkedIgnored[0].testStatus === 'passed', 'unlinked tests ignored for story status')
 
 console.log('All frontend test-routing checks passed')

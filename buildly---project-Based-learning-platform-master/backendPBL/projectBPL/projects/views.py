@@ -989,6 +989,32 @@ class CodeQualityReviewView(APIView):
         if not user_can_access_project(request.user, project):
             return Response({'error': 'المشروع غير موجود'}, status=status.HTTP_404_NOT_FOUND)
 
+        if not test_summary:
+            return Response(
+                {
+                    'error': (
+                        'Code quality review requires test_summary showing all '
+                        'project tests have passed.'
+                    ),
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        total = int(test_summary.get('total', 0) or 0)
+        passed = int(test_summary.get('passed', 0) or 0)
+        failed = int(test_summary.get('failed', 0) or 0)
+
+        if total <= 0 or failed != 0 or passed != total:
+            return Response(
+                {
+                    'error': (
+                        'Code quality review is only available after all '
+                        'project tests pass.'
+                    ),
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
         result = CodeQualityReviewService().review(
             project=project,
             files=files,

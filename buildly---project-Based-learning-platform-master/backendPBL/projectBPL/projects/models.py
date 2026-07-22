@@ -339,6 +339,14 @@ class Tests(models.Model):
         verbose_name=_('Project ID'),
     )
 
+    task = models.ForeignKey(
+        ProjectTask,
+        null=True,
+        blank=True,
+        related_name='tests',
+        on_delete=models.SET_NULL,
+    )
+
     name = models.CharField(max_length=200, verbose_name=_('Name'))
 
     description = models.TextField(verbose_name=_('Description'))

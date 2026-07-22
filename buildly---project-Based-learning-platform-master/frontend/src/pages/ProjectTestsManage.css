@@ -56,6 +56,18 @@
   margin-right: 10px;
 }
 
+.test-manage-story-link {
+  margin: 8px 0 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--primary-color);
+}
+
+.test-manage-story-link.is-unlinked {
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
 .test-manage-index {
   display: inline-flex;
   align-items: center;
@@ -146,7 +158,8 @@
 }
 
 .tests-form input,
-.tests-form textarea {
+.tests-form textarea,
+.tests-form select {
   width: 100%;
   padding: 10px 12px;
   border: 1px solid var(--border-color);

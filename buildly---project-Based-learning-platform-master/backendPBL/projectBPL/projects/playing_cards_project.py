@@ -93,6 +93,7 @@ PLAYING_CARDS_PROJECT = {
 PLAYING_CARDS_TESTS = [
     {
         'name': '1. main#playing-cards exists',
+        'story_index': 1,
         'description': 'You should have a main element with an id of playing-cards.',
         'test_code': (
             'const el = getEl("playing-cards");\n'
@@ -103,6 +104,7 @@ PLAYING_CARDS_TESTS = [
     },
     {
         'name': '2. At least 3 .card in #playing-cards',
+        'story_index': 2,
         'description': (
             'Inside your #playing-cards element, you should have at least three '
             'div elements with a class of card.'
@@ -119,6 +121,7 @@ PLAYING_CARDS_TESTS = [
     },
     {
         'name': '3. .card has width and height in CSS',
+        'story_index': 4,
         'description': (
             'Each of your .card elements should have a width and a height set in your CSS.'
         ),
@@ -131,6 +134,7 @@ PLAYING_CARDS_TESTS = [
     },
     {
         'name': '4. Each .card has exactly 3 div children',
+        'story_index': 3,
         'description': (
             'Each of your .card elements should have exactly three div elements as children.'
         ),
@@ -151,6 +155,7 @@ PLAYING_CARDS_TESTS = [
     },
     {
         'name': '5. .left in each .card',
+        'story_index': 3,
         'description': (
             'Inside each of your .card elements, you should have a div with a class of left.'
         ),
@@ -171,6 +176,7 @@ PLAYING_CARDS_TESTS = [
     },
     {
         'name': '6. .middle in each .card',
+        'story_index': 3,
         'description': (
             'Inside each of your .card elements, you should have a div with a class of middle.'
         ),
@@ -191,6 +197,7 @@ PLAYING_CARDS_TESTS = [
     },
     {
         'name': '7. .right in each .card',
+        'story_index': 3,
         'description': (
             'Inside each of your .card elements, you should have a div with a class of right.'
         ),
@@ -211,6 +218,7 @@ PLAYING_CARDS_TESTS = [
     },
     {
         'name': '8. #playing-cards display flex',
+        'story_index': 5,
         'description': 'Your #playing-cards selector should set display to flex.',
         'test_code': (
             'if (!cssHasDeclaration("#playing-cards", "display", "flex")) '
@@ -221,6 +229,7 @@ PLAYING_CARDS_TESTS = [
     },
     {
         'name': '9. #playing-cards justify-content center',
+        'story_index': 5,
         'description': 'Your #playing-cards selector should set justify-content to center.',
         'test_code': (
             'if (!cssHasDeclaration("#playing-cards", "justify-content", "center")) '
@@ -231,6 +240,7 @@ PLAYING_CARDS_TESTS = [
     },
     {
         'name': '10. #playing-cards flex-wrap wrap',
+        'story_index': 5,
         'description': 'Your #playing-cards selector should set flex-wrap to wrap.',
         'test_code': (
             'if (!cssHasDeclaration("#playing-cards", "flex-wrap", "wrap")) '
@@ -241,6 +251,7 @@ PLAYING_CARDS_TESTS = [
     },
     {
         'name': '11. #playing-cards gap 20px',
+        'story_index': 5,
         'description': 'Your #playing-cards selector should set gap to 20px.',
         'test_code': (
             'if (!cssHasDeclaration("#playing-cards", "gap", "20px")) '
@@ -251,6 +262,7 @@ PLAYING_CARDS_TESTS = [
     },
     {
         'name': '12. .card display flex',
+        'story_index': 6,
         'description': 'Your .card selector should set display to flex.',
         'test_code': (
             'if (!cssHasDeclaration(".card", "display", "flex")) '
@@ -261,6 +273,7 @@ PLAYING_CARDS_TESTS = [
     },
     {
         'name': '13. .card justify-content space-between',
+        'story_index': 6,
         'description': 'Your .card selector should set justify-content to space-between.',
         'test_code': (
             'if (!cssHasDeclaration(".card", "justify-content", "space-between")) '
@@ -271,6 +284,7 @@ PLAYING_CARDS_TESTS = [
     },
     {
         'name': '14. .left align-self flex-start',
+        'story_index': 7,
         'description': 'Your .left selector should set align-self to flex-start.',
         'test_code': (
             'if (!cssHasDeclaration(".left", "align-self", "flex-start")) '
@@ -281,6 +295,7 @@ PLAYING_CARDS_TESTS = [
     },
     {
         'name': '15. .middle align-self center',
+        'story_index': 7,
         'description': 'Your .middle selector should set align-self to center.',
         'test_code': (
             'if (!cssHasDeclaration(".middle", "align-self", "center")) '
@@ -291,6 +306,7 @@ PLAYING_CARDS_TESTS = [
     },
     {
         'name': '16. .right align-self flex-end',
+        'story_index': 7,
         'description': 'Your .right selector should set align-self to flex-end.',
         'test_code': (
             'if (!cssHasDeclaration(".right", "align-self", "flex-end")) '
@@ -301,6 +317,7 @@ PLAYING_CARDS_TESTS = [
     },
     {
         'name': '17. .middle display flex',
+        'story_index': 8,
         'description': 'Your .middle selector should set display to flex.',
         'test_code': (
             'if (!cssHasDeclaration(".middle", "display", "flex")) '
@@ -311,6 +328,7 @@ PLAYING_CARDS_TESTS = [
     },
     {
         'name': '18. .middle flex-direction column',
+        'story_index': 8,
         'description': 'Your .middle selector should set flex-direction to column.',
         'test_code': (
             'if (!cssHasDeclaration(".middle", "flex-direction", "column")) '
