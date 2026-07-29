@@ -71,7 +71,3 @@ python manage.py runserver
 ## 📄 License
 
 This project is part of a graduation requirement at the Syrian Private University – Faculty of Artificial Intelligence Engineering. For academic use only.
-
-`
-
----
