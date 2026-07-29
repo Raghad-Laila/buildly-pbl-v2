@@ -1,6 +1,10 @@
 """Survey Form project definition for Frontend Mastery."""
 
 SURVEY_FORM_TITLE = 'Build a Survey Form'
+SURVEY_FORM_LEGACY_TITLES = (
+    'Build a Survey Form',
+    '[Buildly] بناء نموذج استبيان',
+)
 
 SURVEY_FORM_PROJECT = {
     'title': SURVEY_FORM_TITLE,
@@ -8,116 +12,112 @@ SURVEY_FORM_PROJECT = {
     'languages': ['html', 'css'],
     'estimated_time': 4,
     'description': (
-        'Build an app that is functionally similar to the example project in the start file. '
-        'Try not to copy the example project, give it your own personal style.'
+        'ابنِ تطبيقاً مشابهاً لمثال ملف البداية من ناحية الوظيفة. '
+        'حاول ألا تنسخ المثال حرفياً، وأضف أسلوبك الشخصي في التصميم.'
     ),
     'objectives': (
-        'Fulfill the user stories below and get all the tests to pass to complete the lab.'
+        'نفّذ قصص المستخدم أدناه واجتز كل الاختبارات لإكمال المختبر.'
     ),
     'stories': [
         {
-            'title': 'Page title',
+            'title': 'عنوان الصفحة',
             'description': (
-                'You should have a page title in an h1 element with an id of title.'
+                'يجب أن يكون لديك عنوان صفحة في عنصر h1 بمعرّف title.'
             ),
-            'hint': 'Add <h1 id="title"> with your survey title inside the page.',
+            'hint': 'أضف <h1 id="title"> مع عنوان الاستبيان داخل الصفحة.',
         },
         {
-            'title': 'Short explanation',
+            'title': 'شرح مختصر',
             'description': (
-                'You should have a short explanation in a p element with an id of description.'
+                'يجب أن يكون لديك شرح مختصر في عنصر p بمعرّف description.'
             ),
-            'hint': 'Add <p id="description"> describing what the survey is about.',
+            'hint': 'أضف <p id="description"> يصف موضوع الاستبيان.',
         },
         {
-            'title': 'Survey form',
+            'title': 'نموذج الاستبيان',
             'description': (
-                'You should have a form element with an id of survey-form.'
+                'يجب أن يكون لديك عنصر form بمعرّف survey-form.'
             ),
-            'hint': 'Wrap all form fields inside <form id="survey-form">.',
+            'hint': 'غلّف كل حقول النموذج داخل <form id="survey-form">.',
         },
         {
-            'title': 'Name field',
+            'title': 'حقل الاسم',
             'description': (
-                'Inside the form element you should have a required input field to enter '
-                'your name that has an id of name and a type of text.'
+                'داخل النموذج يجب أن يكون لديك حقل إدخال إلزامي للاسم '
+                'بمعرّف name ونوع text.'
             ),
-            'hint': 'Use <input id="name" type="text" required>.',
+            'hint': 'استخدم <input id="name" type="text" required>.',
         },
         {
-            'title': 'Email field',
+            'title': 'حقل البريد',
             'description': (
-                'Inside the form element you should have a required input field to enter '
-                'your email that has an id of email. If you enter an email that is not '
-                'formatted correctly, you should see an HTML5 validation error.'
+                'داخل النموذج يجب أن يكون لديك حقل إدخال إلزامي للبريد بمعرّف email. '
+                'إذا أدخلت بريداً غير صحيح يجب أن تظهر رسالة تحقق HTML5.'
             ),
-            'hint': 'Use <input id="email" type="email" required> for built-in validation.',
+            'hint': 'استخدم <input id="email" type="email" required> للتحقق المدمج.',
         },
         {
-            'title': 'Number field',
+            'title': 'حقل الرقم',
             'description': (
-                'Inside the form element you should have an input field to enter a number '
-                'that has an id of number. The number input should not accept non-numbers, '
-                'either by preventing you from typing them or by showing an HTML5 validation '
-                'error. If you enter numbers outside the range defined by min and max, you '
-                'should see an HTML5 validation error.'
+                'داخل النموذج يجب أن يكون لديك حقل إدخال للرقم بمعرّف number. '
+                'يجب ألا يقبل الحقل قيماً غير رقمية، إما بمنع الكتابة أو بإظهار خطأ تحقق HTML5. '
+                'وإذا أدخلت أرقاماً خارج نطاق min و max يجب أن يظهر خطأ تحقق HTML5.'
             ),
-            'hint': 'Use <input id="number" type="number" min="..." max="...">.',
+            'hint': 'استخدم <input id="number" type="number" min="..." max="...">.',
         },
         {
-            'title': 'Field labels',
+            'title': 'تسميات الحقول',
             'description': (
-                'For the name, email, and number input fields, you should have corresponding '
-                'label elements in the form with ids: name-label, email-label, and number-label.'
+                'لحقول الاسم والبريد والرقم يجب أن تكون لديك عناصر label مقابلة '
+                'بالمعرّفات: name-label و email-label و number-label.'
             ),
-            'hint': 'Add <label id="name-label">, <label id="email-label">, and <label id="number-label">.',
+            'hint': 'أضف <label id="name-label"> و <label id="email-label"> و <label id="number-label">.',
         },
         {
-            'title': 'Placeholder text',
+            'title': 'نص العنصر النائب',
             'description': (
-                'For the name, email, and number input fields, you should have placeholder '
-                'text that gives a description or instructions for each field.'
+                'لحقول الاسم والبريد والرقم يجب أن يكون لديك نص placeholder '
+                'يصف كل حقل أو يوضّح التعليمات.'
             ),
-            'hint': 'Add a placeholder attribute on each of the three inputs.',
+            'hint': 'أضف خاصية placeholder على كل من الحقول الثلاثة.',
         },
         {
-            'title': 'Dropdown select',
+            'title': 'قائمة منسدلة',
             'description': (
-                'Inside the form element, you should have a select dropdown element with an '
-                'id of dropdown and at least two options to choose from.'
+                'داخل النموذج يجب أن يكون لديك عنصر select بمعرّف dropdown '
+                'مع خيارين على الأقل للاختيار.'
             ),
-            'hint': 'Use <select id="dropdown"> with at least two <option> elements.',
+            'hint': 'استخدم <select id="dropdown"> مع عنصرَي <option> على الأقل.',
         },
         {
-            'title': 'Radio buttons',
+            'title': 'أزرار اختيار واحد',
             'description': (
-                'Inside the form element, you can select an option from a group of at least '
-                'two radio buttons that are grouped using the name attribute.'
+                'داخل النموذج يمكنك اختيار خيار من مجموعة فيها زرّا radio على الأقل '
+                'مجمّعين بنفس خاصية name.'
             ),
-            'hint': 'Add at least two <input type="radio"> elements sharing the same name.',
+            'hint': 'أضف عنصرَي <input type="radio"> على الأقل يشتركان بنفس name.',
         },
         {
-            'title': 'Checkboxes',
+            'title': 'مربعات اختيار',
             'description': (
-                'Inside the form element, you can select several fields from a series of '
-                'checkboxes, each of which must have a value attribute.'
+                'داخل النموذج يمكنك اختيار عدة حقول من سلسلة checkboxes، '
+                'ويجب أن يكون لكل منها خاصية value.'
             ),
-            'hint': 'Add multiple <input type="checkbox" value="..."> inside the form.',
+            'hint': 'أضف عدة <input type="checkbox" value="..."> داخل النموذج.',
         },
         {
-            'title': 'Comments textarea',
+            'title': 'مربع تعليقات',
             'description': (
-                'Inside the form element, you should have a textarea for additional comments.'
+                'داخل النموذج يجب أن يكون لديك textarea للتعليقات الإضافية.'
             ),
-            'hint': 'Add <textarea> inside the form for optional comments.',
+            'hint': 'أضف <textarea> داخل النموذج للتعليقات الاختيارية.',
         },
         {
-            'title': 'Submit button',
+            'title': 'زر الإرسال',
             'description': (
-                'Inside the form element, you should have a button with id of submit to '
-                'submit all the inputs.'
+                'داخل النموذج يجب أن يكون لديك زر بمعرّف submit لإرسال كل المدخلات.'
             ),
-            'hint': 'Add <button type="submit" id="submit"> or <input type="submit" id="submit">.',
+            'hint': 'أضف <button type="submit" id="submit"> أو <input type="submit" id="submit">.',
         },
     ],
 }

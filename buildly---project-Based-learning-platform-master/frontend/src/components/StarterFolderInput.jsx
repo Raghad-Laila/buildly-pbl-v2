@@ -65,7 +65,7 @@ const StarterFolderInput = ({
 
   return (
     <div className="input-group" data-field="starter_folder">
-      <label htmlFor={id}>مجلد البداية *</label>
+      <label htmlFor={id}>مجلد البداية</label>
 
       <div className="custom-file-picker">
         <div className="custom-file-picker-actions">

@@ -1,6 +1,10 @@
 """Book Inventory project definition for Frontend Mastery."""
 
 BOOK_INVENTORY_TITLE = 'Build a Book Inventory App'
+BOOK_INVENTORY_LEGACY_TITLES = (
+    'Build a Book Inventory App',
+    '[Buildly] تطبيق جرد الكتب',
+)
 
 BOOK_INVENTORY_PROJECT = {
     'title': BOOK_INVENTORY_TITLE,
@@ -8,148 +12,135 @@ BOOK_INVENTORY_PROJECT = {
     'languages': ['html', 'css'],
     'estimated_time': 5,
     'description': (
-        'Build an app that is functionally similar to the example project in the start file. '
-        'Try not to copy the example project, give it your own personal style.'
+        'ابنِ تطبيقاً مشابهاً لمثال ملف البداية من ناحية الوظيفة. '
+        'حاول ألا تنسخ المثال حرفياً، وأضف أسلوبك الشخصي في التصميم.'
     ),
     'objectives': (
-        'Fulfill the user stories below and get all the tests to pass to complete the lab.'
+        'نفّذ قصص المستخدم أدناه واجتز كل الاختبارات لإكمال المختبر.'
     ),
     'stories': [
         {
-            'title': 'Page heading',
+            'title': 'عنوان الصفحة',
             'description': (
-                'You should have an h1 element with the text Book Inventory, and only one h1 '
-                'element on the page.'
+                'يجب أن يكون لديك عنصر h1 بالنص Book Inventory، وعنصر h1 واحد فقط في الصفحة.'
             ),
-            'hint': 'Add a single <h1>Book Inventory</h1> at the top of your page.',
+            'hint': 'أضف عنصراً واحداً <h1>Book Inventory</h1> أعلى الصفحة.',
         },
         {
-            'title': 'Table structure',
+            'title': 'بنية الجدول',
             'description': (
-                'You should have a table element with one thead and one tbody. Inside thead, '
-                'include one tr with five th elements named Title, Author, Category, Status, '
-                'and Rate.'
+                'يجب أن يكون لديك عنصر table يحوي thead واحد و tbody واحد. داخل thead، '
+                'ضع tr واحداً مع خمسة عناصر th بأسماء Title و Author و Category و Status و Rate.'
             ),
             'hint': (
-                'Build <table><thead><tr><th>Title</th>... with all five column headings, '
-                'then add <tbody> for your book rows.'
+                'ابنِ <table><thead><tr><th>Title</th>... مع العناوين الخمسة، '
+                'ثم أضف <tbody> لصفوف الكتب.'
             ),
         },
         {
-            'title': 'Table rows and columns',
+            'title': 'صفوف وأعمدة الجدول',
             'description': (
-                'Your table should have at least four rows total (one heading row plus at least '
-                'three book rows). Each tbody row should have exactly five columns.'
+                'يجب أن يحتوي الجدول على أربعة صفوف على الأقل (صف عناوين + ثلاثة صفوف كتب على الأقل). '
+                'وكل صف داخل tbody يجب أن يحتوي خمسة أعمدة بالضبط.'
             ),
-            'hint': 'Add at least three tr elements inside tbody, each with five td cells.',
+            'hint': 'أضف ثلاثة عناصر tr على الأقل داخل tbody، كل منها بخمس خلايا td.',
         },
         {
-            'title': 'Row status classes',
+            'title': 'أصناف حالة الصف',
             'description': (
-                'Each table row inside the table body should have either the class read, '
-                'to-read, or in-progress.'
+                'كل صف داخل جسم الجدول يجب أن يحمل أحد الأصناف: read أو to-read أو in-progress.'
             ),
             'hint': (
-                'Use <tr class="read">, <tr class="to-read">, or <tr class="in-progress"> '
-                'on every tbody row.'
+                'استخدم <tr class="read"> أو <tr class="to-read"> أو <tr class="in-progress"> '
+                'على كل صف في tbody.'
             ),
         },
         {
-            'title': 'Status column markup',
+            'title': 'وسم عمود الحالة',
             'description': (
-                'td elements in the Status column should contain a span element with the class '
-                'status surrounding the text Read, To Read, or In Progress, depending on the '
-                'class of that row.'
+                'خلايا td في عمود Status يجب أن تحوي عنصراً span بالصنف status يحيط بالنص '
+                'Read أو To Read أو In Progress حسب صنف الصف.'
             ),
             'hint': (
-                'In the fourth column, wrap status text in '
-                '<span class="status">Read</span>, <span class="status">To Read</span>, or '
+                'في العمود الرابع غلّف نص الحالة بـ '
+                '<span class="status">Read</span> أو <span class="status">To Read</span> أو '
                 '<span class="status">In Progress</span>.'
             ),
         },
         {
-            'title': 'Rate column markup',
+            'title': 'وسم عمود التقييم',
             'description': (
-                'td elements in the Rate column should contain a span element with the class '
-                'rate wrapping three empty span elements.'
+                'خلايا td في عمود Rate يجب أن تحوي عنصراً span بالصنف rate يغلّف ثلاثة عناصر span فارغة.'
             ),
             'hint': (
-                'In the last column, use '
+                'في العمود الأخير استخدم '
                 '<span class="rate"><span></span><span></span><span></span></span>.'
             ),
         },
         {
-            'title': 'Read row ratings',
+            'title': 'تقييم صفوف المقروء',
             'description': (
-                'rate elements placed inside read rows should have an additional class with '
-                'the value of either one, two, or three, depending on the personal rate. '
-                'This value should come after rate.'
+                'عناصر rate داخل صفوف read يجب أن تحمل صنفاً إضافياً بالقيمة one أو two أو three '
+                'حسب التقييم الشخصي، ويأتي هذا الصنف بعد rate.'
             ),
             'hint': (
-                'On read rows only, add a second class such as '
-                '<span class="rate one">, <span class="rate two">, or <span class="rate three">.'
+                'في صفوف read فقط أضف صنفاً ثانياً مثل '
+                '<span class="rate one"> أو <span class="rate two"> أو <span class="rate three">.'
             ),
         },
         {
-            'title': 'Row background gradients',
+            'title': 'تدرجات خلفية الصفوف',
             'description': (
-                'Create three attribute selectors to target rows with the classes read, to-read, '
-                'and in-progress, and set their background-image property to use a linear-gradient '
-                'of your choice.'
+                'أنشئ ثلاثة محدّدات سمات لاستهداف الصفوف ذات الأصناف read و to-read و in-progress، '
+                'واضبط background-image لتستخدم linear-gradient من اختيارك.'
             ),
             'hint': (
-                'Use selectors like tr[class="read"], tr[class="to-read"], and '
-                'tr[class="in-progress"] with background-image: linear-gradient(...).'
+                'استخدم محدّدات مثل tr[class="read"] و tr[class="to-read"] و '
+                'tr[class="in-progress"] مع background-image: linear-gradient(...).'
             ),
         },
         {
-            'title': 'Span display and status styling',
+            'title': 'عرض span وتنسيق الحالة',
             'description': (
-                'Set the display property of each span element to inline-block. Use attribute '
-                'selectors to target status spans that are descendants of read, to-read, and '
-                'in-progress rows, and set their border and background-image properties.'
+                'اضبط خاصية display لكل عنصر span إلى inline-block. استخدم محدّدات سمات '
+                'لاستهداف spans الحالة التابعة لصفوف read و to-read و in-progress، '
+                'واضبط خصائص border و background-image.'
             ),
             'hint': (
-                'Add span { display: inline-block; } and rules such as '
+                'أضف span { display: inline-block; } وقواعد مثل '
                 'tr[class="read"] span[class="status"] { border: ...; background-image: ...; }.'
             ),
         },
         {
-            'title': 'Status and rate sizing',
+            'title': 'أحجام الحالة والتقييم',
             'description': (
-                'Use an attribute selector to target span elements with the class status and '
-                'span elements whose class value starts with rate, then set their height, width, '
-                'and padding properties.'
+                'استخدم محدّد سمات لاستهداف عناصر span بالصنف status وعناصر span التي تبدأ '
+                'قيمتها بالصنف rate، ثم اضبط height و width و padding.'
             ),
             'hint': (
-                'Style span[class="status"] and span[class^="rate"] with height, width, '
-                'and padding in the same rule or separate rules.'
+                'نسّق span[class="status"] و span[class^="rate"] بخصائص height و width و padding.'
             ),
         },
         {
-            'title': 'Rate dot styling',
+            'title': 'تنسيق نقاط التقييم',
             'description': (
-                'Use an attribute selector to target span elements that are direct children of '
-                'span elements whose class value starts with rate, and set their border, '
-                'border-radius, margin, height, width, and background-color properties.'
+                'استخدم محدّد سمات لاستهداف عناصر span الأبناء المباشرين لعناصر span التي تبدأ '
+                'قيمتها بالصنف rate، واضبط border و border-radius و margin و height و width و background-color.'
             ),
             'hint': (
-                'Target span[class^="rate"] > span and style the empty rating dots as small '
-                'circles or squares.'
+                'استهدف span[class^="rate"] > span ونسّق نقاط التقييم الفارغة كدوائر أو مربعات صغيرة.'
             ),
         },
         {
-            'title': 'Rating gradient fills',
+            'title': 'تعبئة تدرجات التقييم',
             'description': (
-                'Use attribute selectors to style rating dots with linear-gradient fills: target '
-                'the first descendant of spans whose class contains the word one, the first two '
-                'descendants of spans whose class contains the word two, and all three descendant '
-                'spans of spans whose class contains the word three.'
+                'استخدم محدّدات سمات لتنسيق نقاط التقييم بتعبئة linear-gradient: استهدف '
+                'الابن الأول للـ spans التي تحوي كلمة one، والابنَين الأولين لـ two، '
+                'والأبناء الثلاثة لـ three.'
             ),
             'hint': (
-                'Use [class~="one"], [class~="two"], and [class~="three"] with descendant '
-                'selectors such as span[class~="one"] :first-child and '
-                'span[class~="three"] span.'
+                'استخدم [class~="one"] و [class~="two"] و [class~="three"] مع محدّدات أبناء '
+                'مثل span[class~="one"] :first-child و span[class~="three"] span.'
             ),
         },
     ],

@@ -125,6 +125,7 @@ class CourseListSerializer(serializers.ModelSerializer):
     level_display = serializers.CharField(source='get_level_display')
     category_display = serializers.CharField(source='get_category_display')
     enrolled_students_count = serializers.SerializerMethodField()
+    enrolled_learner_ids = serializers.SerializerMethodField()
     
     # ⭐⭐ إضافة حقل للمشاريع المحسوبة فعلياً
     actual_projects_count = serializers.SerializerMethodField()
@@ -135,7 +136,7 @@ class CourseListSerializer(serializers.ModelSerializer):
             'id', 'title', 'description', 'level', 'level_display',
             'category', 'category_display', 'estimated_duration', 'image',
             'projects_count', 'actual_projects_count', 'is_public', 'is_active', 'created_at',  
-            'updated_at', 'instructor_name', 'enrolled_students_count'
+            'updated_at', 'instructor_name', 'enrolled_students_count', 'enrolled_learner_ids'
         ]
         read_only_fields = ['projects_count']
     
@@ -152,6 +153,9 @@ class CourseListSerializer(serializers.ModelSerializer):
     
     def get_enrolled_students_count(self, obj):
         return obj.get_enrolled_students_count()
+
+    def get_enrolled_learner_ids(self, obj):
+        return list(obj.enrolled_learners.values_list('id', flat=True))
     
     def get_actual_projects_count(self, obj):
         """⭐ الحصول على العدد الفعلي للمشاريع (محتسب)"""

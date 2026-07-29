@@ -297,6 +297,27 @@
   gap: 12px;
 }
 
+.admin-dashboard .admin-recent-projects-list {
+  max-height: 320px;
+  overflow-y: auto;
+  padding-inline-end: 4px;
+  scrollbar-width: thin;
+  scrollbar-color: #a5b4fc transparent;
+}
+
+.admin-dashboard .admin-recent-projects-list::-webkit-scrollbar {
+  width: 6px;
+}
+
+.admin-dashboard .admin-recent-projects-list::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.admin-dashboard .admin-recent-projects-list::-webkit-scrollbar-thumb {
+  background: #a5b4fc;
+  border-radius: 999px;
+}
+
 .admin-dashboard .list-item {
   display: flex;
   justify-content: space-between;

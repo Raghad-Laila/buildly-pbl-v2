@@ -83,7 +83,7 @@ const ProjectContentSections = ({
           </button>
         </div>
 
-        <div className="content-items-list">
+        <div className="content-items-list content-items-list--scrollable content-items-list--stories">
           {userStories.map((story, index) => (
             <div key={story.id || `story-${index}`} className="content-story-card">
               <div className="content-story-header">
@@ -124,7 +124,7 @@ const ProjectContentSections = ({
           </button>
         </div>
 
-        <div className="content-items-list">
+        <div className="content-items-list content-items-list--scrollable content-items-list--hints">
           {hintItems.map((hint, index) => (
             <div key={`hint-${index}`} className="content-item-row content-hint-row">
               <span className="content-item-index">{index + 1}</span>

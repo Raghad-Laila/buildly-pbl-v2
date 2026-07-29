@@ -1,6 +1,10 @@
 """Playing Cards project definition for Frontend Mastery."""
 
 PLAYING_CARDS_TITLE = 'Build a Page of Playing Cards'
+PLAYING_CARDS_LEGACY_TITLES = (
+    'Build a Page of Playing Cards',
+    '[Buildly] صفحة بطاقات لعب',
+)
 
 PLAYING_CARDS_PROJECT = {
     'title': PLAYING_CARDS_TITLE,
@@ -8,106 +12,102 @@ PLAYING_CARDS_PROJECT = {
     'languages': ['html', 'css'],
     'estimated_time': 4,
     'description': (
-        'Build an app that is functionally similar to the example project in the start file. '
-        'Try not to copy the example project, give it your own personal style.'
+        'ابنِ تطبيقاً مشابهاً لمثال ملف البداية من ناحية الوظيفة. '
+        'حاول ألا تنسخ المثال حرفياً، وأضف أسلوبك الشخصي في التصميم.'
     ),
     'objectives': (
-        'Fulfill the user stories below and get all the tests to pass to complete the lab.'
+        'نفّذ قصص المستخدم أدناه واجتز كل الاختبارات لإكمال المختبر.'
     ),
     'stories': [
         {
-            'title': 'Main container',
+            'title': 'الحاوية الرئيسية',
             'description': (
-                'You should have a main element with an id of playing-cards.'
+                'يجب أن يكون لديك عنصر main بمعرّف playing-cards.'
             ),
-            'hint': 'Add <main id="playing-cards"> as the wrapper for all your cards.',
+            'hint': 'أضف <main id="playing-cards"> كحاوية لكل البطاقات.',
         },
         {
-            'title': 'Card elements',
+            'title': 'عناصر البطاقات',
             'description': (
-                'Inside your #playing-cards element, you should have at least three '
-                'div elements, each with a class of card.'
+                'داخل #playing-cards يجب أن يكون لديك ثلاثة عناصر div على الأقل، '
+                'كل منها بالصنف card.'
             ),
-            'hint': 'Add at least three direct child <div class="card"> elements inside #playing-cards.',
+            'hint': 'أضف ثلاثة أبناء مباشرين على الأقل: <div class="card"> داخل #playing-cards.',
         },
         {
-            'title': 'Card structure',
+            'title': 'بنية البطاقة',
             'description': (
-                'Inside each of your .card elements, you should have exactly three div '
-                'elements as direct children: the first with a class of left, the second '
-                'with a class of middle, and the third with a class of right.'
+                'داخل كل عنصر .card يجب أن يكون لديك بالضبط ثلاثة عناصر div كأبناء مباشرين: '
+                'الأول بالصنف left، والثاني بالصنف middle، والثالث بالصنف right.'
             ),
             'hint': (
-                'Each card needs three direct children: '
-                '<div class="left">, <div class="middle">, and <div class="right">.'
+                'كل بطاقة تحتاج ثلاثة أبناء مباشرين: '
+                '<div class="left"> و <div class="middle"> و <div class="right">.'
             ),
         },
         {
-            'title': 'Card dimensions',
+            'title': 'أبعاد البطاقة',
             'description': (
-                'Each of your .card elements should have a width and a height set in your CSS.'
+                'كل عنصر .card يجب أن يحدد له width و height في ملف CSS.'
             ),
-            'hint': 'In your stylesheet, add width and height declarations to the .card selector.',
+            'hint': 'في ملف التنسيق أضف width و height لمحدّد .card.',
         },
         {
-            'title': 'Playing cards layout',
+            'title': 'تخطيط صفحة البطاقات',
             'description': (
-                'Your #playing-cards element should use flexbox to center its children, '
-                'allow them to wrap, and put a 20px space between them.'
+                'عنصر #playing-cards يجب أن يستخدم flexbox لتوسيط الأبناء، '
+                'والسماح بالتفافهم، مع مسافة 20px بينهم.'
             ),
             'hint': (
-                'On #playing-cards, set display: flex; justify-content: center; '
-                'flex-wrap: wrap; and gap: 20px;.'
+                'على #playing-cards ضع: display: flex; justify-content: center; '
+                'flex-wrap: wrap; و gap: 20px;.'
             ),
         },
         {
-            'title': 'Card flex layout',
+            'title': 'تخطيط flex للبطاقة',
             'description': (
-                'Your .card elements should use flexbox to justify their children using '
-                'space-between.'
+                'عناصر .card يجب أن تستخدم flexbox مع justify-content: space-between '
+                'لأبنائها.'
             ),
-            'hint': 'On .card, set display: flex; and justify-content: space-between;.',
+            'hint': 'على .card ضع display: flex; و justify-content: space-between;.',
         },
         {
-            'title': 'Card section alignment',
+            'title': 'محاذاة أقسام البطاقة',
             'description': (
-                'Your .left elements should align to the start, your .middle elements '
-                'should align to the center, and your .right elements should align to the end.'
+                'عناصر .left تُحاذى للبداية، و .middle للوسط، و .right للنهاية.'
             ),
             'hint': (
-                'Use align-self: flex-start on .left, align-self: center on .middle, '
-                'and align-self: flex-end on .right.'
+                'استخدم align-self: flex-start على .left و align-self: center على .middle '
+                'و align-self: flex-end على .right.'
             ),
         },
         {
-            'title': 'Middle section layout',
+            'title': 'تخطيط القسم الأوسط',
             'description': (
-                'Your .middle elements should use flexbox with a column direction to stack '
-                'their contents vertically.'
+                'عناصر .middle يجب أن تستخدم flexbox باتجاه عمودي لتكديس المحتوى.'
             ),
-            'hint': 'On .middle, set display: flex; and flex-direction: column;.',
+            'hint': 'على .middle ضع display: flex; و flex-direction: column;.',
         },
     ],
 }
 
 PLAYING_CARDS_TESTS = [
     {
-        'name': '1. main#playing-cards exists',
+        'name': '1. وجود main#playing-cards',
         'story_index': 1,
-        'description': 'You should have a main element with an id of playing-cards.',
+        'description': 'يجب أن يكون لديك عنصر main بمعرّف playing-cards.',
         'test_code': (
             'const el = getEl("playing-cards");\n'
             'if (!el || el.tagName.toLowerCase() !== "main") throw new Error("playing-cards");'
         ),
-        'success_message': 'main#playing-cards is present.',
-        'failure_message': 'Add a <main id="playing-cards"> element to your page.',
+        'success_message': 'عنصر main#playing-cards موجود.',
+        'failure_message': 'أضف عنصراً <main id="playing-cards"> إلى الصفحة.',
     },
     {
-        'name': '2. At least 3 .card in #playing-cards',
+        'name': '2. ثلاث بطاقات .card على الأقل',
         'story_index': 2,
         'description': (
-            'Inside your #playing-cards element, you should have at least three '
-            'div elements with a class of card.'
+            'داخل #playing-cards يجب أن يكون لديك ثلاثة عناصر div بالصنف card على الأقل.'
         ),
         'test_code': (
             'const container = getEl("playing-cards");\n'
@@ -116,28 +116,24 @@ PLAYING_CARDS_TESTS = [
             'el.classList.contains("card"));\n'
             'if (cards.length < 3) throw new Error("cards");'
         ),
-        'success_message': 'At least three .card elements are inside #playing-cards.',
-        'failure_message': 'Add at least three <div class="card"> elements inside #playing-cards.',
+        'success_message': 'يوجد ثلاث بطاقات .card على الأقل داخل #playing-cards.',
+        'failure_message': 'أضف ثلاثة عناصر <div class="card"> على الأقل داخل #playing-cards.',
     },
     {
-        'name': '3. .card has width and height in CSS',
+        'name': '3. .card لها width و height في CSS',
         'story_index': 4,
-        'description': (
-            'Each of your .card elements should have a width and a height set in your CSS.'
-        ),
+        'description': 'كل عنصر .card يجب أن يحدد له width و height في CSS.',
         'test_code': (
             'if (!cssHasDeclaration(".card", "width")) throw new Error("width");\n'
             'if (!cssHasDeclaration(".card", "height")) throw new Error("height");'
         ),
-        'success_message': '.card has width and height in CSS.',
-        'failure_message': 'Add width and height declarations to your .card selector in CSS.',
+        'success_message': '.card لديها width و height في CSS.',
+        'failure_message': 'أضف تصريحات width و height لمحدّد .card في CSS.',
     },
     {
-        'name': '4. Each .card has exactly 3 div children',
+        'name': '4. كل .card تحتوي 3 أبناء div',
         'story_index': 3,
-        'description': (
-            'Each of your .card elements should have exactly three div elements as children.'
-        ),
+        'description': 'كل عنصر .card يجب أن يحتوي بالضبط ثلاثة عناصر div كأبناء.',
         'test_code': (
             'const container = getEl("playing-cards");\n'
             'if (!container) throw new Error("container");\n'
@@ -150,15 +146,13 @@ PLAYING_CARDS_TESTS = [
             '  if (divChildren.length !== 3) throw new Error("children");\n'
             '}'
         ),
-        'success_message': 'Every .card has exactly three div children.',
-        'failure_message': 'Each .card must contain exactly three direct child div elements.',
+        'success_message': 'كل بطاقة .card تحتوي ثلاثة أبناء div بالضبط.',
+        'failure_message': 'كل .card يجب أن تحتوي بالضبط ثلاثة عناصر div أبناء مباشرين.',
     },
     {
-        'name': '5. .left in each .card',
+        'name': '5. .left داخل كل .card',
         'story_index': 3,
-        'description': (
-            'Inside each of your .card elements, you should have a div with a class of left.'
-        ),
+        'description': 'داخل كل .card يجب أن يكون لديك div بالصنف left.',
         'test_code': (
             'const container = getEl("playing-cards");\n'
             'if (!container) throw new Error("container");\n'
@@ -171,15 +165,13 @@ PLAYING_CARDS_TESTS = [
             '  if (!left || left.tagName.toLowerCase() !== "div") throw new Error("left");\n'
             '}'
         ),
-        'success_message': 'Every .card has a .left section.',
-        'failure_message': 'Add a <div class="left"> inside each .card element.',
+        'success_message': 'كل بطاقة تحتوي قسماً .left.',
+        'failure_message': 'أضف <div class="left"> داخل كل عنصر .card.',
     },
     {
-        'name': '6. .middle in each .card',
+        'name': '6. .middle داخل كل .card',
         'story_index': 3,
-        'description': (
-            'Inside each of your .card elements, you should have a div with a class of middle.'
-        ),
+        'description': 'داخل كل .card يجب أن يكون لديك div بالصنف middle.',
         'test_code': (
             'const container = getEl("playing-cards");\n'
             'if (!container) throw new Error("container");\n'
@@ -192,15 +184,13 @@ PLAYING_CARDS_TESTS = [
             '  if (!middle || middle.tagName.toLowerCase() !== "div") throw new Error("middle");\n'
             '}'
         ),
-        'success_message': 'Every .card has a .middle section.',
-        'failure_message': 'Add a <div class="middle"> inside each .card element.',
+        'success_message': 'كل بطاقة تحتوي قسماً .middle.',
+        'failure_message': 'أضف <div class="middle"> داخل كل عنصر .card.',
     },
     {
-        'name': '7. .right in each .card',
+        'name': '7. .right داخل كل .card',
         'story_index': 3,
-        'description': (
-            'Inside each of your .card elements, you should have a div with a class of right.'
-        ),
+        'description': 'داخل كل .card يجب أن يكون لديك div بالصنف right.',
         'test_code': (
             'const container = getEl("playing-cards");\n'
             'if (!container) throw new Error("container");\n'
@@ -213,128 +203,128 @@ PLAYING_CARDS_TESTS = [
             '  if (!right || right.tagName.toLowerCase() !== "div") throw new Error("right");\n'
             '}'
         ),
-        'success_message': 'Every .card has a .right section.',
-        'failure_message': 'Add a <div class="right"> inside each .card element.',
+        'success_message': 'كل بطاقة تحتوي قسماً .right.',
+        'failure_message': 'أضف <div class="right"> داخل كل عنصر .card.',
     },
     {
-        'name': '8. #playing-cards display flex',
+        'name': '8. #playing-cards بـ display flex',
         'story_index': 5,
-        'description': 'Your #playing-cards selector should set display to flex.',
+        'description': 'محدّد #playing-cards يجب أن يضبط display إلى flex.',
         'test_code': (
             'if (!cssHasDeclaration("#playing-cards", "display", "flex")) '
             'throw new Error("display");'
         ),
-        'success_message': '#playing-cards uses display: flex.',
-        'failure_message': 'Set display: flex on your #playing-cards selector.',
+        'success_message': '#playing-cards يستخدم display: flex.',
+        'failure_message': 'اضبط display: flex على محدّد #playing-cards.',
     },
     {
-        'name': '9. #playing-cards justify-content center',
+        'name': '9. #playing-cards بـ justify-content center',
         'story_index': 5,
-        'description': 'Your #playing-cards selector should set justify-content to center.',
+        'description': 'محدّد #playing-cards يجب أن يضبط justify-content إلى center.',
         'test_code': (
             'if (!cssHasDeclaration("#playing-cards", "justify-content", "center")) '
             'throw new Error("justify-content");'
         ),
-        'success_message': '#playing-cards uses justify-content: center.',
-        'failure_message': 'Set justify-content: center on your #playing-cards selector.',
+        'success_message': '#playing-cards يستخدم justify-content: center.',
+        'failure_message': 'اضبط justify-content: center على محدّد #playing-cards.',
     },
     {
-        'name': '10. #playing-cards flex-wrap wrap',
+        'name': '10. #playing-cards بـ flex-wrap wrap',
         'story_index': 5,
-        'description': 'Your #playing-cards selector should set flex-wrap to wrap.',
+        'description': 'محدّد #playing-cards يجب أن يضبط flex-wrap إلى wrap.',
         'test_code': (
             'if (!cssHasDeclaration("#playing-cards", "flex-wrap", "wrap")) '
             'throw new Error("flex-wrap");'
         ),
-        'success_message': '#playing-cards uses flex-wrap: wrap.',
-        'failure_message': 'Set flex-wrap: wrap on your #playing-cards selector.',
+        'success_message': '#playing-cards يستخدم flex-wrap: wrap.',
+        'failure_message': 'اضبط flex-wrap: wrap على محدّد #playing-cards.',
     },
     {
-        'name': '11. #playing-cards gap 20px',
+        'name': '11. #playing-cards بـ gap 20px',
         'story_index': 5,
-        'description': 'Your #playing-cards selector should set gap to 20px.',
+        'description': 'محدّد #playing-cards يجب أن يضبط gap إلى 20px.',
         'test_code': (
             'if (!cssHasDeclaration("#playing-cards", "gap", "20px")) '
             'throw new Error("gap");'
         ),
-        'success_message': '#playing-cards uses gap: 20px.',
-        'failure_message': 'Set gap: 20px on your #playing-cards selector.',
+        'success_message': '#playing-cards يستخدم gap: 20px.',
+        'failure_message': 'اضبط gap: 20px على محدّد #playing-cards.',
     },
     {
-        'name': '12. .card display flex',
+        'name': '12. .card بـ display flex',
         'story_index': 6,
-        'description': 'Your .card selector should set display to flex.',
+        'description': 'محدّد .card يجب أن يضبط display إلى flex.',
         'test_code': (
             'if (!cssHasDeclaration(".card", "display", "flex")) '
             'throw new Error("display");'
         ),
-        'success_message': '.card uses display: flex.',
-        'failure_message': 'Set display: flex on your .card selector.',
+        'success_message': '.card يستخدم display: flex.',
+        'failure_message': 'اضبط display: flex على محدّد .card.',
     },
     {
-        'name': '13. .card justify-content space-between',
+        'name': '13. .card بـ justify-content space-between',
         'story_index': 6,
-        'description': 'Your .card selector should set justify-content to space-between.',
+        'description': 'محدّد .card يجب أن يضبط justify-content إلى space-between.',
         'test_code': (
             'if (!cssHasDeclaration(".card", "justify-content", "space-between")) '
             'throw new Error("justify-content");'
         ),
-        'success_message': '.card uses justify-content: space-between.',
-        'failure_message': 'Set justify-content: space-between on your .card selector.',
+        'success_message': '.card يستخدم justify-content: space-between.',
+        'failure_message': 'اضبط justify-content: space-between على محدّد .card.',
     },
     {
-        'name': '14. .left align-self flex-start',
+        'name': '14. .left بـ align-self flex-start',
         'story_index': 7,
-        'description': 'Your .left selector should set align-self to flex-start.',
+        'description': 'محدّد .left يجب أن يضبط align-self إلى flex-start.',
         'test_code': (
             'if (!cssHasDeclaration(".left", "align-self", "flex-start")) '
             'throw new Error("align-self");'
         ),
-        'success_message': '.left uses align-self: flex-start.',
-        'failure_message': 'Set align-self: flex-start on your .left selector.',
+        'success_message': '.left يستخدم align-self: flex-start.',
+        'failure_message': 'اضبط align-self: flex-start على محدّد .left.',
     },
     {
-        'name': '15. .middle align-self center',
+        'name': '15. .middle بـ align-self center',
         'story_index': 7,
-        'description': 'Your .middle selector should set align-self to center.',
+        'description': 'محدّد .middle يجب أن يضبط align-self إلى center.',
         'test_code': (
             'if (!cssHasDeclaration(".middle", "align-self", "center")) '
             'throw new Error("align-self");'
         ),
-        'success_message': '.middle uses align-self: center.',
-        'failure_message': 'Set align-self: center on your .middle selector.',
+        'success_message': '.middle يستخدم align-self: center.',
+        'failure_message': 'اضبط align-self: center على محدّد .middle.',
     },
     {
-        'name': '16. .right align-self flex-end',
+        'name': '16. .right بـ align-self flex-end',
         'story_index': 7,
-        'description': 'Your .right selector should set align-self to flex-end.',
+        'description': 'محدّد .right يجب أن يضبط align-self إلى flex-end.',
         'test_code': (
             'if (!cssHasDeclaration(".right", "align-self", "flex-end")) '
             'throw new Error("align-self");'
         ),
-        'success_message': '.right uses align-self: flex-end.',
-        'failure_message': 'Set align-self: flex-end on your .right selector.',
+        'success_message': '.right يستخدم align-self: flex-end.',
+        'failure_message': 'اضبط align-self: flex-end على محدّد .right.',
     },
     {
-        'name': '17. .middle display flex',
+        'name': '17. .middle بـ display flex',
         'story_index': 8,
-        'description': 'Your .middle selector should set display to flex.',
+        'description': 'محدّد .middle يجب أن يضبط display إلى flex.',
         'test_code': (
             'if (!cssHasDeclaration(".middle", "display", "flex")) '
             'throw new Error("display");'
         ),
-        'success_message': '.middle uses display: flex.',
-        'failure_message': 'Set display: flex on your .middle selector.',
+        'success_message': '.middle يستخدم display: flex.',
+        'failure_message': 'اضبط display: flex على محدّد .middle.',
     },
     {
-        'name': '18. .middle flex-direction column',
+        'name': '18. .middle بـ flex-direction column',
         'story_index': 8,
-        'description': 'Your .middle selector should set flex-direction to column.',
+        'description': 'محدّد .middle يجب أن يضبط flex-direction إلى column.',
         'test_code': (
             'if (!cssHasDeclaration(".middle", "flex-direction", "column")) '
             'throw new Error("flex-direction");'
         ),
-        'success_message': '.middle uses flex-direction: column.',
-        'failure_message': 'Set flex-direction: column on your .middle selector.',
+        'success_message': '.middle يستخدم flex-direction: column.',
+        'failure_message': 'اضبط flex-direction: column على محدّد .middle.',
     },
 ]

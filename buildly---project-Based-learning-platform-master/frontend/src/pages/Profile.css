@@ -95,18 +95,6 @@
   pointer-events: none;
 }
 
-.profile-page-header::after {
-  content: '';
-  position: absolute;
-  width: 240px;
-  height: 240px;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.1);
-  top: -80px;
-  inset-inline-end: -50px;
-  pointer-events: none;
-}
-
 .profile-page-header-copy {
   position: relative;
   z-index: 1;

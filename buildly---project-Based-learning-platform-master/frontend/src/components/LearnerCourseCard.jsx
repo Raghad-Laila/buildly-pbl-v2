@@ -46,8 +46,7 @@ const LearnerCourseCard = ({
         )}
 
         <span className="learner-course-card-chip">
-          {course.level_display}
-          {course.category_display ? `: ${course.category_display}` : ''}
+          {course.category_display || 'مسار تعليمي'}
         </span>
       </div>
 

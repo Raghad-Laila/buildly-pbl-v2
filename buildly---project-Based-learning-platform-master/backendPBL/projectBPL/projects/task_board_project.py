@@ -1,6 +1,10 @@
 """Task Board advanced project for Frontend Mastery."""
 
 TASK_BOARD_TITLE = 'Build a Task Board with Vanilla JavaScript'
+TASK_BOARD_LEGACY_TITLES = (
+    'Build a Task Board with Vanilla JavaScript',
+    '[Buildly] لوحة مهام بـ JavaScript',
+)
 
 TASK_BOARD_PROJECT = {
     'title': TASK_BOARD_TITLE,
@@ -8,130 +12,126 @@ TASK_BOARD_PROJECT = {
     'languages': ['javascript', 'html', 'css'],
     'estimated_time': 6,
     'description': (
-        'Build a kanban-style task board using HTML, CSS, and vanilla JavaScript. '
-        'Create task data helpers, render a responsive board layout, and style cards '
-        'by status and priority. Give the project your own visual style while keeping '
-        'the required structure and behavior.'
+        'ابنِ لوحة مهام بأسلوب كانبان باستخدام HTML و CSS و JavaScript فقط. '
+        'أنشئ دوال بيانات المهام، واعرض تخطيطاً متجاوباً، ونسّق البطاقات حسب الحالة والأولوية. '
+        'أضف أسلوبك البصري مع الحفاظ على البنية والسلوك المطلوبين.'
     ),
     'objectives': (
-        'Build a complete task board with JavaScript logic, semantic markup, and custom CSS.'
+        'ابنِ لوحة مهام كاملة بمنطق JavaScript ووسوم دلالية وCSS مخصص.'
     ),
     'stories': [
         {
-            'title': 'Task model',
+            'title': 'نموذج المهمة',
             'description': (
-                'In script.js, write a createTask(id, title, status, priority) function that '
-                'returns an object with id, title, status, and priority. Status must be one '
-                'of: todo, doing, or done. Priority must be one of: high, medium, or low.'
+                'في script.js اكتب دالة createTask(id, title, status, priority) تُرجع كائناً '
+                'يحوي id و title و status و priority. الحالة يجب أن تكون واحدةً من: '
+                'todo أو doing أو done. والأولوية واحدةً من: high أو medium أو low.'
             ),
-            'hint': 'Return { id, title, status, priority } and validate the allowed values.',
+            'hint': 'أرجع { id, title, status, priority } وتحقق من القيم المسموحة.',
         },
         {
-            'title': 'Sort and filter tasks',
+            'title': 'ترتيب وتصفية المهام',
             'description': (
-                'Write sortTasksByPriority(tasks) to order tasks high → medium → low, and '
-                'filterTasksByStatus(tasks, status) to return only tasks with the given status.'
+                'اكتب sortTasksByPriority(tasks) لترتيب المهام high ← medium ← low، و '
+                'filterTasksByStatus(tasks, status) لإرجاع المهام ذات الحالة المطلوبة فقط.'
             ),
-            'hint': 'Use a priority map like { high: 0, medium: 1, low: 2 } for sorting.',
+            'hint': 'استخدم خريطة أولوية مثل { high: 0, medium: 1, low: 2 } للترتيب.',
         },
         {
-            'title': 'Task statistics',
+            'title': 'إحصائيات المهام',
             'description': (
-                'Write countTasksByStatus(tasks) to return an object with todo, doing, and done '
-                'counts. Write getTaskSummary(tasks) to return a readable summary string.'
+                'اكتب countTasksByStatus(tasks) لتُرجع كائناً بعدّادات todo و doing و done. '
+                'واكتب getTaskSummary(tasks) لتُرجع نص ملخص مقروء.'
             ),
-            'hint': 'Reduce over the tasks array and increment counters per status.',
+            'hint': 'مرّ على المصفوفة وزد العدّادات حسب الحالة.',
         },
         {
-            'title': 'Render a task card',
+            'title': 'عرض بطاقة مهمة',
             'description': (
-                'Write renderTaskCard(task) to return an HTML string for one task. Each card '
-                'must use the class task-card and include the title, status badge, and priority.'
+                'اكتب renderTaskCard(task) لتُرجع نص HTML لمهمة واحدة. كل بطاقة يجب أن تستخدم '
+                'الصنف task-card وتشمل العنوان وشارة الحالة والأولوية.'
             ),
             'hint': (
-                'Return markup like '
-                '<article class="task-card">...</article> with nested status/priority elements.'
+                'أرجع HTML مثل '
+                '<article class="task-card">...</article> مع عناصر الحالة/الأولوية.'
             ),
         },
         {
-            'title': 'Render the board layout',
+            'title': 'عرض تخطيط اللوحة',
             'description': (
-                'Write renderTaskBoard(tasks) to return HTML for the full board. Include a '
-                'wrapper with id task-board and three sections with classes board-column, one '
-                'for each status: todo, doing, and done.'
+                'اكتب renderTaskBoard(tasks) لتُرجع HTML للوحة كاملة. أدرج غلافاً بمعرّف '
+                'task-board وثلاثة أقسام بالصنف board-column لكل حالة: todo و doing و done.'
             ),
-            'hint': 'Group tasks by status and render each column with renderTaskCard.',
+            'hint': 'جمّع المهام حسب الحالة واعرض كل عمود باستخدام renderTaskCard.',
         },
         {
-            'title': 'Board stylesheet',
+            'title': 'ملف تنسيق اللوحة',
             'description': (
-                'Write getBoardStyles() to return a CSS string. Style #task-board with flexbox, '
-                'add .board-column rules, and style .task-card with spacing, borders, and '
-                'priority classes (.priority-high, .priority-medium, .priority-low).'
+                'اكتب getBoardStyles() لتُرجع نص CSS. نسّق #task-board بـ flexbox، '
+                'وأضف قواعد .board-column، ونسّق .task-card مع أصناف الأولوية '
+                '(.priority-high و .priority-medium و .priority-low).'
             ),
-            'hint': 'Return a template string containing all required selectors and properties.',
+            'hint': 'أرجع template string يحوي كل المحدّدات والخصائص المطلوبة.',
         },
         {
-            'title': 'Priority labels',
+            'title': 'تسميات الأولوية',
             'description': (
-                'Write formatPriorityLabel(priority) to return a human-readable label for each '
-                'priority value.'
+                'اكتب formatPriorityLabel(priority) لتُرجع تسمية مقروءة لكل قيمة أولوية.'
             ),
-            'hint': 'Map high → "High Priority", medium → "Medium Priority", low → "Low Priority".',
+            'hint': 'اربط high → "High Priority" و medium → "Medium Priority" و low → "Low Priority".',
         },
         {
-            'title': 'Page integration',
+            'title': 'دمج الصفحة',
             'description': (
-                'In index.html, link style.css and script.js, add a root container with id app, '
-                'and use your render functions to display the board. Apply styles from '
-                'getBoardStyles() or move them into style.css.'
+                'في index.html اربط style.css و script.js، وأضف حاوية جذر بمعرّف app، '
+                'واستخدم دوال العرض لعرض اللوحة. طبّق أنماط getBoardStyles() أو انقلها إلى style.css.'
             ),
-            'hint': 'Keep a full HTML document and inject the rendered board into #app.',
+            'hint': 'احتفظ بمستند HTML كامل واحقن اللوحة المعروضة داخل #app.',
         },
     ],
 }
 
 TASK_BOARD_TESTS = [
     {
-        'name': '1. createTask returns a task object',
+        'name': '1. createTask تُرجع كائن مهمة',
         'story_index': 1,
-        'description': 'createTask should return an object with id, title, status, and priority.',
+        'description': 'createTask يجب أن تُرجع كائناً يحوي id و title و status و priority.',
         'test_code': (
             'const task = createTask(1, "Fix navbar", "todo", "high");\n'
             'if (!task || task.id !== 1 || task.title !== "Fix navbar") throw new Error("task");\n'
             'if (task.status !== "todo" || task.priority !== "high") throw new Error("fields");'
         ),
-        'success_message': 'createTask returns the expected task shape.',
-        'failure_message': 'Return an object with id, title, status, and priority.',
+        'success_message': 'createTask تُرجع شكل المهمة المتوقع.',
+        'failure_message': 'أرجع كائناً يحوي id و title و status و priority.',
     },
     {
-        'name': '2. createTask validates status',
+        'name': '2. createTask تتحقق من الحالة',
         'story_index': 1,
-        'description': 'createTask should reject invalid status values.',
+        'description': 'createTask يجب أن ترفض قيم الحالة غير الصالحة.',
         'test_code': (
             'let failed = false;\n'
             'try { createTask(2, "Bad", "invalid", "low"); } catch (e) { failed = true; }\n'
             'if (!failed) throw new Error("status");'
         ),
-        'success_message': 'createTask validates status correctly.',
-        'failure_message': 'Throw an error when status is not todo, doing, or done.',
+        'success_message': 'createTask تتحقق من الحالة بشكل صحيح.',
+        'failure_message': 'ارمِ خطأ عندما لا تكون الحالة todo أو doing أو done.',
     },
     {
-        'name': '3. createTask validates priority',
+        'name': '3. createTask تتحقق من الأولوية',
         'story_index': 1,
-        'description': 'createTask should reject invalid priority values.',
+        'description': 'createTask يجب أن ترفض قيم الأولوية غير الصالحة.',
         'test_code': (
             'let failed = false;\n'
             'try { createTask(3, "Bad", "todo", "urgent"); } catch (e) { failed = true; }\n'
             'if (!failed) throw new Error("priority");'
         ),
-        'success_message': 'createTask validates priority correctly.',
-        'failure_message': 'Throw an error when priority is not high, medium, or low.',
+        'success_message': 'createTask تتحقق من الأولوية بشكل صحيح.',
+        'failure_message': 'ارمِ خطأ عندما لا تكون الأولوية high أو medium أو low.',
     },
     {
-        'name': '4. sortTasksByPriority orders tasks',
+        'name': '4. sortTasksByPriority ترتّب المهام',
         'story_index': 2,
-        'description': 'sortTasksByPriority should order high before medium before low.',
+        'description': 'sortTasksByPriority يجب أن ترتّب high قبل medium قبل low.',
         'test_code': (
             'const tasks = [\n'
             '  createTask(1, "A", "todo", "low"),\n'
@@ -142,13 +142,13 @@ TASK_BOARD_TESTS = [
             'if (sorted[0].priority !== "high" || sorted[2].priority !== "low") '
             'throw new Error("order");'
         ),
-        'success_message': 'Tasks are sorted by priority.',
-        'failure_message': 'Sort tasks in high → medium → low order.',
+        'success_message': 'المهام مرتّبة حسب الأولوية.',
+        'failure_message': 'رتّب المهام بالترتيب high ← medium ← low.',
     },
     {
-        'name': '5. filterTasksByStatus filters tasks',
+        'name': '5. filterTasksByStatus تصفّي المهام',
         'story_index': 2,
-        'description': 'filterTasksByStatus should return only matching tasks.',
+        'description': 'filterTasksByStatus يجب أن تُرجع المهام المطابقة فقط.',
         'test_code': (
             'const tasks = [\n'
             '  createTask(1, "A", "todo", "low"),\n'
@@ -159,13 +159,13 @@ TASK_BOARD_TESTS = [
             'if (filtered.length !== 2 || filtered.some((t) => t.status !== "todo")) '
             'throw new Error("filter");'
         ),
-        'success_message': 'filterTasksByStatus works correctly.',
-        'failure_message': 'Return only tasks that match the requested status.',
+        'success_message': 'filterTasksByStatus تعمل بشكل صحيح.',
+        'failure_message': 'أرجع فقط المهام ذات الحالة المطلوبة.',
     },
     {
-        'name': '6. countTasksByStatus counts tasks',
+        'name': '6. countTasksByStatus تعدّ المهام',
         'story_index': 3,
-        'description': 'countTasksByStatus should return todo, doing, and done counts.',
+        'description': 'countTasksByStatus يجب أن تُرجع عدّادات todo و doing و done.',
         'test_code': (
             'const tasks = [\n'
             '  createTask(1, "A", "todo", "low"),\n'
@@ -177,61 +177,61 @@ TASK_BOARD_TESTS = [
             'if (counts.todo !== 2 || counts.doing !== 1 || counts.done !== 1) '
             'throw new Error("counts");'
         ),
-        'success_message': 'Task counts are correct.',
-        'failure_message': 'Return an object with accurate todo, doing, and done counts.',
+        'success_message': 'عدّادات المهام صحيحة.',
+        'failure_message': 'أرجع كائناً بعدّادات todo و doing و done الدقيقة.',
     },
     {
-        'name': '7. renderTaskCard includes task-card',
+        'name': '7. renderTaskCard تتضمن task-card',
         'story_index': 4,
-        'description': 'renderTaskCard should return markup containing the task-card class.',
+        'description': 'renderTaskCard يجب أن تُرجع HTML يحوي الصنف task-card.',
         'test_code': (
             'const markup = renderTaskCard(createTask(1, "Ship feature", "doing", "high"));\n'
             'if (!markup.includes("task-card")) throw new Error("card");'
         ),
-        'success_message': 'renderTaskCard includes task-card.',
-        'failure_message': 'Use the task-card class in your card markup.',
+        'success_message': 'renderTaskCard تتضمن task-card.',
+        'failure_message': 'استخدم الصنف task-card في HTML البطاقة.',
     },
     {
-        'name': '8. renderTaskCard shows title and priority',
+        'name': '8. renderTaskCard تعرض العنوان والأولوية',
         'story_index': 4,
-        'description': 'renderTaskCard should include the task title and priority.',
+        'description': 'renderTaskCard يجب أن تشمل عنوان المهمة والأولوية.',
         'test_code': (
             'const markup = renderTaskCard(createTask(2, "Write tests", "todo", "medium"));\n'
             'if (!markup.includes("Write tests") || !markup.includes("medium")) '
             'throw new Error("content");'
         ),
-        'success_message': 'renderTaskCard shows title and priority.',
-        'failure_message': 'Display the task title and priority in each card.',
+        'success_message': 'renderTaskCard تعرض العنوان والأولوية.',
+        'failure_message': 'اعرض عنوان المهمة والأولوية في كل بطاقة.',
     },
     {
-        'name': '9. renderTaskCard shows status badge',
+        'name': '9. renderTaskCard تعرض شارة الحالة',
         'story_index': 4,
-        'description': 'renderTaskCard should include a status badge for the task.',
+        'description': 'renderTaskCard يجب أن تشمل شارة حالة للمهمة.',
         'test_code': (
             'const markup = renderTaskCard(createTask(3, "Review PR", "done", "low"));\n'
             'if (!markup.includes("status-badge") || !markup.includes("done")) '
             'throw new Error("badge");'
         ),
-        'success_message': 'renderTaskCard includes a status badge.',
-        'failure_message': 'Add a status-badge element that shows the task status.',
+        'success_message': 'renderTaskCard تتضمن شارة حالة.',
+        'failure_message': 'أضف عنصراً بالصنف status-badge يعرض حالة المهمة.',
     },
     {
-        'name': '10. renderTaskBoard has task-board wrapper',
+        'name': '10. renderTaskBoard لها غلاف task-board',
         'story_index': 5,
-        'description': 'renderTaskBoard should return markup with id task-board.',
+        'description': 'renderTaskBoard يجب أن تُرجع HTML بمعرّف task-board.',
         'test_code': (
             'const tasks = [createTask(1, "A", "todo", "high")];\n'
             'const board = renderTaskBoard(tasks);\n'
             'if (!board.includes(\'id="task-board"\') && !board.includes("id=\'task-board\'")) '
             'throw new Error("board");'
         ),
-        'success_message': 'renderTaskBoard includes #task-board.',
-        'failure_message': 'Wrap the board in an element with id="task-board".',
+        'success_message': 'renderTaskBoard تتضمن #task-board.',
+        'failure_message': 'غلّف اللوحة بعنصر id="task-board".',
     },
     {
-        'name': '11. renderTaskBoard has three columns',
+        'name': '11. renderTaskBoard لها ثلاثة أعمدة',
         'story_index': 5,
-        'description': 'renderTaskBoard should include todo, doing, and done columns.',
+        'description': 'renderTaskBoard يجب أن تشمل أعمدة todo و doing و done.',
         'test_code': (
             'const tasks = [createTask(1, "A", "todo", "low")];\n'
             'const board = renderTaskBoard(tasks);\n'
@@ -239,13 +239,13 @@ TASK_BOARD_TESTS = [
             'if (!board.includes("todo") || !board.includes("doing") || !board.includes("done")) '
             'throw new Error("status-columns");'
         ),
-        'success_message': 'renderTaskBoard renders all three columns.',
-        'failure_message': 'Add board-column sections for todo, doing, and done.',
+        'success_message': 'renderTaskBoard تعرض الأعمدة الثلاثة.',
+        'failure_message': 'أضف أقسام board-column لـ todo و doing و done.',
     },
     {
-        'name': '12. renderTaskBoard renders multiple cards',
+        'name': '12. renderTaskBoard تعرض عدة بطاقات',
         'story_index': 5,
-        'description': 'renderTaskBoard should render a card for each task.',
+        'description': 'renderTaskBoard يجب أن تعرض بطاقة لكل مهمة.',
         'test_code': (
             'const tasks = [\n'
             '  createTask(1, "A", "todo", "high"),\n'
@@ -254,59 +254,59 @@ TASK_BOARD_TESTS = [
             'const board = renderTaskBoard(tasks);\n'
             'if ((board.match(/task-card/g) || []).length < 2) throw new Error("cards");'
         ),
-        'success_message': 'renderTaskBoard renders all task cards.',
-        'failure_message': 'Render every task as a task-card inside the board.',
+        'success_message': 'renderTaskBoard تعرض كل بطاقات المهام.',
+        'failure_message': 'اعرض كل مهمة كبطاقة task-card داخل اللوحة.',
     },
     {
-        'name': '13. getBoardStyles uses flex layout',
+        'name': '13. getBoardStyles تستخدم تخطيط flex',
         'story_index': 6,
-        'description': 'getBoardStyles should style the board with flexbox.',
+        'description': 'getBoardStyles يجب أن تنسّق اللوحة بـ flexbox.',
         'test_code': (
             'const styles = getBoardStyles();\n'
             'if (!styles.includes("#task-board") || !styles.includes("display") '
             '|| !styles.includes("flex")) throw new Error("flex");'
         ),
-        'success_message': 'getBoardStyles includes flex layout for the board.',
-        'failure_message': 'Style #task-board with a flex display.',
+        'success_message': 'getBoardStyles تتضمن تخطيط flex للوحة.',
+        'failure_message': 'نسّق #task-board بـ display: flex.',
     },
     {
-        'name': '14. getBoardStyles styles task cards',
+        'name': '14. getBoardStyles تنسّق بطاقات المهام',
         'story_index': 6,
-        'description': 'getBoardStyles should include .task-card rules.',
+        'description': 'getBoardStyles يجب أن تشمل قواعد .task-card.',
         'test_code': (
             'const styles = getBoardStyles();\n'
             'if (!styles.includes(".task-card")) throw new Error("card-style");'
         ),
-        'success_message': 'getBoardStyles includes .task-card rules.',
-        'failure_message': 'Add CSS rules for .task-card in getBoardStyles.',
+        'success_message': 'getBoardStyles تتضمن قواعد .task-card.',
+        'failure_message': 'أضف قواعد CSS لـ .task-card في getBoardStyles.',
     },
     {
-        'name': '15. getBoardStyles includes priority classes',
+        'name': '15. getBoardStyles تتضمن أصناف الأولوية',
         'story_index': 6,
-        'description': 'getBoardStyles should style high, medium, and low priorities.',
+        'description': 'getBoardStyles يجب أن تنسّق أولويات high و medium و low.',
         'test_code': (
             'const styles = getBoardStyles();\n'
             'if (!styles.includes(".priority-high") || !styles.includes(".priority-medium") '
             '|| !styles.includes(".priority-low")) throw new Error("priority");'
         ),
-        'success_message': 'Priority classes are styled.',
-        'failure_message': 'Add .priority-high, .priority-medium, and .priority-low rules.',
+        'success_message': 'أصناف الأولوية منسّقة.',
+        'failure_message': 'أضف قواعد .priority-high و .priority-medium و .priority-low.',
     },
     {
-        'name': '16. formatPriorityLabel returns readable text',
+        'name': '16. formatPriorityLabel تُرجع نصاً مقروءاً',
         'story_index': 7,
-        'description': 'formatPriorityLabel should return a readable label.',
+        'description': 'formatPriorityLabel يجب أن تُرجع تسمية مقروءة.',
         'test_code': (
             'const label = formatPriorityLabel("high");\n'
             'if (!label || label.length < 3 || !/high/i.test(label)) throw new Error("label");'
         ),
-        'success_message': 'formatPriorityLabel returns readable text.',
-        'failure_message': 'Return a readable label for each priority value.',
+        'success_message': 'formatPriorityLabel تُرجع نصاً مقروءاً.',
+        'failure_message': 'أرجع تسمية مقروءة لكل قيمة أولوية.',
     },
     {
-        'name': '17. getTaskSummary returns summary text',
+        'name': '17. getTaskSummary تُرجع نص ملخص',
         'story_index': 3,
-        'description': 'getTaskSummary should return a non-empty summary string.',
+        'description': 'getTaskSummary يجب أن تُرجع نص ملخص غير فارغ.',
         'test_code': (
             'const tasks = [\n'
             '  createTask(1, "A", "todo", "low"),\n'
@@ -315,7 +315,7 @@ TASK_BOARD_TESTS = [
             'const summary = getTaskSummary(tasks);\n'
             'if (!summary || summary.length < 5) throw new Error("summary");'
         ),
-        'success_message': 'getTaskSummary returns a useful summary.',
-        'failure_message': 'Return a readable summary string for the current tasks.',
+        'success_message': 'getTaskSummary تُرجع ملخصاً مفيداً.',
+        'failure_message': 'أرجع نص ملخص مقروء للمهام الحالية.',
     },
 ]

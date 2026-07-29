@@ -4,33 +4,37 @@ from django.db.models import Max
 
 from courses.models import Course
 from projects.book_inventory_project import (
+    BOOK_INVENTORY_LEGACY_TITLES,
     BOOK_INVENTORY_PROJECT,
     BOOK_INVENTORY_TESTS,
     BOOK_INVENTORY_TITLE,
 )
 from projects.models import Project, ProjectTask, Tests
 from projects.playing_cards_project import (
+    PLAYING_CARDS_LEGACY_TITLES,
     PLAYING_CARDS_PROJECT,
     PLAYING_CARDS_TESTS,
     PLAYING_CARDS_TITLE,
 )
 from projects.product_catalog_project import (
+    PRODUCT_CATALOG_LEGACY_TITLES,
     PRODUCT_CATALOG_PROJECT,
     PRODUCT_CATALOG_TESTS,
     PRODUCT_CATALOG_TITLE,
 )
 from projects.seed_data import FRONTEND_COURSE_TITLE
 from projects.task_board_project import (
+    TASK_BOARD_LEGACY_TITLES,
     TASK_BOARD_PROJECT,
     TASK_BOARD_TESTS,
     TASK_BOARD_TITLE,
 )
 
 LAB_PROJECTS = [
-    (PLAYING_CARDS_TITLE, PLAYING_CARDS_PROJECT, PLAYING_CARDS_TESTS),
-    (BOOK_INVENTORY_TITLE, BOOK_INVENTORY_PROJECT, BOOK_INVENTORY_TESTS),
-    (TASK_BOARD_TITLE, TASK_BOARD_PROJECT, TASK_BOARD_TESTS),
-    (PRODUCT_CATALOG_TITLE, PRODUCT_CATALOG_PROJECT, PRODUCT_CATALOG_TESTS),
+    (PLAYING_CARDS_TITLE, PLAYING_CARDS_PROJECT, PLAYING_CARDS_TESTS, PLAYING_CARDS_LEGACY_TITLES),
+    (BOOK_INVENTORY_TITLE, BOOK_INVENTORY_PROJECT, BOOK_INVENTORY_TESTS, BOOK_INVENTORY_LEGACY_TITLES),
+    (TASK_BOARD_TITLE, TASK_BOARD_PROJECT, TASK_BOARD_TESTS, TASK_BOARD_LEGACY_TITLES),
+    (PRODUCT_CATALOG_TITLE, PRODUCT_CATALOG_PROJECT, PRODUCT_CATALOG_TESTS, PRODUCT_CATALOG_LEGACY_TITLES),
 ]
 
 
@@ -46,8 +50,8 @@ class Command(BaseCommand):
             )
             return
 
-        for title, project_data, tests in LAB_PROJECTS:
-            project = self._upsert_project(course, project_data)
+        for title, project_data, tests, legacy_titles in LAB_PROJECTS:
+            project = self._upsert_project(course, project_data, legacy_titles)
             self._seed_tasks_and_tests(project, project_data, tests)
             self.stdout.write(self.style.SUCCESS(
                 f'Project "{title}" ready (id={project.id}) with '
@@ -57,11 +61,13 @@ class Command(BaseCommand):
         course.update_projects_count()
         self.stdout.write('Upload starter folders and images from the admin UI.')
 
-    def _upsert_project(self, course, project_data):
-        existing = Project.objects.filter(course=course, title=project_data['title']).first()
+    def _upsert_project(self, course, project_data, legacy_titles=()):
+        lookup_titles = (project_data['title'], *legacy_titles)
+        existing = Project.objects.filter(course=course, title__in=lookup_titles).first()
 
         if existing:
             project = existing
+            project.title = project_data['title']
             project.description = project_data['description']
             project.level = project_data['level']
             project.languages = project_data['languages']

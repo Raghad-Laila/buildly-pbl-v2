@@ -138,42 +138,24 @@ const CourseEdit = () => {
             />
           </div>
 
-          <div className="form-row">
-            <div className="input-group" data-field="level">
-              <label htmlFor="level">المستوى *</label>
-              <select
-                id="level"
-                name="level"
-                value={formData.level}
-                onChange={handleChange}
-                required
-              >
-                <option value="beginner">مبتدئ</option>
-                <option value="intermediate">متوسط</option>
-                <option value="advanced">متقدم</option>
-                <option value="expert">خبير</option>
-              </select>
-            </div>
-
-            <div className="input-group" data-field="category">
-              <label htmlFor="category">الفئة *</label>
-              <select
-                id="category"
-                name="category"
-                value={formData.category}
-                onChange={handleChange}
-                required
-              >
-                <option value="web">تطوير الويب</option>
-                <option value="mobile">تطوير الموبايل</option>
-                <option value="data">علوم البيانات</option>
-                <option value="ai">الذكاء الاصطناعي</option>
-                <option value="design">التصميم</option>
-                <option value="business">أعمال</option>
-                <option value="language">لغات</option>
-                <option value="other">أخرى</option>
-              </select>
-            </div>
+          <div className="input-group" data-field="category">
+            <label htmlFor="category">الفئة *</label>
+            <select
+              id="category"
+              name="category"
+              value={formData.category}
+              onChange={handleChange}
+              required
+            >
+              <option value="web">تطوير الويب</option>
+              <option value="mobile">تطوير الموبايل</option>
+              <option value="data">علوم البيانات</option>
+              <option value="ai">الذكاء الاصطناعي</option>
+              <option value="design">التصميم</option>
+              <option value="business">أعمال</option>
+              <option value="language">لغات</option>
+              <option value="other">أخرى</option>
+            </select>
           </div>
 
           <div className="input-group" data-field="estimated_duration">

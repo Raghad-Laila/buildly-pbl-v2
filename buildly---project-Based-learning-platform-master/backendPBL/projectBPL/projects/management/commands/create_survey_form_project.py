@@ -6,6 +6,7 @@ from courses.models import Course
 from projects.models import Project, ProjectTask, Tests
 from projects.seed_data import FRONTEND_COURSE_TITLE
 from projects.survey_form_project import (
+    SURVEY_FORM_LEGACY_TITLES,
     SURVEY_FORM_PROJECT,
     SURVEY_FORM_TESTS,
     SURVEY_FORM_TITLE,
@@ -13,7 +14,7 @@ from projects.survey_form_project import (
 
 
 class Command(BaseCommand):
-    help = 'Create the "Build a Survey Form" project in Frontend Mastery'
+    help = 'Create the Arabic Survey Form lab project in Frontend Mastery'
 
     @transaction.atomic
     def handle(self, *args, **options):
@@ -24,7 +25,8 @@ class Command(BaseCommand):
             )
             return
 
-        existing = Project.objects.filter(course=course, title=SURVEY_FORM_TITLE).first()
+        lookup_titles = (SURVEY_FORM_TITLE, *SURVEY_FORM_LEGACY_TITLES)
+        existing = Project.objects.filter(course=course, title__in=lookup_titles).first()
         if existing:
             project = existing
             self.stdout.write(f'Updating existing project id={project.id}')
@@ -50,6 +52,7 @@ class Command(BaseCommand):
             self.stdout.write(f'Created project id={project.id}')
 
         if existing:
+            project.title = SURVEY_FORM_PROJECT['title']
             project.description = SURVEY_FORM_PROJECT['description']
             project.level = SURVEY_FORM_PROJECT['level']
             project.languages = SURVEY_FORM_PROJECT['languages']

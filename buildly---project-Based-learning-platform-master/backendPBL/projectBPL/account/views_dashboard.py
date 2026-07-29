@@ -57,91 +57,182 @@ class LearnerDashboardView(APIView):
         })
     
     def get_learner_stats(self, user):
-        """الحصول على إحصائيات المتعلم"""
+        """إحصائيات حقيقية من تقدم المشاريع والمسارات"""
         enrolled_courses = user.get_enrolled_courses_list() or []
-        
-        # محاكاة بيانات المشاريع (في النظام الحقيقي سيتم جلبها من قاعدة البيانات)
-        completed_projects = len(enrolled_courses) // 2  # افتراضية
-        in_progress_projects = len(enrolled_courses) - completed_projects
-        total_hours_spent = len(enrolled_courses) * 10  # افتراضية
-        skill_level = self.calculate_skill_level(user)
-        
+        progress_qs = ProjectProgress.objects.filter(user=user).select_related('project')
+
+        completed_projects = progress_qs.filter(status='completed').count()
+        in_progress_projects = progress_qs.filter(status='in_progress').count()
+
+        hours_qs = progress_qs.filter(status__in=['completed', 'in_progress'])
+        total_hours_spent = sum(
+            (item.project.estimated_time or 0) for item in hours_qs
+        )
+
+        graded = list(
+            progress_qs.filter(is_graded=True, grade_stars__isnull=False)
+            .values_list('grade_stars', flat=True)
+        )
+        avg_score = round(sum(graded) / len(graded), 1) if graded else 0
+
+        accessible_projects = Project.objects.filter(
+            course__enrolled_learners=user,
+            course__is_active=True,
+            course__is_archived=False,
+            is_active=True,
+        ).count()
+        completion_rate = (
+            int(round((completed_projects / accessible_projects) * 100))
+            if accessible_projects
+            else 0
+        )
+
         return {
             'total_enrolled_projects': len(enrolled_courses),
             'completed_projects': completed_projects,
             'in_progress_projects': in_progress_projects,
             'total_hours_spent': total_hours_spent,
             'current_streak_days': self.get_streak_days(user),
-            'skill_level': skill_level,
-            'completion_rate': self.calculate_completion_rate(user),
-            'avg_project_score': self.get_average_score(user),
+            'skill_level': self.calculate_skill_level(user),
+            'completion_rate': completion_rate,
+            'avg_project_score': avg_score,
         }
-    
+
     def get_enrolled_projects(self, user):
-        """الحصول على المشاريع المنضم إليها"""
-        enrolled_courses = user.get_enrolled_courses_list() or []
-        
+        """المشاريع من المسارات المنضم إليها مع حالة التقدم الحقيقية"""
+        projects_qs = (
+            Project.objects.filter(
+                course__enrolled_learners=user,
+                course__is_active=True,
+                course__is_archived=False,
+                is_active=True,
+            )
+            .select_related('course')
+            .order_by('-created_at')
+        )
+
+        progress_map = {
+            item.project_id: item
+            for item in ProjectProgress.objects.filter(user=user, project__in=projects_qs)
+        }
+
         projects = []
-        for i, course_title in enumerate(enrolled_courses[:5]):  # آخر 5 مشاريع
-            # محاكاة حالة المشروع
-            status_options = ['قيد التنفيذ', 'تم التقديم', 'قيد المراجعة', 'معتمد']
-            status = status_options[i % len(status_options)]
-            
-            progress = (i + 1) * 20 if status != 'معتمد' else 100
-            
-            project = {
-                'id': i + 1,
-                'title': course_title,
-                'description': f'مشروع تطبيقي في {course_title}',
-                'status': status,
-                'progress_percentage': progress,
-                'deadline': (timezone.now() + timedelta(days=(30 - i*5))).strftime('%Y-%m-%d'),
-                'last_activity': (timezone.now() - timedelta(days=i)).strftime('%Y-%m-%d'),
-                'category': self.get_project_category(course_title),
-                'difficulty': ['مبتدئ', 'متوسط', 'متقدم'][i % 3],
-                'estimated_hours': [10, 15, 20, 25, 30][i % 5],
+        for project in projects_qs[:5]:
+            progress = progress_map.get(project.id)
+            status = progress.status if progress else 'not_started'
+            status_labels = {
+                'not_started': 'لم يبدأ',
+                'in_progress': 'قيد التنفيذ',
+                'completed': 'مكتمل',
             }
-            projects.append(project)
-        
+            percentage = 100 if status == 'completed' else (
+                progress.progress_percentage if progress else 0
+            )
+
+            projects.append({
+                'id': project.id,
+                'project_id': project.id,
+                'title': project.title,
+                'description': project.description,
+                'status': status_labels.get(status, status),
+                'progress_percentage': percentage,
+                'deadline': None,
+                'last_activity': (
+                    (progress.completed_at or progress.started_at).strftime('%Y-%m-%d')
+                    if progress and (progress.completed_at or progress.started_at)
+                    else None
+                ),
+                'category': project.course.title,
+                'difficulty': project.get_level_display(),
+                'estimated_hours': project.estimated_time,
+                'course_id': project.course_id,
+                'course_title': project.course.title,
+            })
+
+        total_count = projects_qs.count()
         return {
             'count': len(projects),
             'projects': projects,
-            'has_more': len(enrolled_courses) > 5,
-            'total_count': len(enrolled_courses)
+            'has_more': total_count > 5,
+            'total_count': total_count,
         }
-    
+
     def get_learning_progress(self, user):
-        """تتبع التقدم التعليمي"""
-        enrolled_courses = user.get_enrolled_courses_list() or []
-        
-        # محاكاة بيانات التقدم
+        """تقدم تعليمي حقيقي من سجلات التقدم"""
+        progress_qs = ProjectProgress.objects.filter(user=user).select_related('project')
+        completed = progress_qs.filter(status='completed').count()
+
+        total_projects = Project.objects.filter(
+            course__enrolled_learners=user,
+            course__is_active=True,
+            course__is_archived=False,
+            is_active=True,
+        ).count()
+
+        overall = (
+            int(round((completed / total_projects) * 100))
+            if total_projects
+            else 0
+        )
+
         progress_data = []
-        for i, course in enumerate(enrolled_courses[:6]):
-            progress = {
-                'project_name': course,
-                'progress': min(100, (i + 1) * 20),
-                'skills_gained': self.get_skills_for_project(course),
-                'time_spent': (i + 1) * 5,
-                'last_update': (timezone.now() - timedelta(days=i)).strftime('%Y-%m-%d'),
-            }
-            progress_data.append(progress)
-        
-        # مخطط التقدم الشهري (محاكاة)
-        monthly_progress = []
-        current_date = timezone.now()
-        for i in range(6):
-            month_date = current_date - timedelta(days=30*i)
-            monthly_progress.append({
-                'month': month_date.strftime('%b'),
-                'completed_projects': (i + 1) * 2,
-                'hours_spent': (i + 1) * 15,
+        for item in progress_qs.order_by('-completed_at', '-started_at')[:6]:
+            progress_data.append({
+                'project_name': item.project.title,
+                'progress': 100 if item.status == 'completed' else (item.progress_percentage or 0),
+                'skills_gained': item.project.get_languages_display_list(),
+                'time_spent': item.project.estimated_time or 0,
+                'last_update': (
+                    (item.completed_at or item.started_at).strftime('%Y-%m-%d')
+                    if (item.completed_at or item.started_at)
+                    else None
+                ),
             })
-        
+
+        now = timezone.now()
+        monthly_progress = []
+        for i in range(5, -1, -1):
+            month_start = (now.replace(day=1) - timedelta(days=30 * i)).replace(day=1)
+            if i == 0:
+                month_end = now
+            else:
+                next_month = (month_start + timedelta(days=32)).replace(day=1)
+                month_end = next_month
+
+            month_completed = progress_qs.filter(
+                status='completed',
+                completed_at__gte=month_start,
+                completed_at__lt=month_end,
+            )
+            hours = sum((p.project.estimated_time or 0) for p in month_completed.select_related('project'))
+            monthly_progress.append({
+                'month': month_start.strftime('%b'),
+                'completed_projects': month_completed.count(),
+                'hours_spent': hours,
+            })
+
+        recent_completed = progress_qs.filter(
+            status='completed',
+            completed_at__gte=now - timedelta(days=30),
+        ).count()
+        older_completed = progress_qs.filter(
+            status='completed',
+            completed_at__gte=now - timedelta(days=60),
+            completed_at__lt=now - timedelta(days=30),
+        ).count()
+
+        if recent_completed > older_completed:
+            trend = 'تصاعدي'
+        elif recent_completed < older_completed:
+            trend = 'تنازلي'
+        else:
+            trend = 'مستقر'
+
         return {
-            'overall_progress_percentage': min(100, len(enrolled_courses) * 10),
+            'overall_progress_percentage': overall,
             'progress_by_project': progress_data,
-            'monthly_progress': monthly_progress[::-1],  # عكس الترتيب
-            'learning_trend': 'تصاعدي' if len(enrolled_courses) > 0 else 'مستقر',
+            'monthly_progress': monthly_progress,
+            'learning_trend': trend,
         }
     
     def get_recent_notifications(self, user):
@@ -335,67 +426,79 @@ class LearnerDashboardView(APIView):
         ]
     
     # === دوال مساعدة ===
-    
-    def calculate_skill_level(self, user):
-        """حساب مستوى المهارة"""
-        enrolled_count = len(user.get_enrolled_courses_list() or [])
-        if enrolled_count == 0:
-            return 'مبتدئ'
-        elif enrolled_count <= 3:
-            return 'متوسط'
-        elif enrolled_count <= 6:
-            return 'متقدم'
-        else:
-            return 'خبير'
-    
-    def get_streak_days(self, user):
-        """عدد الأيام المتتالية للنشاط"""
-        # محاكاة - في النظام الحقيقي سيتم حسابها من سجل النشاط
-        return 7  # أسبوع
-    
-    def calculate_completion_rate(self, user):
-        """معدل إتمام المشاريع"""
-        enrolled = len(user.get_enrolled_courses_list() or [])
-        if enrolled == 0:
-            return 0
-        completed = enrolled // 2  # افتراضية
-        return int((completed / enrolled) * 100)
-    
-    def get_average_score(self, user):
-        """متوسط الدرجات"""
-        # محاكاة
-        return 85
-    
-    def get_project_category(self, project_title):
-        """تحديد تصنيف المشروع من عنوانه"""
-        categories = {
-            'ويب': 'تطوير الويب',
-            'تطبيق': 'تطوير التطبيقات',
-            'بيانات': 'تحليل البيانات',
-            'ذكاء': 'الذكاء الاصطناعي',
-            'أمن': 'الأمن السيبراني',
-            'تصميم': 'تصميم واجهات',
-        }
-        
-        for key, category in categories.items():
-            if key in project_title:
-                return category
-        return 'عام'
-    
-    def get_skills_for_project(self, project_title):
-        """المهارات المكتسبة من المشروع"""
-        skills_map = {
-            'ويب': ['HTML', 'CSS', 'JavaScript', 'React'],
-            'تطبيق': ['Flutter', 'React Native', 'Android', 'iOS'],
-            'بيانات': ['Python', 'Pandas', 'SQL', 'Tableau'],
-            'ذكاء': ['Python', 'TensorFlow', 'ML', 'Deep Learning'],
-        }
-        
-        for key, skills in skills_map.items():
-            if key in project_title:
-                return skills
-        return ['مهارات تقنية', 'حل المشكلات', 'التفكير النقدي']
 
+    def calculate_skill_level(self, user):
+        """مستوى المهارة من مستوى المستخدم أو من المشاريع المكتملة"""
+        if getattr(user, 'is_rated', False) and user.level:
+            return user.get_level_display()
+
+        completed = ProjectProgress.objects.filter(user=user, status='completed').count()
+        if completed == 0:
+            return 'مبتدئ'
+        if completed <= 2:
+            return 'متوسط'
+        if completed <= 5:
+            return 'متقدم'
+        return 'خبير'
+
+    def get_streak_days(self, user):
+        """عدد الأيام المتتالية للنشاط من سجلات التقدم والمهام"""
+        dates = set()
+
+        for progress in ProjectProgress.objects.filter(user=user):
+            if progress.started_at:
+                dates.add(timezone.localtime(progress.started_at).date())
+            if progress.completed_at:
+                dates.add(timezone.localtime(progress.completed_at).date())
+
+        for submission in TaskSubmission.objects.filter(
+            user=user,
+            is_completed=True,
+            completed_at__isnull=False,
+        ):
+            dates.add(timezone.localtime(submission.completed_at).date())
+
+        if not dates:
+            return 0
+
+        today = timezone.localdate()
+        check = today
+        if check not in dates:
+            check = today - timedelta(days=1)
+            if check not in dates:
+                return 0
+
+        streak = 0
+        while check in dates:
+            streak += 1
+            check -= timedelta(days=1)
+        return streak
+
+    def calculate_completion_rate(self, user):
+        """معدل إتمام المشاريع ضمن المسارات المنضم إليها"""
+        total = Project.objects.filter(
+            course__enrolled_learners=user,
+            course__is_active=True,
+            course__is_archived=False,
+            is_active=True,
+        ).count()
+        if total == 0:
+            return 0
+        completed = ProjectProgress.objects.filter(user=user, status='completed').count()
+        return int(round((completed / total) * 100))
+
+    def get_average_score(self, user):
+        """متوسط تقييم المشاريع المكتملة"""
+        grades = list(
+            ProjectProgress.objects.filter(
+                user=user,
+                is_graded=True,
+                grade_stars__isnull=False,
+            ).values_list('grade_stars', flat=True)
+        )
+        if not grades:
+            return 0
+        return round(sum(grades) / len(grades), 1)
 
 class LearnerProgressAPIView(APIView):
     """API لمتابعة تقدم المتعلم"""

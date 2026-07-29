@@ -74,7 +74,6 @@ const FavoritesDashboardSection = () => {
                 <p>{course.description?.substring(0, 80)}...</p>
                 <div className="item-meta">
                   <span className="badge badge-favorite">مسار مفضل</span>
-                  <span className="badge">{course.level_display}</span>
                   <span className="badge">{course.category_display}</span>
                 </div>
               </div>

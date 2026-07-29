@@ -1,0 +1,302 @@
+/* Login page atmosphere — form card keeps Auth.css look */
+
+.login-page {
+  --login-indigo: #6366f1;
+  --login-indigo-deep: #4f46e5;
+  --login-violet: #8b5cf6;
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  min-height: calc(100vh - 80px);
+  padding: 48px 20px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background:
+    radial-gradient(ellipse 70% 55% at 12% 18%, rgba(99, 102, 241, 0.34), transparent 58%),
+    radial-gradient(ellipse 60% 50% at 88% 78%, rgba(139, 92, 246, 0.28), transparent 55%),
+    radial-gradient(ellipse 45% 40% at 70% 12%, rgba(129, 140, 248, 0.2), transparent 50%),
+    linear-gradient(155deg, #1e1b4b 0%, #312e81 42%, #3730a3 100%);
+}
+
+.login-page-atmosphere {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.login-orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(4px);
+  opacity: 0.75;
+  will-change: transform;
+}
+
+.login-orb--a {
+  width: min(46vw, 460px);
+  height: min(46vw, 460px);
+  top: -12%;
+  inset-inline-start: -8%;
+  background: radial-gradient(
+    circle at 35% 35%,
+    rgba(165, 180, 252, 0.55),
+    rgba(99, 102, 241, 0.18) 55%,
+    transparent 72%
+  );
+  animation: login-float-a 16s ease-in-out infinite;
+}
+
+.login-orb--b {
+  width: min(40vw, 400px);
+  height: min(40vw, 400px);
+  bottom: -14%;
+  inset-inline-end: -6%;
+  background: radial-gradient(
+    circle at 40% 40%,
+    rgba(196, 181, 253, 0.45),
+    rgba(139, 92, 246, 0.16) 58%,
+    transparent 72%
+  );
+  animation: login-float-b 20s ease-in-out infinite;
+}
+
+.login-orb--c {
+  width: min(26vw, 260px);
+  height: min(26vw, 260px);
+  top: 38%;
+  inset-inline-start: 46%;
+  background: radial-gradient(
+    circle at 50% 50%,
+    rgba(199, 210, 254, 0.32),
+    transparent 70%
+  );
+  animation: login-float-c 13s ease-in-out infinite;
+}
+
+.login-ring {
+  position: absolute;
+  border-radius: 50%;
+  border: 1.5px solid rgba(199, 210, 254, 0.18);
+  opacity: 0.7;
+  will-change: transform, opacity;
+}
+
+.login-ring--a {
+  width: min(52vw, 520px);
+  height: min(52vw, 520px);
+  top: 50%;
+  inset-inline-start: 50%;
+  margin-top: calc(min(52vw, 520px) / -2);
+  margin-inline-start: calc(min(52vw, 520px) / -2);
+  animation: login-ring-pulse 12s ease-in-out infinite;
+}
+
+.login-ring--b {
+  width: min(34vw, 340px);
+  height: min(34vw, 340px);
+  top: 50%;
+  inset-inline-start: 50%;
+  margin-top: calc(min(34vw, 340px) / -2);
+  margin-inline-start: calc(min(34vw, 340px) / -2);
+  border-color: rgba(167, 139, 250, 0.2);
+  animation: login-ring-pulse 12s ease-in-out infinite 1.8s;
+}
+
+.login-grid {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.04) 1px, transparent 1px);
+  background-size: 52px 52px;
+  mask-image: radial-gradient(ellipse 72% 62% at 50% 45%, #000 18%, transparent 78%);
+  opacity: 0.5;
+  animation: login-grid-drift 32s linear infinite;
+}
+
+.login-shine {
+  position: absolute;
+  top: -25%;
+  inset-inline-start: -35%;
+  width: 65%;
+  height: 75%;
+  background: linear-gradient(
+    115deg,
+    transparent 28%,
+    rgba(255, 255, 255, 0.07) 48%,
+    transparent 64%
+  );
+  transform: rotate(18deg);
+  animation: login-shine-sweep 11s ease-in-out infinite;
+}
+
+.login-dot {
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: rgba(224, 231, 255, 0.7);
+  box-shadow: 0 0 12px rgba(165, 180, 252, 0.55);
+  animation: login-dot-drift 10s ease-in-out infinite;
+}
+
+.login-dot--1 {
+  top: 18%;
+  inset-inline-start: 18%;
+  animation-duration: 11s;
+}
+
+.login-dot--2 {
+  top: 28%;
+  inset-inline-end: 16%;
+  width: 5px;
+  height: 5px;
+  animation-duration: 13s;
+  animation-delay: -2s;
+}
+
+.login-dot--3 {
+  bottom: 22%;
+  inset-inline-start: 24%;
+  width: 4px;
+  height: 4px;
+  animation-duration: 9s;
+  animation-delay: -4s;
+}
+
+.login-dot--4 {
+  bottom: 30%;
+  inset-inline-end: 22%;
+  animation-duration: 14s;
+  animation-delay: -1s;
+}
+
+.login-dot--5 {
+  top: 58%;
+  inset-inline-start: 12%;
+  width: 5px;
+  height: 5px;
+  animation-duration: 12s;
+  animation-delay: -3s;
+}
+
+/* Keep auth-card look; only lift above atmosphere + soft entrance */
+.login-page .login-card {
+  position: relative;
+  z-index: 1;
+  animation: login-card-enter 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
+  box-shadow:
+    0 28px 60px rgba(30, 27, 75, 0.35),
+    0 8px 20px rgba(79, 70, 229, 0.18);
+}
+
+@keyframes login-float-a {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  50% {
+    transform: translate3d(24px, 32px, 0) scale(1.05);
+  }
+}
+
+@keyframes login-float-b {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  50% {
+    transform: translate3d(-28px, -20px, 0) scale(1.07);
+  }
+}
+
+@keyframes login-float-c {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+  50% {
+    transform: translate3d(-36px, 22px, 0);
+  }
+}
+
+@keyframes login-ring-pulse {
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 0.35;
+  }
+  50% {
+    transform: scale(1.08);
+    opacity: 0.7;
+  }
+}
+
+@keyframes login-grid-drift {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+  to {
+    transform: translate3d(52px, 52px, 0);
+  }
+}
+
+@keyframes login-shine-sweep {
+  0%,
+  100% {
+    opacity: 0.2;
+    transform: translate3d(0, 0, 0) rotate(18deg);
+  }
+  50% {
+    opacity: 0.45;
+    transform: translate3d(16%, 7%, 0) rotate(18deg);
+  }
+}
+
+@keyframes login-dot-drift {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0);
+    opacity: 0.35;
+  }
+  50% {
+    transform: translate3d(0, -14px, 0);
+    opacity: 0.9;
+  }
+}
+
+@keyframes login-card-enter {
+  from {
+    opacity: 0;
+    transform: translateY(22px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@media (max-width: 768px) {
+  .login-page {
+    padding: 28px 16px;
+  }
+
+  .login-orb--c,
+  .login-ring--b {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .login-orb,
+  .login-ring,
+  .login-grid,
+  .login-shine,
+  .login-dot,
+  .login-page .login-card {
+    animation: none !important;
+  }
+}

@@ -7,7 +7,6 @@ import ProjectImageInput from '../components/ProjectImageInput'
 import StarterFolderInput from '../components/StarterFolderInput'
 import {
   createEmptyStarterSelection,
-  hasStarterFolderSelection,
   uploadStarterSelection,
 } from '../utils/starterFolder'
 import {
@@ -92,11 +91,6 @@ const ProjectCreate = () => {
     if (selectedLanguages.length === 0) {
       setLanguageError('يجب اختيار لغة واحدة على الأقل')
       setError('يجب اختيار لغة واحدة على الأقل', 'languages')
-      return null
-    }
-
-    if (!hasStarterFolderSelection(starterSelection)) {
-      setError('يجب رفع مجلد البداية', 'starter_folder')
       return null
     }
 

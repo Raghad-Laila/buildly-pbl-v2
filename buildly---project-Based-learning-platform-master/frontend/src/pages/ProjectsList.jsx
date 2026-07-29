@@ -135,10 +135,10 @@ const ProjectsList = () => {
     return progress[projectId]?.status || 'not_started'
   }
 
-  // تبويبات المسارات — نستخلص المسارات الفريدة من قائمة المشاريع
-  const courseTabs = isLearner && !courseId
+  // تبويبات المسارات — نستخلص المسارات الفريدة من قائمة المشاريع (متعلم ومشرف)
+  const courseTabs = !courseId
     ? [
-        { id: 'all', title: 'الكل' },
+        { id: 'all', title: isAdmin ? 'جميع المسارات' : 'الكل' },
         ...Array.from(
           new Map(
             projects.map((p) => [p.course_id, { id: p.course_id, title: p.course_title || `مسار ${p.course_id}` }])
@@ -149,7 +149,6 @@ const ProjectsList = () => {
 
   const filteredProjects = projects.filter((project) => {
     if (
-      isLearner &&
       !courseId &&
       activeCourseTab !== 'all' &&
       Number(project.course_id) !== Number(activeCourseTab)
@@ -455,6 +454,23 @@ const ProjectsList = () => {
               </h1>
             </div>
             <div className="projects-header-actions">
+              {courseTabs.length > 1 && (
+                <select
+                  value={activeCourseTab}
+                  onChange={(e) => {
+                    const raw = e.target.value
+                    setActiveCourseTab(raw === 'all' ? 'all' : Number(raw))
+                  }}
+                  className="projects-filter-select"
+                  aria-label="تصفية حسب المسار"
+                >
+                  {courseTabs.map((tab) => (
+                    <option key={tab.id} value={tab.id}>
+                      {tab.title}
+                    </option>
+                  ))}
+                </select>
+              )}
               {levelFilterDropdown}
               <Link
                 to="/projects/create"
@@ -492,7 +508,8 @@ const ProjectsList = () => {
             <p>
               {statusFilter !== 'all' && isLearner
                 ? 'لا توجد مشاريع بهذه الحالة ضمن التصفية الحالية'
-                : 'لا توجد مشاريع مطابقة للمستوى المحدد'}
+                : 'لا توجد مشاريع مطابقة للتصفية المحددة'}
+
             </p>
           </div>
         ) : (

@@ -58,6 +58,14 @@ const LearnerDashboard = () => {
         (item) => item?.status && item.status !== 'completed' && item.status !== 'not_started'
       ).length
 
+      const hoursSpent = projects.reduce((sum, project) => {
+        const progress =
+          progressMap[project.project_id] || progressMap[String(project.project_id)]
+        if (!progress?.status) return sum
+        if (progress.status !== 'completed' && progress.status !== 'in_progress') return sum
+        return sum + (Number(project.estimated_time) || 0)
+      }, 0)
+
       const overallFromCourses =
         coursesWithProgress.length > 0
           ? Math.round(
@@ -74,6 +82,7 @@ const LearnerDashboard = () => {
         _overallProgress: overallFromCourses,
         _completedProjects: completedProjects,
         _inProgressProjects: inProgressProjects,
+        _hoursSpent: hoursSpent,
       })
     } catch (err) {
       setError('فشل تحميل بيانات لوحة التحكم')
@@ -128,6 +137,8 @@ const LearnerDashboard = () => {
     dashboardData._completedProjects ?? dashboard_stats?.completed_projects ?? 0
   const inProgressProjects =
     dashboardData._inProgressProjects ?? dashboard_stats?.in_progress_projects ?? 0
+  const hoursSpent =
+    dashboardData._hoursSpent ?? dashboard_stats?.total_hours_spent ?? 0
 
   return (
     <div className="learner-dashboard">
@@ -185,7 +196,7 @@ const LearnerDashboard = () => {
               <span>⏰</span>
             </div>
             <div className="learner-stat-content">
-              <h3>{dashboard_stats?.total_hours_spent || 0}</h3>
+              <h3>{hoursSpent}</h3>
               <p>ساعات التعلم</p>
             </div>
           </div>
@@ -248,7 +259,6 @@ const LearnerDashboard = () => {
                           : 'لا يوجد وصف'}
                       </p>
                       <div className="project-meta">
-                        <span className="badge badge-info">{course.level_display}</span>
                         <span className="badge badge-warning">{course.category_display}</span>
                         <span className="badge">
                           {course.actual_projects_count ?? course.projects_count ?? 0} مشروع

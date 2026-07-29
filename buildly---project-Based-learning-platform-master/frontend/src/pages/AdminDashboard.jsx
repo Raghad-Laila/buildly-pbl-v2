@@ -35,15 +35,27 @@ const AdminDashboard = () => {
       const projects = projectsRes.data.projects || []
       const archived = archivedRes.data.archived_courses || []
 
+      const uniqueLearnerIds = new Set()
+      courses.forEach((course) => {
+        ;(course.enrolled_learner_ids || []).forEach((id) => uniqueLearnerIds.add(id))
+      })
+
+      const sortedCourses = [...courses].sort(
+        (a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0)
+      )
+      const sortedProjects = [...projects].sort(
+        (a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0)
+      )
+
       setStats({
         totalCourses: courses.length,
         totalProjects: projects.length,
-        totalLearners: courses.reduce((sum, course) => sum + (course.enrolled_students_count || 0), 0),
+        totalLearners: uniqueLearnerIds.size,
         activeCourses: courses.filter((c) => c.is_active).length,
       })
 
-      setRecentCourses(courses.slice(0, 5))
-      setRecentProjects(projects.slice(0, 5))
+      setRecentCourses(sortedCourses.slice(0, 5))
+      setRecentProjects(sortedProjects.slice(0, 5))
       setArchivedCourses(archived)
       setFavoritesCount(favoritesRes.data.count || 0)
     } catch (err) {
@@ -203,7 +215,6 @@ const AdminDashboard = () => {
                       <h4>{course.title}</h4>
                       <p>{course.description?.substring(0, 60)}...</p>
                       <div className="item-meta">
-                        <span className="badge">{course.level_display}</span>
                         <span className="badge">{course.category_display}</span>
                       </div>
                     </div>
@@ -220,14 +231,14 @@ const AdminDashboard = () => {
           </section>
 
           {/* المشاريع الحديثة */}
-          <section className="dashboard-card admin-panel">
+          <section className="dashboard-card admin-panel admin-panel-wide admin-recent-projects">
             <div className="card-header">
               <h2>المشاريع الحديثة</h2>
               <Link to="/projects" className="btn btn-secondary admin-view-all-btn">
                 عرض الكل
               </Link>
             </div>
-            <div className="items-list">
+            <div className="items-list admin-recent-projects-list">
               {recentProjects.length > 0 ? (
                 recentProjects.map((project) => (
                   <Link
@@ -271,7 +282,6 @@ const AdminDashboard = () => {
                       <h4>{course.title}</h4>
                       <p>{course.description?.substring(0, 80)}...</p>
                       <div className="item-meta">
-                        <span className="badge">{course.level_display}</span>
                         <span className="badge">{course.category_display}</span>
                         <span className="badge badge-archive">مؤرشف</span>
                       </div>

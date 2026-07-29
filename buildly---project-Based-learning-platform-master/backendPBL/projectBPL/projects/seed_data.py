@@ -6,7 +6,8 @@ PYTHON_COURSE_FALLBACK_TITLE = 'مسار تعلم Python'
 
 FRONTEND_PROJECTS = [
     {
-        'title': f'{SEED_PREFIX}صفحة ترحيب HTML',
+        'title': f'{SEED_PREFIX}HTML Welcome Page',
+        'legacy_titles': (f'{SEED_PREFIX}صفحة ترحيب HTML',),
         'level': 'beginner',
         'languages': ['html', 'css'],
         'estimated_time': 2,
@@ -81,7 +82,8 @@ FRONTEND_PROJECTS = [
         ],
     },
     {
-        'title': f'{SEED_PREFIX}تنسيق CSS للروابط',
+        'title': f'{SEED_PREFIX}CSS Link Styling',
+        'legacy_titles': (f'{SEED_PREFIX}تنسيق CSS للروابط',),
         'level': 'beginner',
         'languages': ['html', 'css'],
         'estimated_time': 2,
@@ -136,7 +138,8 @@ FRONTEND_PROJECTS = [
         ],
     },
     {
-        'title': f'{SEED_PREFIX}حاسبة JavaScript بسيطة',
+        'title': f'{SEED_PREFIX}Simple JavaScript Calculator',
+        'legacy_titles': (f'{SEED_PREFIX}حاسبة JavaScript بسيطة',),
         'level': 'intermediate',
         'languages': ['javascript', 'html'],
         'estimated_time': 3,
@@ -191,7 +194,8 @@ FRONTEND_PROJECTS = [
         ],
     },
     {
-        'title': f'{SEED_PREFIX}فلترة مصفوفة الطلاب',
+        'title': f'{SEED_PREFIX}Student Array Filtering',
+        'legacy_titles': (f'{SEED_PREFIX}فلترة مصفوفة الطلاب',),
         'level': 'intermediate',
         'languages': ['javascript'],
         'estimated_time': 3,
@@ -246,7 +250,8 @@ FRONTEND_PROJECTS = [
         ],
     },
     {
-        'title': f'{SEED_PREFIX}مكون بطاقة React',
+        'title': f'{SEED_PREFIX}React Card Component',
+        'legacy_titles': (f'{SEED_PREFIX}مكون بطاقة React',),
         'level': 'advanced',
         'languages': ['react', 'javascript', 'html'],
         'estimated_time': 4,
@@ -301,7 +306,8 @@ FRONTEND_PROJECTS = [
         ],
     },
     {
-        'title': f'{SEED_PREFIX}واجهة Grid Gallery',
+        'title': f'{SEED_PREFIX}Grid Gallery Interface',
+        'legacy_titles': (f'{SEED_PREFIX}واجهة Grid Gallery',),
         'level': 'advanced',
         'languages': ['html', 'css'],
         'estimated_time': 4,
@@ -356,7 +362,8 @@ FRONTEND_PROJECTS = [
         ],
     },
     {
-        'title': f'{SEED_PREFIX}إدارة حالة العداد',
+        'title': f'{SEED_PREFIX}Counter State Management',
+        'legacy_titles': (f'{SEED_PREFIX}إدارة حالة العداد',),
         'level': 'expert',
         'languages': ['javascript', 'typescript'],
         'estimated_time': 5,
@@ -411,7 +418,8 @@ FRONTEND_PROJECTS = [
         ],
     },
     {
-        'title': f'{SEED_PREFIX}نظام تنقل Portfolio',
+        'title': f'{SEED_PREFIX}Portfolio Navigation System',
+        'legacy_titles': (f'{SEED_PREFIX}نظام تنقل Portfolio',),
         'level': 'expert',
         'languages': ['html', 'css', 'javascript', 'react'],
         'estimated_time': 6,
@@ -469,7 +477,8 @@ FRONTEND_PROJECTS = [
 
 PYTHON_PROJECTS = [
     {
-        'title': f'{SEED_PREFIX}دوال Python الأساسية',
+        'title': f'{SEED_PREFIX}Python Basic Functions',
+        'legacy_titles': (f'{SEED_PREFIX}دوال Python الأساسية', 'دوال Python الأساسية'),
         'level': 'beginner',
         'languages': ['python'],
         'estimated_time': 2,
@@ -524,7 +533,8 @@ PYTHON_PROJECTS = [
         ],
     },
     {
-        'title': f'{SEED_PREFIX}التعامل مع القوائم',
+        'title': f'{SEED_PREFIX}Working with Lists',
+        'legacy_titles': (f'{SEED_PREFIX}التعامل مع القوائم',),
         'level': 'beginner',
         'languages': ['python'],
         'estimated_time': 2,
@@ -579,7 +589,8 @@ PYTHON_PROJECTS = [
         ],
     },
     {
-        'title': f'{SEED_PREFIX}معالجة النصوص',
+        'title': f'{SEED_PREFIX}Text Processing',
+        'legacy_titles': (f'{SEED_PREFIX}معالجة النصوص',),
         'level': 'intermediate',
         'languages': ['python'],
         'estimated_time': 3,
@@ -634,7 +645,8 @@ PYTHON_PROJECTS = [
         ],
     },
     {
-        'title': f'{SEED_PREFIX}القواميس والبحث',
+        'title': f'{SEED_PREFIX}Dictionaries and Lookup',
+        'legacy_titles': (f'{SEED_PREFIX}القواميس والبحث',),
         'level': 'intermediate',
         'languages': ['python'],
         'estimated_time': 3,
@@ -689,7 +701,8 @@ PYTHON_PROJECTS = [
         ],
     },
     {
-        'title': f'{SEED_PREFIX}الأصناف OOP',
+        'title': f'{SEED_PREFIX}OOP Classes',
+        'legacy_titles': (f'{SEED_PREFIX}الأصناف OOP',),
         'level': 'advanced',
         'languages': ['python'],
         'estimated_time': 4,
@@ -744,7 +757,8 @@ PYTHON_PROJECTS = [
         ],
     },
     {
-        'title': f'{SEED_PREFIX}معالجة الأخطاء',
+        'title': f'{SEED_PREFIX}Error Handling',
+        'legacy_titles': (f'{SEED_PREFIX}معالجة الأخطاء',),
         'level': 'advanced',
         'languages': ['python'],
         'estimated_time': 4,
@@ -799,7 +813,8 @@ PYTHON_PROJECTS = [
         ],
     },
     {
-        'title': f'{SEED_PREFIX}البحث الثنائي',
+        'title': f'{SEED_PREFIX}Binary Search',
+        'legacy_titles': (f'{SEED_PREFIX}البحث الثنائي',),
         'level': 'expert',
         'languages': ['python'],
         'estimated_time': 5,
@@ -854,7 +869,8 @@ PYTHON_PROJECTS = [
         ],
     },
     {
-        'title': f'{SEED_PREFIX}دوال عالية المستوى',
+        'title': f'{SEED_PREFIX}Higher-Order Functions',
+        'legacy_titles': (f'{SEED_PREFIX}دوال عالية المستوى',),
         'level': 'expert',
         'languages': ['python'],
         'estimated_time': 5,

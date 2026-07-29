@@ -38,6 +38,50 @@
   gap: 12px;
 }
 
+.content-items-list--scrollable {
+  max-height: 360px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 12px;
+  margin: 0 -4px;
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  background: var(--bg-secondary);
+  scrollbar-gutter: stable;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(99, 102, 241, 0.45) transparent;
+}
+
+.content-items-list--stories {
+  max-height: 420px;
+}
+
+.content-items-list--hints {
+  max-height: 300px;
+}
+
+.content-items-list--scrollable::-webkit-scrollbar {
+  width: 8px;
+}
+
+.content-items-list--scrollable::-webkit-scrollbar-track {
+  background: transparent;
+  border-radius: 999px;
+}
+
+.content-items-list--scrollable::-webkit-scrollbar-thumb {
+  background: rgba(99, 102, 241, 0.35);
+  border-radius: 999px;
+}
+
+.content-items-list--scrollable::-webkit-scrollbar-thumb:hover {
+  background: rgba(99, 102, 241, 0.55);
+}
+
+.content-items-list--scrollable .content-story-card {
+  background: var(--bg-primary);
+}
+
 .content-item-row {
   display: grid;
   grid-template-columns: 32px 1fr auto;

@@ -135,22 +135,33 @@ class Command(BaseCommand):
         seeded = 0
 
         for order, data in enumerate(project_defs, start=1):
-            project, _ = Project.objects.update_or_create(
-                course=course,
-                title=data['title'],
-                defaults={
-                    'description': data['description'],
-                    'level': data['level'],
-                    'languages': data['languages'],
-                    'language': data['languages'][0],
-                    'objectives': '\n'.join(data['objectives']),
-                    'estimated_time': data['estimated_time'],
-                    'order': order,
-                    'is_active': True,
-                    'assets_provided': data.get('assets_provided', []),
-                    'ideas_to_test': data.get('ideas_to_test', []),
-                },
-            )
+            lookup_titles = (data['title'], *data.get('legacy_titles', ()))
+            project = Project.objects.filter(course=course, title__in=lookup_titles).first()
+
+            defaults = {
+                'description': data['description'],
+                'level': data['level'],
+                'languages': data['languages'],
+                'language': data['languages'][0],
+                'objectives': '\n'.join(data['objectives']),
+                'estimated_time': data['estimated_time'],
+                'order': order,
+                'is_active': True,
+                'assets_provided': data.get('assets_provided', []),
+                'ideas_to_test': data.get('ideas_to_test', []),
+            }
+
+            if project:
+                project.title = data['title']
+                for field, value in defaults.items():
+                    setattr(project, field, value)
+                project.save()
+            else:
+                project = Project.objects.create(
+                    course=course,
+                    title=data['title'],
+                    **defaults,
+                )
 
             ProjectTask.objects.filter(project=project).delete()
             Tests.objects.filter(project=project).delete()

@@ -218,10 +218,6 @@ const CourseDetail = () => {
             <h3>معلومات المسار</h3>
             <div className="info-list">
               <div className="info-item">
-                <span className="info-label">المستوى:</span>
-                <span className="info-value">{course.level_display}</span>
-              </div>
-              <div className="info-item">
                 <span className="info-label">الفئة:</span>
                 <span className="info-value">{course.category_display}</span>
               </div>
