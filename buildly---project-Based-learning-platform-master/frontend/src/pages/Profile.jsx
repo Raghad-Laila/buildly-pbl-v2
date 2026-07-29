@@ -18,7 +18,7 @@ const getInitials = (profile) => {
 }
 
 const Profile = () => {
-  const { user, updateUser } = useAuth()
+  const { user, updateUser, isAdmin } = useAuth()
   const fileInputRef = useRef(null)
 
   const [formData, setFormData] = useState({
@@ -26,21 +26,13 @@ const Profile = () => {
     last_name: '',
     email: '',
   })
-  const [passwordData, setPasswordData] = useState({
-    current_password: '',
-    new_password: '',
-    new_password2: '',
-  })
 
   const [profileData, setProfileData] = useState(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [uploadingAvatar, setUploadingAvatar] = useState(false)
-  const [changingPassword, setChangingPassword] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
-  const [passwordError, setPasswordError] = useState('')
-  const [passwordSuccess, setPasswordSuccess] = useState('')
 
   useEffect(() => {
     fetchProfile()
@@ -75,13 +67,6 @@ const Profile = () => {
     setFormData((prev) => ({ ...prev, [name]: value }))
     setError('')
     setSuccess('')
-  }
-
-  const handlePasswordChange = (e) => {
-    const { name, value } = e.target
-    setPasswordData((prev) => ({ ...prev, [name]: value }))
-    setPasswordError('')
-    setPasswordSuccess('')
   }
 
   const handleSubmit = async (e) => {
@@ -168,48 +153,13 @@ const Profile = () => {
     }
   }
 
-  const handlePasswordSubmit = async (e) => {
-    e.preventDefault()
-    setPasswordError('')
-    setPasswordSuccess('')
-    setChangingPassword(true)
-
-    try {
-      const response = await accountAPI.changePassword(passwordData)
-      setPasswordSuccess(response.data.message || 'تم تغيير كلمة المرور بنجاح')
-      setPasswordData({
-        current_password: '',
-        new_password: '',
-        new_password2: '',
-      })
-    } catch (err) {
-      const errorData = err.response?.data
-      if (errorData?.current_password) {
-        setPasswordError(
-          Array.isArray(errorData.current_password)
-            ? errorData.current_password[0]
-            : errorData.current_password
-        )
-      } else if (errorData?.new_password) {
-        setPasswordError(
-          Array.isArray(errorData.new_password)
-            ? errorData.new_password[0]
-            : errorData.new_password
-        )
-      } else if (errorData?.message) {
-        setPasswordError(errorData.message)
-      } else {
-        setPasswordError('حدث خطأ أثناء تغيير كلمة المرور')
-      }
-    } finally {
-      setChangingPassword(false)
-    }
-  }
-
   if (loading) {
     return (
-      <div className="loading">
-        <div className="spinner"></div>
+      <div className={`profile-page ${isAdmin ? 'profile-page-admin' : 'profile-page-learner'}`}>
+        <div className="profile-page-loading">
+          <div className="spinner"></div>
+          <p>جاري تحميل الملف الشخصي...</p>
+        </div>
       </div>
     )
   }
@@ -218,196 +168,154 @@ const Profile = () => {
   const avatarUrl = profileData?.profile_picture_url
 
   return (
-    <div className="container">
-      <div className="page-header">
-        <h1>الملف الشخصي</h1>
-      </div>
+    <div className={`profile-page ${isAdmin ? 'profile-page-admin' : 'profile-page-learner'}`}>
+      <div className="container profile-page-inner">
+        <header className="profile-page-header">
+          <div className="profile-page-header-copy">
+            <p className="profile-page-eyebrow">
+              {isAdmin ? 'Buildly Admin Profile' : 'Buildly Profile'}
+            </p>
+            <h1>الملف الشخصي</h1>
+            <p>
+              {isAdmin
+                ? 'إدارة بيانات حساب المشرف وإعدادات الملف الشخصي'
+                : 'إدارة معلوماتك الشخصية وإعدادات الحساب'}
+            </p>
+          </div>
+        </header>
 
-      <div className="profile-container">
-        <div className="profile-sidebar">
-          <div className="card">
-            <div className="profile-avatar">
-              {avatarUrl ? (
-                <img
-                  src={avatarUrl}
-                  alt={displayName}
-                  className="avatar-image"
+        <div className="profile-container">
+          <aside className="profile-sidebar">
+            <div className="profile-panel profile-identity-card">
+              <div className="profile-avatar">
+                {avatarUrl ? (
+                  <img
+                    src={avatarUrl}
+                    alt={displayName}
+                    className="avatar-image"
+                  />
+                ) : (
+                  <div className="avatar-circle">
+                    {getInitials(profileData || user)}
+                  </div>
+                )}
+              </div>
+
+              <h2>{displayName}</h2>
+              <p className="user-email-text">{profileData?.email || user?.email}</p>
+              <p className="user-type">{profileData?.user_type || user?.user_type}</p>
+
+              <div className="avatar-actions">
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp,image/gif"
+                  className="avatar-file-input"
+                  onChange={handleAvatarSelect}
                 />
-              ) : (
-                <div className="avatar-circle">
-                  {getInitials(profileData || user)}
-                </div>
-              )}
-            </div>
-
-            <h2>{displayName}</h2>
-            <p className="user-email-text">{profileData?.email || user?.email}</p>
-            <p className="user-type">{profileData?.user_type || user?.user_type}</p>
-
-            <div className="avatar-actions">
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/jpeg,image/png,image/webp,image/gif"
-                className="avatar-file-input"
-                onChange={handleAvatarSelect}
-              />
-              <button
-                type="button"
-                className="btn btn-primary btn-sm"
-                onClick={() => fileInputRef.current?.click()}
-                disabled={uploadingAvatar}
-              >
-                {uploadingAvatar ? 'جاري الرفع...' : 'رفع صورة'}
-              </button>
-              {avatarUrl && (
                 <button
                   type="button"
-                  className="btn btn-secondary btn-sm"
-                  onClick={handleDeleteAvatar}
+                  className="btn btn-primary btn-sm profile-avatar-btn"
+                  onClick={() => fileInputRef.current?.click()}
                   disabled={uploadingAvatar}
                 >
-                  حذف الصورة
+                  {uploadingAvatar ? 'جاري الرفع...' : 'رفع صورة'}
                 </button>
-              )}
+                {avatarUrl && (
+                  <button
+                    type="button"
+                    className="btn btn-secondary btn-sm profile-avatar-btn-secondary"
+                    onClick={handleDeleteAvatar}
+                    disabled={uploadingAvatar}
+                  >
+                    حذف الصورة
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {profileData?.enrollment_info && (
+              <div className="profile-panel">
+                <div className="profile-panel-header">
+                  <h3>معلومات الانضمام</h3>
+                </div>
+                <div className="info-list">
+                  <div className="info-item">
+                    <span className="info-label">عدد المسارات:</span>
+                    <span className="info-value">
+                      {profileData.enrollment_info.enrolled_courses_count || 0}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            )}
+          </aside>
+
+          <div className="profile-main">
+            <div className="profile-panel">
+              <div className="profile-panel-header">
+                <h2>تعديل المعلومات الشخصية</h2>
+                <p>حدّث اسمك وبريدك الإلكتروني الظاهر في المنصة</p>
+              </div>
+
+              {error && <div className="alert alert-error">{error}</div>}
+              {success && <div className="alert alert-success">{success}</div>}
+
+              <form onSubmit={handleSubmit} className="profile-form">
+                <div className="profile-form-grid">
+                  <div className="input-group">
+                    <label htmlFor="first_name">الاسم الأول</label>
+                    <input
+                      type="text"
+                      id="first_name"
+                      name="first_name"
+                      value={formData.first_name}
+                      onChange={handleChange}
+                      placeholder="أدخل اسمك الأول"
+                    />
+                  </div>
+
+                  <div className="input-group">
+                    <label htmlFor="last_name">اسم العائلة</label>
+                    <input
+                      type="text"
+                      id="last_name"
+                      name="last_name"
+                      value={formData.last_name}
+                      onChange={handleChange}
+                      placeholder="أدخل اسم العائلة"
+                    />
+                  </div>
+                </div>
+
+                <div className="input-group">
+                  <label htmlFor="email">البريد الإلكتروني *</label>
+                  <input
+                    type="email"
+                    id="email"
+                    name="email"
+                    value={formData.email}
+                    onChange={handleChange}
+                    required
+                    placeholder="أدخل بريدك الإلكتروني"
+                  />
+                </div>
+
+                <div className="form-actions">
+                  <button type="submit" className="btn btn-primary" disabled={saving}>
+                    {saving ? 'جاري الحفظ...' : 'حفظ التغييرات'}
+                  </button>
+                </div>
+              </form>
             </div>
           </div>
 
-          {profileData?.enrollment_info && (
-            <div className="card">
-              <h3>معلومات الانضمام</h3>
-              <div className="info-list">
-                <div className="info-item">
-                  <span className="info-label">عدد المسارات:</span>
-                  <span className="info-value">
-                    {profileData.enrollment_info.enrolled_courses_count || 0}
-                  </span>
-                </div>
-              </div>
+          <div className="profile-panel profile-panel-full">
+            <div className="profile-panel-header">
+              <h2>معلومات الحساب</h2>
+              <p>بيانات الحساب الأساسية من النظام</p>
             </div>
-          )}
-        </div>
-
-        <div className="profile-main">
-          <div className="card">
-            <h2>تعديل المعلومات الشخصية</h2>
-
-            {error && <div className="alert alert-error">{error}</div>}
-            {success && <div className="alert alert-success">{success}</div>}
-
-            <form onSubmit={handleSubmit} className="profile-form">
-              <div className="profile-form-grid">
-                <div className="input-group">
-                  <label htmlFor="first_name">الاسم الأول</label>
-                  <input
-                    type="text"
-                    id="first_name"
-                    name="first_name"
-                    value={formData.first_name}
-                    onChange={handleChange}
-                    placeholder="أدخل اسمك الأول"
-                  />
-                </div>
-
-                <div className="input-group">
-                  <label htmlFor="last_name">اسم العائلة</label>
-                  <input
-                    type="text"
-                    id="last_name"
-                    name="last_name"
-                    value={formData.last_name}
-                    onChange={handleChange}
-                    placeholder="أدخل اسم العائلة"
-                  />
-                </div>
-              </div>
-
-              <div className="input-group">
-                <label htmlFor="email">البريد الإلكتروني *</label>
-                <input
-                  type="email"
-                  id="email"
-                  name="email"
-                  value={formData.email}
-                  onChange={handleChange}
-                  required
-                  placeholder="أدخل بريدك الإلكتروني"
-                />
-              </div>
-
-              <div className="form-actions">
-                <button type="submit" className="btn btn-primary" disabled={saving}>
-                  {saving ? 'جاري الحفظ...' : 'حفظ التغييرات'}
-                </button>
-              </div>
-            </form>
-          </div>
-
-          <div className="card">
-            <h2>تغيير كلمة المرور</h2>
-
-            {passwordError && <div className="alert alert-error">{passwordError}</div>}
-            {passwordSuccess && <div className="alert alert-success">{passwordSuccess}</div>}
-
-            <form onSubmit={handlePasswordSubmit} className="profile-form">
-              <div className="input-group">
-                <label htmlFor="current_password">كلمة المرور الحالية *</label>
-                <input
-                  type="password"
-                  id="current_password"
-                  name="current_password"
-                  value={passwordData.current_password}
-                  onChange={handlePasswordChange}
-                  required
-                  placeholder="أدخل كلمة المرور الحالية"
-                />
-              </div>
-
-              <div className="profile-form-grid">
-                <div className="input-group">
-                  <label htmlFor="new_password">كلمة المرور الجديدة *</label>
-                  <input
-                    type="password"
-                    id="new_password"
-                    name="new_password"
-                    value={passwordData.new_password}
-                    onChange={handlePasswordChange}
-                    required
-                    minLength={8}
-                    placeholder="8 أحرف على الأقل"
-                  />
-                </div>
-
-                <div className="input-group">
-                  <label htmlFor="new_password2">تأكيد كلمة المرور *</label>
-                  <input
-                    type="password"
-                    id="new_password2"
-                    name="new_password2"
-                    value={passwordData.new_password2}
-                    onChange={handlePasswordChange}
-                    required
-                    minLength={8}
-                    placeholder="أعد إدخال كلمة المرور"
-                  />
-                </div>
-              </div>
-
-              <div className="form-actions">
-                <button
-                  type="submit"
-                  className="btn btn-secondary"
-                  disabled={changingPassword}
-                >
-                  {changingPassword ? 'جاري التحديث...' : 'تغيير كلمة المرور'}
-                </button>
-              </div>
-            </form>
-          </div>
-
-          <div className="card">
-            <h2>معلومات الحساب</h2>
-            <div className="info-list">
+            <div className="info-list info-list-grid">
               <div className="info-item">
                 <span className="info-label">نوع المستخدم:</span>
                 <span className="info-value">{profileData?.user_type}</span>

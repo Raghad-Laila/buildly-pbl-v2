@@ -48,6 +48,13 @@ class Course(models.Model):
         verbose_name='المدة المقدرة (بالساعات)',
         help_text='أدخل المدة المقدرة لإتمام المسار بالساعات'
     )
+    image = models.ImageField(
+        upload_to='course_images/',
+        null=True,
+        blank=True,
+        verbose_name='صورة المسار',
+        help_text='قم برفع صورة تعبيرية للمسار تظهر في البطاقات',
+    )
     projects_count = models.IntegerField(
         default=0,
         verbose_name='عدد المشاريع',

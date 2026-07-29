@@ -42,7 +42,7 @@ class LearnerDashboardView(APIView):
         recent_activity = self.get_recent_activity(user)
         
         # المشاريع المقترحة
-        suggested_projects = self.get_suggested_projects(user)
+        suggested_projects = self.get_suggested_projects(user, request)
         
         return Response({
             'message': _('لوحة تحكم المتعلم'),
@@ -241,32 +241,64 @@ class LearnerDashboardView(APIView):
         return activities[:10]
     
 
-    def get_suggested_projects(self, user):
-        """المشاريع المقترحة حسب مستوى المستخدم"""
-    
+    def get_suggested_projects(self, user, request=None):
+        """مشاريع حقيقية من مسارات المتعلم، مناسبة لمستواه وغير مكتملة"""
+
         if not user.is_rated or not user.level:
             return []
-    
-        projects = Project.objects.filter(
-            level=user.level,
-            is_active=True
-        ).order_by('-created_at')[:6]
-    
+
+        completed_ids = ProjectProgress.objects.filter(
+            user=user,
+            completed_at__isnull=False,
+        ).values_list('project_id', flat=True)
+
+        enrolled_base = Project.objects.filter(
+            course__enrolled_learners=user,
+            course__is_active=True,
+            course__is_archived=False,
+            is_active=True,
+        ).exclude(id__in=completed_ids).select_related('course')
+
+        projects = list(
+            enrolled_base.filter(level=user.level).order_by('-created_at')[:6]
+        )
+
+        # إن لم يوجد تطابق بالمستوى، اعرض مشاريع حقيقية من مساراته
+        if not projects:
+            projects = list(enrolled_base.order_by('-created_at')[:6])
+
         suggestions = []
-    
-        for p in projects:
-            suggestion = {
-                'id': p.id,
-                'title': p.title,
-                'description': p.description,
-                'category': p.language,
-                'difficulty': p.get_level_display(),
-                'estimated_time': p.estimated_time,
-                'match_percentage': 90,  # fake. we use it maybe later
+        for project in projects:
+            languages = project.get_languages_list()
+            languages_display = project.get_languages_display_list()
+            image_url = None
+            if project.image:
+                image_url = (
+                    request.build_absolute_uri(project.image.url)
+                    if request is not None
+                    else project.image.url
+                )
+
+            suggestions.append({
+                'id': project.id,
+                'project_id': project.id,
+                'title': project.title,
+                'description': project.description,
+                'category': project.get_language_display(),
+                'difficulty': project.get_level_display(),
+                'level': project.level,
+                'level_display': project.get_level_display(),
+                'language': project.language,
+                'language_display': project.get_language_display(),
+                'languages': languages,
+                'languages_display': languages_display,
+                'estimated_time': project.estimated_time,
+                'course_id': project.course_id,
+                'course_title': project.course.title,
+                'image': image_url,
                 'reason': 'يتناسب مع مستواك الحالي',
-            }
-            suggestions.append(suggestion)
-    
+            })
+
         return suggestions
     
     def get_quick_actions(self):

@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
-import { coursesAPI } from '../services/api'
+import { coursesAPI, accountAPI } from '../services/api'
+import LearnerCourseCard from '../components/LearnerCourseCard'
 import './Courses.css'
 
 const MyCourses = () => {
   const [courses, setCourses] = useState([])
+  const [favoriteCourseIds, setFavoriteCourseIds] = useState(new Set())
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
@@ -15,14 +17,30 @@ const MyCourses = () => {
   const fetchMyCourses = async () => {
     try {
       setLoading(true)
-      const response = await coursesAPI.myCourses()
-      setCourses(response.data.courses || [])
+      const [coursesRes, favoritesRes] = await Promise.all([
+        coursesAPI.myCourses(),
+        accountAPI.getFavorites().catch(() => ({ data: { favorite_course_ids: [] } })),
+      ])
+      setCourses(coursesRes.data.courses || [])
+      setFavoriteCourseIds(new Set(favoritesRes.data.favorite_course_ids || []))
     } catch (err) {
       setError('فشل تحميل مساراتك')
       console.error(err)
     } finally {
       setLoading(false)
     }
+  }
+
+  const handleFavoriteToggle = (isFavorite, _itemType, objectId) => {
+    setFavoriteCourseIds((prev) => {
+      const next = new Set(prev)
+      if (isFavorite) {
+        next.add(objectId)
+      } else {
+        next.delete(objectId)
+      }
+      return next
+    })
   }
 
   if (loading) {
@@ -38,7 +56,7 @@ const MyCourses = () => {
   }
 
   return (
-    <div className="container">
+    <div className="container learner-courses-page">
       <div className="page-header">
         <h1>مساراتي</h1>
         <Link to="/courses" className="btn btn-secondary">
@@ -54,35 +72,14 @@ const MyCourses = () => {
           </Link>
         </div>
       ) : (
-        <div className="courses-grid">
+        <div className="learner-courses-grid">
           {courses.map((course) => (
-            <div key={course.id} className="course-card">
-              <div className="course-header">
-                <h3>{course.title}</h3>
-                <div className="course-badges">
-                  <span className="badge badge-info">{course.level_display}</span>
-                  <span className="badge badge-warning">{course.category_display}</span>
-                </div>
-              </div>
-              <p className="course-description">
-                {course.description?.substring(0, 150)}...
-              </p>
-              <div className="course-meta">
-                <div className="meta-item">
-                  <span className="meta-label">المدة:</span>
-                  <span className="meta-value">{course.estimated_duration} ساعة</span>
-                </div>
-                <div className="meta-item">
-                  <span className="meta-label">المشاريع:</span>
-                  <span className="meta-value">{course.projects_count || 0}</span>
-                </div>
-              </div>
-              <div className="course-actions">
-                <Link to={`/courses/${course.id}`} className="btn btn-primary">
-                  عرض التفاصيل
-                </Link>
-              </div>
-            </div>
+            <LearnerCourseCard
+              key={course.id}
+              course={course}
+              isFavorite={favoriteCourseIds.has(course.id)}
+              onFavoriteToggle={handleFavoriteToggle}
+            />
           ))}
         </div>
       )}
@@ -91,4 +88,3 @@ const MyCourses = () => {
 }
 
 export default MyCourses
-

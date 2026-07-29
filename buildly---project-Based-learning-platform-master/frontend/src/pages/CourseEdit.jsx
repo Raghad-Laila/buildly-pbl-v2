@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { coursesAPI } from '../services/api'
 import FormErrorToast from '../components/FormErrorToast'
+import ProjectImageInput from '../components/ProjectImageInput'
 import useFormFeedback from '../hooks/useFormFeedback'
 import './Form.css'
 
@@ -16,6 +17,8 @@ const CourseEdit = () => {
     estimated_duration: '',
     is_public: false,
   })
+  const [imageFile, setImageFile] = useState(null)
+  const [imagePreview, setImagePreview] = useState(null)
   const { error, errorField, setError, clearError, handleInvalid } = useFormFeedback()
   const [loading, setLoading] = useState(false)
   const [fetching, setFetching] = useState(true)
@@ -37,6 +40,8 @@ const CourseEdit = () => {
         estimated_duration: course.estimated_duration,
         is_public: course.is_public,
       })
+      setImagePreview(course.image || null)
+      setImageFile(null)
     } catch (err) {
       setError('فشل تحميل بيانات المسار')
     } finally {
@@ -59,7 +64,11 @@ const CourseEdit = () => {
     setLoading(true)
 
     try {
-      await coursesAPI.update(id, formData)
+      const payload = { ...formData }
+      if (imageFile) {
+        payload.image = imageFile
+      }
+      await coursesAPI.update(id, payload)
       navigate(`/courses/${id}`)
     } catch (err) {
       const errorData = err.response?.data
@@ -181,6 +190,19 @@ const CourseEdit = () => {
               placeholder="أدخل المدة بالساعات"
             />
           </div>
+
+          <ProjectImageInput
+            id="course_image"
+            label="صورة المسار"
+            selectedFile={imageFile}
+            preview={imagePreview}
+            hint="قم برفع صورة تعبيرية للمسار تظهر في البطاقات (يفضل مقاس 16:9)"
+            onChange={({ file, preview }) => {
+              setImageFile(file)
+              setImagePreview(preview)
+              clearError()
+            }}
+          />
 
           <div className="input-group">
             <label className="checkbox-label">

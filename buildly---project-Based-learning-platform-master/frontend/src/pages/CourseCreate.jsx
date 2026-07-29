@@ -2,6 +2,7 @@ import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { coursesAPI } from '../services/api'
 import FormErrorToast from '../components/FormErrorToast'
+import ProjectImageInput from '../components/ProjectImageInput'
 import useFormFeedback from '../hooks/useFormFeedback'
 import './Form.css'
 
@@ -14,6 +15,8 @@ const CourseCreate = () => {
     estimated_duration: '',
     is_public: false,
   })
+  const [imageFile, setImageFile] = useState(null)
+  const [imagePreview, setImagePreview] = useState(null)
   const { error, errorField, setError, clearError, handleInvalid } = useFormFeedback()
   const [loading, setLoading] = useState(false)
 
@@ -32,10 +35,15 @@ const CourseCreate = () => {
     setLoading(true)
 
     try {
-      const response = await coursesAPI.create({
+      const payload = {
         ...formData,
         level: 'beginner',
-      })
+      }
+      if (imageFile) {
+        payload.image = imageFile
+      }
+
+      const response = await coursesAPI.create(payload)
       if (response.data.success) {
         navigate(`/courses/${response.data.course.id}`)
       }
@@ -133,6 +141,19 @@ const CourseCreate = () => {
               placeholder="أدخل المدة بالساعات"
             />
           </div>
+
+          <ProjectImageInput
+            id="course_image"
+            label="صورة المسار"
+            selectedFile={imageFile}
+            preview={imagePreview}
+            hint="قم برفع صورة تعبيرية للمسار تظهر في البطاقات (يفضل مقاس 16:9)"
+            onChange={({ file, preview }) => {
+              setImageFile(file)
+              setImagePreview(preview)
+              clearError()
+            }}
+          />
 
           <div className="input-group">
             <label className="checkbox-label">

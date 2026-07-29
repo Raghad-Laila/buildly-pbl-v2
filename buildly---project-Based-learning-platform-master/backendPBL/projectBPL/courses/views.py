@@ -47,6 +47,7 @@ def build_course_archive_snapshot(course):
             'estimated_duration': course.estimated_duration,
             'projects_count': course.get_actual_projects_count(),
             'is_public': course.is_public,
+            'image': course.image.url if course.image else None,
             'instructor_email': course.instructor.email,
             'created_at': course.created_at.isoformat() if course.created_at else None,
             'updated_at': course.updated_at.isoformat() if course.updated_at else None,
@@ -82,6 +83,7 @@ class CreateCourseView(generics.CreateAPIView):
                     'estimated_duration': course.estimated_duration,
                     'projects_count': course.projects_count,
                     'is_public': course.is_public,
+                    'image': request.build_absolute_uri(course.image.url) if course.image else None,
                     'created_at': course.created_at,
                 }
             }, status=status.HTTP_201_CREATED)
@@ -135,7 +137,8 @@ class UpdateCourseView(generics.UpdateAPIView):
                 'level': course.level,
                 'category': course.category,
                 'estimated_duration': course.estimated_duration,
-                'is_public': course.is_public
+                'is_public': course.is_public,
+                'image': request.build_absolute_uri(course.image.url) if course.image else None,
             }
         })
 

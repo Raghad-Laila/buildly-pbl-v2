@@ -3,6 +3,7 @@ import './CustomFilePicker.css'
 
 const ProjectImageInput = ({
   id = 'project_image',
+  label = 'صورة المشروع',
   selectedFile = null,
   preview = null,
   onChange,
@@ -28,7 +29,7 @@ const ProjectImageInput = ({
 
   return (
     <div className="input-group">
-      <label htmlFor={id}>صورة المشروع</label>
+      <label htmlFor={id}>{label}</label>
 
       <div className="custom-file-picker">
         <div className="custom-file-picker-actions">
@@ -58,7 +59,7 @@ const ProjectImageInput = ({
 
       {preview && (
         <div className="image-preview-container">
-          <img src={preview} alt="معاينة صورة المشروع" className="image-preview" />
+          <img src={preview} alt={label} className="image-preview" />
         </div>
       )}
 

@@ -21,8 +21,8 @@ const ProjectWorkProgress = ({
             🎉
           </span>
           <div className="project-completed-banner-content">
-            <strong>Project Completed</strong>
-            <p>لقد نجحت في جميع الاختبارات! يمكنك الآن تسليم المشروع.</p>
+            <strong>All Tests Passed</strong>
+            <p>لقد نجحت في جميع الاختبارات! المشروع جاهز للتسليم.</p>
             {showImproveCode && (
               <button
                 type="button"

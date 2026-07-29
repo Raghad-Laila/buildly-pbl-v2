@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { coursesAPI, accountAPI } from '../services/api'
 import ArchiveCourseModal from '../components/ArchiveCourseModal'
-import FavoriteButton from '../components/FavoriteButton'
+import LearnerCourseCard from '../components/LearnerCourseCard'
 import './Courses.css'
 
 const CoursesList = () => {
@@ -79,7 +79,7 @@ const CoursesList = () => {
   }
 
   return (
-    <div className="container">
+    <div className={`container ${!isAdmin ? 'learner-courses-page' : ''}`}>
       {archiveCourse && (
         <ArchiveCourseModal
           course={archiveCourse}
@@ -88,14 +88,33 @@ const CoursesList = () => {
         />
       )}
 
-      <div className="page-header">
-        <h1>المسارات التعليمية</h1>
-        {isAdmin && (
+      {isAdmin ? (
+        <div className="page-header">
+          <h1>المسارات التعليمية</h1>
           <Link to="/courses/create" className="btn btn-primary">
             إضافة مسار جديد
           </Link>
-        )}
-      </div>
+        </div>
+      ) : (
+        <header className="learner-courses-header">
+          <div className="learner-courses-header-copy">
+            <p className="learner-courses-eyebrow">Buildly Learner</p>
+            <h1>المسارات التعليمية</h1>
+            <p>
+              اكتشف رحلة تعلم متكاملة مصممة لنقلك من الصفر إلى الاحتراف في مجالات
+              التكنولوجيا الأكثر طلباً.
+            </p>
+          </div>
+          <div className="learner-courses-header-actions">
+            <Link to="/my-courses" className="learner-courses-btn learner-courses-btn-primary">
+              مساراتي
+            </Link>
+            <Link to="/dashboard" className="learner-courses-btn">
+              لوحة التحكم
+            </Link>
+          </div>
+        </header>
+      )}
 
       {courses.length === 0 ? (
         <div className="empty-state">
@@ -106,71 +125,53 @@ const CoursesList = () => {
             </Link>
           )}
         </div>
-      ) : (
-        <div className="courses-grid">
+      ) : isAdmin ? (
+        <div className="learner-courses-grid">
           {courses.map((course) => (
-            <div key={course.id} className="course-card">
-              <div className="course-header">
-                <div className="course-header-top">
-                  <h3>{course.title}</h3>
-                  <FavoriteButton
-                    itemType="course"
-                    objectId={course.id}
-                    initialFavorite={favoriteCourseIds.has(course.id)}
-                    onToggle={handleFavoriteToggle}
-                    label="مفضلة"
-                  />
-                </div>
-                <div className="course-badges">
-                  <span className="badge badge-info">{course.level_display}</span>
-                  <span className="badge badge-warning">{course.category_display}</span>
-                </div>
-              </div>
-              <p className="course-description">
-                {course.description?.substring(0, 150)}...
-              </p>
-              <div className="course-meta">
-                <div className="meta-item">
-                  <span className="meta-label">المدة:</span>
-                  <span className="meta-value">{course.estimated_duration} ساعة</span>
-                </div>
-                <div className="meta-item">
-                  <span className="meta-label">المشاريع:</span>
-                  <span className="meta-value">{course.projects_count || 0}</span>
-                </div>
-                <div className="meta-item">
-                  <span className="meta-label">المتعلمين:</span>
-                  <span className="meta-value">{course.enrolled_students_count || 0}</span>
-                </div>
-              </div>
-              <div className="course-actions">
-                <Link to={`/courses/${course.id}`} className="btn btn-primary">
-                  عرض التفاصيل
-                </Link>
-                {isAdmin && (
-                  <>
-                    <Link
-                      to={`/courses/${course.id}/edit`}
-                      className="btn btn-secondary"
-                    >
-                      تعديل
-                    </Link>
-                    <button
-                      onClick={() => setArchiveCourse(course)}
-                      className="btn btn-warning"
-                    >
-                      أرشفة
-                    </button>
-                    <button
-                      onClick={() => handleDelete(course.id)}
-                      className="btn btn-danger"
-                    >
-                      حذف
-                    </button>
-                  </>
-                )}
-              </div>
-            </div>
+            <LearnerCourseCard
+              key={course.id}
+              course={course}
+              isFavorite={favoriteCourseIds.has(course.id)}
+              onFavoriteToggle={handleFavoriteToggle}
+              actions={
+                <>
+                  <Link to={`/courses/${course.id}`} className="learner-course-card-cta">
+                    عرض التفاصيل
+                  </Link>
+                  <Link
+                    to={`/courses/${course.id}/edit`}
+                    className="learner-course-card-btn learner-course-card-btn-secondary"
+                  >
+                    تعديل
+                  </Link>
+                  <button
+                    type="button"
+                    onClick={() => setArchiveCourse(course)}
+                    className="learner-course-card-btn learner-course-card-btn-warning"
+                  >
+                    أرشفة
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleDelete(course.id)}
+                    className="learner-course-card-btn learner-course-card-btn-danger"
+                  >
+                    حذف
+                  </button>
+                </>
+              }
+            />
+          ))}
+        </div>
+      ) : (
+        <div className="learner-courses-grid">
+          {courses.map((course) => (
+            <LearnerCourseCard
+              key={course.id}
+              course={course}
+              isFavorite={favoriteCourseIds.has(course.id)}
+              onFavoriteToggle={handleFavoriteToggle}
+            />
           ))}
         </div>
       )}

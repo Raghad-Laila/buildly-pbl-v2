@@ -21,6 +21,8 @@ const ProjectsList = () => {
   const [searchQuery, setSearchQuery] = useState('')
   const [debouncedSearch, setDebouncedSearch] = useState('')
   const [favoriteProjectIds, setFavoriteProjectIds] = useState(new Set())
+  const [activeCourseTab, setActiveCourseTab] = useState('all')
+  const [statusFilter, setStatusFilter] = useState('all')
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -133,7 +135,27 @@ const ProjectsList = () => {
     return progress[projectId]?.status || 'not_started'
   }
 
+  // تبويبات المسارات — نستخلص المسارات الفريدة من قائمة المشاريع
+  const courseTabs = isLearner && !courseId
+    ? [
+        { id: 'all', title: 'الكل' },
+        ...Array.from(
+          new Map(
+            projects.map((p) => [p.course_id, { id: p.course_id, title: p.course_title || `مسار ${p.course_id}` }])
+          ).values()
+        ),
+      ]
+    : []
+
   const filteredProjects = projects.filter((project) => {
+    if (
+      isLearner &&
+      !courseId &&
+      activeCourseTab !== 'all' &&
+      Number(project.course_id) !== Number(activeCourseTab)
+    ) {
+      return false
+    }
     if (levelFilter === 'all') return true
     return project.level === levelFilter
   })
@@ -149,11 +171,32 @@ const ProjectsList = () => {
     groupedProjects[status].push(project)
   })
 
+  const statusTabs = [
+    {
+      id: 'all',
+      label: 'الكل',
+      count:
+        groupedProjects.not_started.length +
+        groupedProjects.in_progress.length +
+        groupedProjects.completed.length,
+    },
+    { id: 'not_started', label: 'لم يبدأ', count: groupedProjects.not_started.length },
+    { id: 'in_progress', label: 'قيد التنفيذ', count: groupedProjects.in_progress.length },
+    { id: 'completed', label: 'مكتمل', count: groupedProjects.completed.length },
+  ]
+
+  const visibleByStatus =
+    statusFilter === 'all'
+      ? null
+      : groupedProjects[statusFilter] || []
+
   const totalVisibleProjects = isAdmin
     ? filteredProjects.length
-    : groupedProjects.not_started.length +
-      groupedProjects.in_progress.length +
-      groupedProjects.completed.length
+    : statusFilter === 'all'
+      ? groupedProjects.not_started.length +
+        groupedProjects.in_progress.length +
+        groupedProjects.completed.length
+      : visibleByStatus.length
 
   const ProjectSection = ({ title, projects, isAdmin, handleDelete, showStatus = false }) => {
     if (!projects.length) return null
@@ -247,18 +290,26 @@ const ProjectsList = () => {
 
   const isSearchActive = Boolean(debouncedSearch)
 
-  const levelFilterSelect = (
+  const LEVEL_OPTIONS = [
+    { value: 'all', label: 'جميع المستويات' },
+    { value: 'beginner', label: 'مبتدئ' },
+    { value: 'intermediate', label: 'متوسط' },
+    { value: 'advanced', label: 'متقدم' },
+    { value: 'expert', label: 'خبير' },
+  ]
+
+  const levelFilterDropdown = (
     <select
       value={levelFilter}
       onChange={(e) => setLevelFilter(e.target.value)}
-      className="filter-select projects-level-filter"
+      className="projects-filter-select"
       aria-label="تصفية حسب المستوى"
     >
-      <option value="all">جميع المستويات</option>
-      <option value="beginner">مبتدئ</option>
-      <option value="intermediate">متوسط</option>
-      <option value="advanced">متقدم</option>
-      <option value="expert">خبير</option>
+      {LEVEL_OPTIONS.map((opt) => (
+        <option key={opt.value} value={opt.value}>
+          {opt.label}
+        </option>
+      ))}
     </select>
   )
 
@@ -278,47 +329,42 @@ const ProjectsList = () => {
     <div className="container">
 
       <div className="container">
-        <div className={`page-header projects-page-header ${isAdmin ? 'projects-page-header--admin' : 'projects-page-header--learner'}`}>
-          <div className="projects-header-main">
-            {courseId && (
-              <Link to={`/courses/${courseId}`} className="back-link">
-                ← العودة للمسار
-              </Link>
-            )}
-            <h1>
-              {courseInfo?.title
-                ? `مشاريع المسار: ${courseInfo.title}`
-                : 'المشاريع التعليمية'}
-            </h1>
 
-            {isLearner && (
-              <div className="projects-level-filter-wrap">
-                {levelFilterSelect}
+        {/* ======= Header للمتعلم ======= */}
+        {isLearner && (
+          <div className="projects-learner-header">
+            <div className="projects-learner-header-top">
+              <div className="projects-learner-title-group">
+                {courseId && (
+                  <Link to={`/courses/${courseId}`} className="projects-back-link">
+                    ← العودة للمسار
+                  </Link>
+                )}
+                <h1>
+                  {courseInfo?.title
+                    ? `مشاريع المسار: ${courseInfo.title}`
+                    : 'المشاريع التعليمية'}
+                </h1>
+                {(courseInfo || debouncedSearch) && (
+                  <p className="projects-learner-summary">
+                    {debouncedSearch
+                      ? (searching
+                          ? 'جاري البحث...'
+                          : totalVisibleProjects > 0
+                            ? `تم العثور على ${totalVisibleProjects} مشروع`
+                            : 'لا توجد نتائج مطابقة')
+                      : (projects.length > 0
+                          ? `${projects.length} مشروع في هذا المسار`
+                          : 'لا توجد مشاريع في هذا المسار حالياً')}
+                  </p>
+                )}
               </div>
-            )}
 
-            {courseInfo && (
-              <p className="projects-search-summary">
-                {projects.length > 0
-                  ? `${projects.length} مشروع في هذا المسار`
-                  : 'لا توجد مشاريع في هذا المسار حالياً'}
-              </p>
-            )}
-            {isLearner && debouncedSearch && (
-              <p className="projects-search-summary">
-                {searching
-                  ? 'جاري البحث...'
-                  : totalVisibleProjects > 0
-                    ? `تم العثور على ${totalVisibleProjects} مشروع`
-                    : 'لا توجد نتائج مطابقة'}
-              </p>
-            )}
-          </div>
-
-          {isLearner && (
-            <div className="projects-toolbar">
               <div className="projects-search-box">
-                <span className="projects-search-icon" aria-hidden="true">🔍</span>
+                <svg className="projects-search-svg" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                  <circle cx="9" cy="9" r="6" stroke="currentColor" strokeWidth="1.8"/>
+                  <path d="M14 14l3.5 3.5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/>
+                </svg>
                 <input
                   type="text"
                   value={searchQuery}
@@ -340,11 +386,76 @@ const ProjectsList = () => {
                 )}
               </div>
             </div>
-          )}
+          </div>
+        )}
 
-          {isAdmin && (
+        {/* شريط فلاتر موحّد للمتعلم */}
+        {isLearner && projects.length > 0 && !isSearchActive && (
+          <div className="projects-filter-bar" aria-label="تصفية المشاريع">
+            {courseTabs.length > 1 && (
+              <label className="projects-filter-field">
+                <span className="projects-filter-label">المسار</span>
+                <select
+                  value={activeCourseTab}
+                  onChange={(e) => {
+                    const raw = e.target.value
+                    setActiveCourseTab(raw === 'all' ? 'all' : Number(raw))
+                    setStatusFilter('all')
+                  }}
+                  className="projects-filter-select"
+                >
+                  {courseTabs.map((tab) => (
+                    <option key={tab.id} value={tab.id}>
+                      {tab.title}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            )}
+
+            <div className="projects-filter-field projects-filter-field-status">
+              <span className="projects-filter-label">الحالة</span>
+              <div className="projects-status-segment" role="tablist" aria-label="تصفية حسب حالة المشروع">
+                {statusTabs.map((tab) => (
+                  <button
+                    key={tab.id}
+                    type="button"
+                    role="tab"
+                    aria-selected={statusFilter === tab.id}
+                    className={`projects-status-seg${statusFilter === tab.id ? ' active' : ''}`}
+                    onClick={() => setStatusFilter(tab.id)}
+                  >
+                    <span>{tab.label}</span>
+                    <span className="projects-status-count">{tab.count}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <label className="projects-filter-field">
+              <span className="projects-filter-label">المستوى</span>
+              {levelFilterDropdown}
+            </label>
+          </div>
+        )}
+
+        {/* ======= Header للأدمن ======= */}
+        {isAdmin && (
+          <div className={`page-header projects-page-header projects-page-header--admin`}>
+            <div className="projects-header-main">
+              {courseId && (
+                <Link to={`/courses/${courseId}`} className="back-link">
+                  ← العودة للمسار
+                </Link>
+              )}
+              <h1>
+                {courseInfo?.title
+                  ? `مشاريع المسار: ${courseInfo.title}`
+                  : 'المشاريع التعليمية'}
+              </h1>
+            </div>
             <div className="projects-header-actions">
-              {levelFilterSelect}
+              {levelFilterDropdown}
               <Link
                 to="/projects/create"
                 state={courseId ? { courseId: Number(courseId) } : undefined}
@@ -353,8 +464,9 @@ const ProjectsList = () => {
                 إضافة مشروع جديد
               </Link>
             </div>
-          )}
-        </div>
+          </div>
+        )}
+
 
         {projects.length === 0 ? (
           <div className="empty-state">
@@ -377,7 +489,11 @@ const ProjectsList = () => {
           </div>
         ) : totalVisibleProjects === 0 ? (
           <div className="empty-state">
-            <p>لا توجد مشاريع مطابقة للمستوى المحدد</p>
+            <p>
+              {statusFilter !== 'all' && isLearner
+                ? 'لا توجد مشاريع بهذه الحالة ضمن التصفية الحالية'
+                : 'لا توجد مشاريع مطابقة للمستوى المحدد'}
+            </p>
           </div>
         ) : (
           <div className="projects-sections">
@@ -389,30 +505,36 @@ const ProjectsList = () => {
               />
             ) : isSearchActive ? (
               <ProjectSection
-                title={`🔍 نتائج البحث (${totalVisibleProjects})`}
+                title={`نتائج البحث (${totalVisibleProjects})`}
                 projects={filteredProjects}
                 isAdmin={isAdmin}
                 handleDelete={handleDelete}
                 showStatus
               />
+            ) : statusFilter !== 'all' ? (
+              <ProjectSection
+                projects={visibleByStatus}
+                isAdmin={isAdmin}
+                handleDelete={handleDelete}
+              />
             ) : (
               <>
                 <ProjectSection
-                  title="🆕 لم يبدأ"
+                  title="لم يبدأ"
                   projects={groupedProjects.not_started}
                   isAdmin={isAdmin}
                   handleDelete={handleDelete}
                 />
 
                 <ProjectSection
-                  title="🔄 قيد التنفيذ"
+                  title="قيد التنفيذ"
                   projects={groupedProjects.in_progress}
                   isAdmin={isAdmin}
                   handleDelete={handleDelete}
                 />
 
                 <ProjectSection
-                  title="✅ مكتمل"
+                  title="مكتمل"
                   projects={groupedProjects.completed}
                   isAdmin={isAdmin}
                   handleDelete={handleDelete}

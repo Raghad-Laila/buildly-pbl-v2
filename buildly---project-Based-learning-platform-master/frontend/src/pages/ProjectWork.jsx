@@ -729,9 +729,11 @@ const ProjectWork = () => {
                 results: [],
                 summary: { total: 0, passed: 0, failed: 0 },
             })
+            setDockActiveTab('tests')
             return
         }
 
+        setDockActiveTab('tests')
         setRunningTests(true)
         setTestError('')
         setTestResults(null)
@@ -763,6 +765,7 @@ const ProjectWork = () => {
             }
 
             setTestResults(payload)
+            setDockActiveTab('tests')
         } catch (err) {
             const message =
                 err.response?.data?.error ||
@@ -1066,14 +1069,25 @@ const ProjectWork = () => {
                     <p className="fcc-breadcrumb">مساحة تنفيذ المشروع</p>
                     <h1>{project.title}</h1>
                 </div>
-                <button
-                    type="button"
-                    className="btn btn-success fcc-submit-btn"
-                    onClick={handleFinish}
-                    disabled={!canFinish}
-                >
-                    تسليم المشروع
-                </button>
+                <div className="fcc-header-actions">
+                    {!canFinish &&
+                        testProgress.hasTests &&
+                        !testProgress.allPassed && (
+                        <span className="fcc-finish-hint">
+                            {!testResults?.summary
+                                ? 'شغّل Check Code أولاً لاجتياز الاختبارات قبل التسليم.'
+                                : 'يجب اجتياز جميع الاختبارات قبل تسليم المشروع.'}
+                        </span>
+                    )}
+                    <button
+                        type="button"
+                        className="btn btn-success fcc-submit-btn"
+                        onClick={handleFinish}
+                        disabled={!canFinish}
+                    >
+                        تسليم المشروع
+                    </button>
+                </div>
             </header>
 
             <div className="fcc-layout">
@@ -1234,6 +1248,26 @@ const ProjectWork = () => {
                             )}
 
                             <div className="fcc-check-row">
+                                <button
+                                    type="button"
+                                    className="btn fcc-run-btn"
+                                    onClick={runCode}
+                                    disabled={
+                                        running ||
+                                        !workspace ||
+                                        !tasks.some((item) => item.task_type === 'code')
+                                    }
+                                >
+                                    {running ? (
+                                        <>
+                                            <span className="execution-spinner" />
+                                            Running...
+                                        </>
+                                    ) : (
+                                        'Run'
+                                    )}
+                                </button>
+
                                 <button
                                     type="button"
                                     className="btn btn-primary fcc-check-btn"

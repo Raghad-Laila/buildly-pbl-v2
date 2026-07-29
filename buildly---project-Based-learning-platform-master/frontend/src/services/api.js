@@ -158,11 +158,38 @@ export const coursesAPI = {
   getDetails: (id) =>
     api.get(`/courses/${id}/details/`),
 
-  create: (data) =>
-    api.post('/courses/create/', data),
+  create: (data) => {
+    if (data.image instanceof File) {
+      const formData = new FormData()
+      Object.keys(data).forEach((key) => {
+        if (data[key] === undefined || data[key] === null) return
+        if (key === 'image' && !(data[key] instanceof File)) return
+        const value = typeof data[key] === 'boolean' ? String(data[key]) : data[key]
+        formData.append(key, value)
+      })
+      return api.post('/courses/create/', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      })
+    }
+    return api.post('/courses/create/', data)
+  },
 
-  update: (id, data) =>
-    api.put(`/courses/${id}/update/`, data),
+  update: (id, data) => {
+    if (data.image instanceof File) {
+      const formData = new FormData()
+      Object.keys(data).forEach((key) => {
+        if (data[key] === undefined || data[key] === null) return
+        if (key === 'image' && !(data[key] instanceof File)) return
+        const value = typeof data[key] === 'boolean' ? String(data[key]) : data[key]
+        formData.append(key, value)
+      })
+      return api.put(`/courses/${id}/update/`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      })
+    }
+    const { image, ...rest } = data
+    return api.put(`/courses/${id}/update/`, rest)
+  },
 
   delete: (id) =>
     api.delete(`/courses/${id}/delete/`),

@@ -10,7 +10,7 @@ class CourseCreateSerializer(serializers.ModelSerializer):
         model = Course
         fields = [
             'title', 'description', 'level', 'category',
-            'estimated_duration', 'is_public'
+            'estimated_duration', 'is_public', 'image'
         ]
         extra_kwargs = {
             'title': {
@@ -39,6 +39,10 @@ class CourseCreateSerializer(serializers.ModelSerializer):
             'is_public': {
                 'required': False,
                 'default': False
+            },
+            'image': {
+                'required': False,
+                'allow_null': True,
             }
         }
     
@@ -129,7 +133,7 @@ class CourseListSerializer(serializers.ModelSerializer):
         model = Course
         fields = [
             'id', 'title', 'description', 'level', 'level_display',
-            'category', 'category_display', 'estimated_duration',
+            'category', 'category_display', 'estimated_duration', 'image',
             'projects_count', 'actual_projects_count', 'is_public', 'is_active', 'created_at',  
             'updated_at', 'instructor_name', 'enrolled_students_count'
         ]
@@ -173,7 +177,7 @@ class CourseDetailSerializer(serializers.ModelSerializer):
         model = Course
         fields = [
             'id', 'title', 'description', 'level', 'level_display',
-            'category', 'category_display', 'estimated_duration',
+            'category', 'category_display', 'estimated_duration', 'image',
             'projects_count', 'actual_projects_count', 'is_public', 'created_at', 'instructor_name',
             'enrolled_students_count', 'enrolled_students_emails', 'is_enrolled', 'can_join', 'course_projects'
         ]
@@ -244,7 +248,7 @@ class CourseUpdateSerializer(serializers.ModelSerializer):
         model = Course
         fields = [
             'title', 'description', 'level',
-            'category', 'estimated_duration', 'is_public'
+            'category', 'estimated_duration', 'is_public', 'image'
         ]
         extra_kwargs = {
             'title': {
@@ -269,6 +273,10 @@ class CourseUpdateSerializer(serializers.ModelSerializer):
                     'required': _('المدة المقدرة مطلوبة'),
                     'invalid': _('المدة يجب أن تكون رقم صحيح')
                 }
+            },
+            'image': {
+                'required': False,
+                'allow_null': True,
             }
         }
     
