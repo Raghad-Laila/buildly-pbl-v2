@@ -13,6 +13,12 @@ const CLIENT_TEST_LANGUAGES = new Set(
 
 const JS_TEST_LANGUAGE_HINTS = ['react', 'javascript', 'typescript']
 
+const HTML_CSS_HELPER_CALL =
+  /\b(getEl|getDoc|getText|htmlHasStructure|htmlHasTagContent|htmlHasText|isDescendantOf|getFormInputs|getFormRadios|getFormCheckboxes|cssHasDeclaration|cssHasAttributeSelector|cssAttrRuleHasProperty|cssHasRowAttrSelector|getTableBodyRows|getTableHeadings|hasNumericAttr|submitTypeIsValid|cardHasInlineSize|normalizeCss|cssBlocks)\s*\(/
+
+const HTML_CSS_VAR_USAGE =
+  /\bhtml\s*\.|\bcss\s*\.|\bhtml\s*includes|\bcss\s*includes/
+
 function isJsLikeTestFile(file, projectLanguage = 'javascript') {
   if (!file?.name) return false
   const language = detectLanguageFromFile(file, projectLanguage)
@@ -23,19 +29,11 @@ function isJsLikeTestFile(file, projectLanguage = 'javascript') {
   )
 }
 
-// CHECK CODE ROUTING — temporary heuristic; replace later via explicit test metadata.
+// CHECK CODE ROUTING — prefer helper calls / html|css variable usage over loose words.
 function inferClientTestRunnerHeuristic(testCode = '') {
   const code = String(testCode || '')
 
-  if (
-    /\b(getEl|getDoc|getText|htmlHasStructure|htmlHasTagContent|htmlHasText|isDescendantOf|getFormInputs)\s*\(/.test(
-      code
-    )
-  ) {
-    return 'html-css-workspace'
-  }
-
-  if (/\b(html|css)\b/.test(code)) {
+  if (HTML_CSS_HELPER_CALL.test(code) || HTML_CSS_VAR_USAGE.test(code)) {
     return 'html-css-workspace'
   }
 
@@ -96,6 +94,64 @@ function resolveLanguages(options = {}) {
     return [projectLanguage]
   }
   return ['python']
+}
+
+function resolveWorkspaceHtml(workspace) {
+  const exact = getWorkspaceFileContent(workspace, 'index.html')
+  if (String(exact || '').trim()) return exact
+
+  const file = (workspace?.files || []).find((item) =>
+    /\.html?$/i.test(item?.name || '')
+  )
+  return file?.content || ''
+}
+
+function resolveWorkspaceCss(workspace) {
+  const exact = getWorkspaceFileContent(workspace, 'style.css')
+  if (String(exact || '').trim()) return exact
+
+  const preferred = (workspace?.files || []).find((item) =>
+    /(^|\/)styles?\.css$/i.test(item?.name || '')
+  )
+  if (preferred) return preferred.content || ''
+
+  const cssFiles = (workspace?.files || []).filter((item) =>
+    /\.css$/i.test(item?.name || '')
+  )
+  if (!cssFiles.length) return ''
+  if (cssFiles.length === 1) return cssFiles[0].content || ''
+  return cssFiles.map((file) => file.content || '').join('\n')
+}
+
+/** Prefer main.py with content; otherwise first non-empty .py file. */
+export function pickPythonTestEntryFile(workspace) {
+  const files = workspace?.files || []
+  const main = files.find(
+    (file) =>
+      String(file?.name || '').toLowerCase() === 'main.py' &&
+      String(file?.content || '').trim()
+  )
+  if (main) return main
+
+  const withContent = files.find(
+    (file) =>
+      /\.py$/i.test(file?.name || '') && String(file?.content || '').trim()
+  )
+  if (withContent) return withContent
+
+  return (
+    files.find((file) => String(file?.name || '').toLowerCase() === 'main.py') ||
+    getMainExecutableFile(workspace, 'python')
+  )
+}
+
+export function getPythonTestMountFiles(workspace) {
+  return (workspace?.files || [])
+    .filter((file) => /\.(py|json|txt)$/i.test(file?.name || ''))
+    .map((file) => ({
+      name: file.name,
+      content: file.content || '',
+    }))
 }
 
 // CHECK CODE ROUTING — project mode via shared detectWorkspaceType; per-test via classifyClientTest.
@@ -167,8 +223,8 @@ export function runClientTests(code, tests = [], options = {}) {
   const { workspace, projectLanguage, languages } = options
   const langs = resolveLanguages({ languages, projectLanguage })
 
-  const html = workspace ? getWorkspaceFileContent(workspace, 'index.html') : ''
-  const css = workspace ? getWorkspaceFileContent(workspace, 'style.css') : ''
+  const html = workspace ? resolveWorkspaceHtml(workspace) : ''
+  const css = workspace ? resolveWorkspaceCss(workspace) : ''
 
   const results = tests.map((test) => {
     try {

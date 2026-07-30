@@ -380,8 +380,12 @@ export const projectsAPI = {
   deleteTest: (testId) =>
     api.delete(`/projects/tests/${testId}/delete/`),
 
-  runTests: (projectId, code, language) =>
-    api.post(`/projects/${projectId}/tests/run/`, { code, language }),
+  runTests: (projectId, { code, language, files, entryFileName } = {}) =>
+    api.post(`/projects/${projectId}/tests/run/`, {
+      code,
+      language,
+      ...(Array.isArray(files) && files.length ? { files, entryFileName } : {}),
+    }),
 
   getSubmissions: (projectId) =>
     api.get(`/progress/projects/${projectId}/submissions/`),

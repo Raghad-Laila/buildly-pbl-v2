@@ -3,6 +3,8 @@ import pathlib
 import subprocess
 import tempfile
 
+from .test_helpers import wrap_python_test_code
+
 ALLOWED_WORKSPACE_EXTENSIONS = {'.py', '.json', '.txt'}
 
 
@@ -110,12 +112,62 @@ def run_python_in_docker(code=None, timeout=5, files=None, entry_file_name='main
         }
 
 
-def run_project_tests(code, language, tests_queryset):
+def _normalize_workspace_files(files):
+    prepared = []
+    for item in files or []:
+        if not isinstance(item, dict):
+            continue
+        relative = _safe_relative_path(item.get('name'))
+        if not relative:
+            continue
+        content = item.get('content')
+        if content is None:
+            content = ''
+        prepared.append({'name': relative, 'content': str(content)})
+    return prepared
+
+
+def _files_with_wrapped_entry(files, entry_file_name, test_code):
+    """Copy workspace files and append helpers + test code to the entry file."""
+    prepared = _normalize_workspace_files(files)
+    entry = _safe_relative_path(entry_file_name) or 'main.py'
+
+    if not prepared:
+        raise ValueError('No safe workspace files provided for Docker execution')
+
+    found = False
+    wrapped = []
+    for item in prepared:
+        content = item['content']
+        if item['name'] == entry:
+            content = wrap_python_test_code(content, test_code)
+            found = True
+        wrapped.append({'name': item['name'], 'content': content})
+
+    if not found:
+        raise ValueError(f'Entry file "{entry_file_name}" was not found in workspace files')
+
+    return wrapped, entry
+
+
+def _run_single_python_test(code, test_code, files=None, entry_file_name='main.py'):
+    if files is not None:
+        wrapped_files, entry = _files_with_wrapped_entry(files, entry_file_name, test_code)
+        return run_python_in_docker(
+            files=wrapped_files,
+            entry_file_name=entry,
+        )
+
+    combined_code = wrap_python_test_code(code or '', test_code)
+    return run_python_in_docker(combined_code)
+
+
+def run_project_tests(code, language, tests_queryset, files=None, entry_file_name='main.py'):
     results = []
+    has_files = isinstance(files, list) and len(files) > 0
+    workspace_files = files if has_files else None
 
     for test in tests_queryset:
-        combined_code = f'{code}\n\n{test.test_code or ""}'.strip()
-
         if language != 'python':
             results.append(
                 {
@@ -134,9 +186,16 @@ def run_project_tests(code, language, tests_queryset):
             continue
 
         try:
-            outcome = run_python_in_docker(combined_code)
+            outcome = _run_single_python_test(
+                code,
+                test.test_code or '',
+                files=workspace_files,
+                entry_file_name=entry_file_name or 'main.py',
+            )
             stderr = (outcome.get('stderr') or '').strip()
-            passed = outcome.get('returncode') == 0 and not stderr
+            # Assertions fail with non-zero returncode. Do not treat stderr-only
+            # warnings as failure when the process exits successfully.
+            passed = outcome.get('returncode') == 0
 
             if passed:
                 message = test.success_message or 'نجح الاختبار'

@@ -844,8 +844,15 @@ class RunProjectTestsView(APIView):
     def post(self, request, project_id):
         code = request.data.get('code')
         language = request.data.get('language', 'python')
+        files = request.data.get('files')
+        entry_file_name = (
+            request.data.get('entryFileName')
+            or request.data.get('entry_file_name')
+            or 'main.py'
+        )
 
-        if not code or not str(code).strip():
+        has_files = isinstance(files, list) and len(files) > 0
+        if not has_files and (not code or not str(code).strip()):
             return Response({'error': 'No code provided'}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
@@ -867,7 +874,14 @@ class RunProjectTestsView(APIView):
                 }
             )
 
-        payload = run_project_tests(code, language or project.get_languages_list()[0] or project.language, tests)
+        resolved_language = language or project.get_languages_list()[0] or project.language
+        payload = run_project_tests(
+            code,
+            resolved_language,
+            tests,
+            files=files if has_files else None,
+            entry_file_name=entry_file_name,
+        )
 
         return Response(
             {

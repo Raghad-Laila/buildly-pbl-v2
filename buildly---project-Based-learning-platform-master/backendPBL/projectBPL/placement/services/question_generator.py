@@ -47,7 +47,50 @@ def _extract_json(text: str) -> dict:
     return json.loads(cleaned)
 
 
-def _validate_question_payload(payload: dict, expected_topic: str, track_slug: str) -> dict:
+def _normalize_text(text: str) -> str:
+    cleaned = re.sub(r'\s+', ' ', str(text or '').strip().lower())
+    cleaned = re.sub(r'[^\w\s\u0600-\u06FF]', ' ', cleaned, flags=re.UNICODE)
+    return re.sub(r'\s+', ' ', cleaned).strip()
+
+
+def _significant_tokens(text: str) -> set[str]:
+    stopwords = {
+        'ال', 'و', 'في', 'من', 'على', 'إلى', 'عن', 'مع', 'هذا', 'هذه', 'ذلك', 'تلك',
+        'ما', 'هو', 'هي', 'أو', 'لا', 'أن', 'إن', 'كان', 'يتم', 'يمكن', 'عند',
+        'the', 'a', 'an', 'of', 'to', 'in', 'on', 'for', 'is', 'are', 'and', 'or',
+        'what', 'which', 'who', 'how', 'does', 'do', 'did',
+    }
+    tokens = set()
+    for token in _normalize_text(text).split(' '):
+        if len(token) < 3:
+            continue
+        if token in stopwords:
+            continue
+        tokens.add(token)
+    return tokens
+
+
+def _similarity_ratio(left: str, right: str) -> float:
+    left_tokens = _significant_tokens(left)
+    right_tokens = _significant_tokens(right)
+    if not left_tokens or not right_tokens:
+        return 0.0
+    overlap = len(left_tokens & right_tokens)
+    return overlap / float(min(len(left_tokens), len(right_tokens)))
+
+
+def _clip_option_text(option: str) -> str:
+    return str(option or '').strip()
+
+
+def _validate_question_payload(
+    payload: dict,
+    expected_topic: str,
+    track_slug: str,
+    *,
+    expected_difficulty: str | None = None,
+    exclude_questions: list[str] | None = None,
+) -> dict:
     valid_topics = get_track_topics(track_slug)
     required_fields = ('question', 'options', 'correct_answer', 'explanation', 'topic', 'difficulty_level')
     for field in required_fields:
@@ -64,11 +107,17 @@ def _validate_question_payload(payload: dict, expected_topic: str, track_slug: s
     if not isinstance(options, list) or len(options) != 4:
         raise ValueError('Options must contain exactly 4 items')
 
-    options = [str(option).strip() for option in options]
+    options = [_clip_option_text(option) for option in options]
+    if any(not option for option in options):
+        raise ValueError('Options must be non-empty')
+    if any(len(option) > 140 for option in options):
+        raise ValueError('Option text too long')
     if len({option.lower() for option in options}) != 4:
         raise ValueError('Options must be unique')
 
     correct_answer = payload['correct_answer']
+    if isinstance(correct_answer, str) and correct_answer.strip().isdigit():
+        correct_answer = int(correct_answer.strip())
     if not isinstance(correct_answer, int) or correct_answer not in range(4):
         raise ValueError('correct_answer must be an integer from 0 to 3')
 
@@ -76,10 +125,58 @@ def _validate_question_payload(payload: dict, expected_topic: str, track_slug: s
     if difficulty_level not in DIFFICULTY_SCORES:
         raise ValueError('Invalid difficulty_level')
 
+    # Ability-driven difficulty is the source of truth for adaptive placement.
+    if expected_difficulty:
+        if expected_difficulty not in DIFFICULTY_SCORES:
+            raise ValueError('Invalid expected difficulty')
+        if difficulty_level != expected_difficulty:
+            logger.info(
+                'Placement AI difficulty mismatch (%s -> %s); coercing to ability target',
+                difficulty_level,
+                expected_difficulty,
+            )
+            difficulty_level = expected_difficulty
+
     question_text = str(payload['question']).strip()
     explanation = str(payload['explanation']).strip()
-    if len(question_text) < 12 or len(explanation) < 8:
-        raise ValueError('Question or explanation too short')
+    if len(question_text) < 18:
+        raise ValueError('Question too short')
+    if len(question_text) > 320:
+        raise ValueError('Question too long for timed placement')
+    if len(explanation) < 12:
+        raise ValueError('Explanation too short')
+    if len(explanation) > 420:
+        raise ValueError('Explanation too long')
+
+    # Avoid options that merely copy the whole question stem.
+    normalized_question = _normalize_text(question_text)
+    for option in options:
+        if _normalize_text(option) == normalized_question:
+            raise ValueError('Option duplicates the question text')
+
+    # Reject near-duplicates of recently asked questions (concept repetition).
+    for previous in exclude_questions or []:
+        if _similarity_ratio(question_text, previous) >= 0.72:
+            raise ValueError('Question too similar to a previously asked question')
+
+    # Soft topic relevance using topic label + common aliases.
+    topic_label = get_track_config(track_slug)['topic_labels'].get(expected_topic, expected_topic)
+    topic_aliases = {
+        'html': ['html', 'htm', 'وسم', 'وسوم', 'عنصر', 'DOCTYPE', 'body', 'head', 'meta'],
+        'css': ['css', 'ستايل', 'تنسيق', 'selector', 'خاصية', 'margin', 'padding', 'display'],
+        'javascript': ['javascript', 'js', 'دالة', 'متغير', 'مصفوفة', 'object', 'event', 'dom'],
+        'basics': ['python', 'بايثون', 'متغير', 'نوع', 'print', 'شرط', 'حلقة', 'أساسي'],
+        'data_structures': ['list', 'dict', 'set', 'tuple', 'قائمة', 'قاموس', 'مجموعة', 'هيكل'],
+        'oop': ['class', 'object', 'oop', 'كائن', 'صنف', 'وراثة', 'init', 'method'],
+    }
+    alias_tokens = set(topic_aliases.get(expected_topic, []))
+    topic_tokens = _significant_tokens(f'{expected_topic} {topic_label}') | {
+        token.lower() for token in alias_tokens
+    }
+    if topic_tokens:
+        haystack = _normalize_text(' '.join([question_text, explanation, *options]))
+        if not any(token in haystack for token in topic_tokens):
+            raise ValueError('Question does not appear related to the target topic')
 
     return {
         'question': question_text,
@@ -111,11 +208,14 @@ def _build_prompt(
 
 المتطلبات:
 - المسار: {track_config['display_name']}
-- الموضوع: {topic_label} ({topic})
-- مستوى الصعوبة: {difficulty_level} — {guidance}
-- 4 خيارات واقعية، واحد فقط صحيح
+- الموضوع: {topic_label} ({topic}) — يجب أن يكون السؤال واضحاً عن هذا الموضوع فقط
+- مستوى الصعوبة المطلوب بالضبط: {difficulty_level} — {guidance}
+- difficulty_level في JSON يجب أن يساوي "{difficulty_level}" دون تغيير
+- 4 خيارات واقعية ومختلفة الطول المعتدل، واحد فقط صحيح
+- طول السؤال مناسب لاختبار زمني قصير (جملة إلى فقرة قصيرة)
+- شرح مختصر واضح للإجابة الصحيحة
 - السؤال يختبر فهماً حقيقياً وليس حفظاً سطحياً
-- لا تكرر أي سؤال من القائمة أدناه
+- لا تكرر أي سؤال أو فكرة قريبة جداً من القائمة أدناه
 - استخدم seed={random_seed} وstep={step_index} لضمان تنوع السؤال
 
 الأسئلة المستبعدة:
@@ -189,7 +289,13 @@ def generate_question(
         try:
             raw_text = _call_gemini(prompt)
             payload = _extract_json(raw_text)
-            return _validate_question_payload(payload, topic, track_slug)
+            return _validate_question_payload(
+                payload,
+                topic,
+                track_slug,
+                expected_difficulty=difficulty_level,
+                exclude_questions=exclude_questions,
+            )
         except (urllib.error.URLError, urllib.error.HTTPError, TimeoutError, json.JSONDecodeError, ValueError) as exc:
             logger.warning('AI question generation attempt %s failed: %s', attempt + 1, exc)
 

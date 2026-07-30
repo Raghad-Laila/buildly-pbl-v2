@@ -46,14 +46,17 @@ class CodeQualityReviewService:
         self.prompt_builder = prompt_builder or CodeQualityPromptBuilder()
 
     def review(self, project, files, test_summary=None):
-        prompt = self.prompt_builder.build(
+        prompt_parts = self.prompt_builder.build(
             project=project,
             files=files,
             test_summary=test_summary,
         )
 
         try:
-            raw_response = self.client.review(prompt)
+            raw_response = self.client.review(
+                system=prompt_parts.get('system'),
+                user=prompt_parts.get('user'),
+            )
         except OllamaClientError as exc:
             logger.warning('Code quality review request failed: %s', exc)
             return self._fallback_response()

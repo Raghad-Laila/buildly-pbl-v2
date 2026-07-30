@@ -22,9 +22,20 @@ function htmlHasText(...parts) {
   return parts.every((part) => html.includes(part));
 }
 
+// One parsed document per Check Code run. Re-parsing on every getEl/getDoc
+// put child/parent in different trees, so Node.contains() always failed
+// (isDescendantOf and any cross-element DOM check).
+let _parsedDoc = null;
+let _parsedHtml = null;
+
 function getDoc() {
+  if (_parsedDoc && _parsedHtml === html) {
+    return _parsedDoc;
+  }
   const parser = new DOMParser();
-  return parser.parseFromString(html, 'text/html');
+  _parsedDoc = parser.parseFromString(html, 'text/html');
+  _parsedHtml = html;
+  return _parsedDoc;
 }
 
 function getEl(id) {
@@ -37,8 +48,9 @@ function getText(el) {
 }
 
 function isDescendantOf(childId, parentId) {
-  const child = getEl(childId);
-  const parent = getEl(parentId);
+  const doc = getDoc();
+  const child = doc.getElementById(childId);
+  const parent = doc.getElementById(parentId);
   if (!child || !parent) return false;
   return parent.contains(child);
 }

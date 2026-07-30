@@ -22,7 +22,6 @@ import {
     renameFile,
     serializeWorkspace,
     setActiveFile,
-    getWorkspaceFileContent,
     getWorkspaceSnapshot,
     workspaceHasContent,
 } from '../utils/codeWorkspace'
@@ -39,6 +38,8 @@ import { resetPythonKernel } from '../utils/pythonKernel'
 import {
     runClientTests,
     resolveCheckCodePlan,
+    pickPythonTestEntryFile,
+    getPythonTestMountFiles,
 } from '../utils/testRunner'
 import { linkResultsByTask } from '../utils/testResultLinking'
 import { getProjectTestProgress } from '../utils/projectProgress'
@@ -733,11 +734,25 @@ const ProjectWork = () => {
             projectLanguage,
         })
 
+        if (checkPlan.mode === 'unsupported') {
+            setTestError('تشغيل الاختبارات غير مدعوم لهذه اللغة حالياً.')
+            setTestResults(null)
+            return
+        }
+
         if (checkPlan.mode === 'client') {
             if (checkPlan.needsWorkspaceHtmlCss) {
-                const html = getWorkspaceFileContent(currentWorkspace, 'index.html').trim()
-                const css = getWorkspaceFileContent(currentWorkspace, 'style.css').trim()
-                if (!html && !css) {
+                const hasHtml = (currentWorkspace.files || []).some(
+                    (file) =>
+                        /\.html?$/i.test(file?.name || '') &&
+                        String(file?.content || '').trim()
+                )
+                const hasCss = (currentWorkspace.files || []).some(
+                    (file) =>
+                        /\.css$/i.test(file?.name || '') &&
+                        String(file?.content || '').trim()
+                )
+                if (!hasHtml && !hasCss) {
                     setTestError('اكتب الكود أولاً قبل تشغيل الاختبارات.')
                     setTestResults(null)
                     return
@@ -775,8 +790,12 @@ const ProjectWork = () => {
                 }
             }
         } else {
-            const code = getStudentCode(currentWorkspace)
-            if (!code) {
+            const mountFiles = getPythonTestMountFiles(currentWorkspace)
+            const hasPythonContent = mountFiles.some(
+                (file) =>
+                    /\.py$/i.test(file.name || '') && String(file.content || '').trim()
+            )
+            if (!hasPythonContent && !getStudentCode(currentWorkspace)) {
                 setTestError('اكتب الكود أولاً قبل تشغيل الاختبارات.')
                 setTestResults(null)
                 return
@@ -809,11 +828,18 @@ const ProjectWork = () => {
                     languages: projectLanguages,
                 })
             } else {
-                const response = await projectsAPI.runTests(
-                    id,
-                    getStudentCode(currentWorkspace),
-                    checkPlan.mode === 'server-python' ? 'python' : projectLanguage
-                )
+                const mountFiles = getPythonTestMountFiles(currentWorkspace)
+                const entryFile = pickPythonTestEntryFile(currentWorkspace)
+                const entryFileName =
+                    entryFile?.name && /\.py$/i.test(entryFile.name)
+                        ? entryFile.name
+                        : 'main.py'
+                const response = await projectsAPI.runTests(id, {
+                    code: getStudentCode(currentWorkspace) || entryFile?.content || '',
+                    language: 'python',
+                    files: mountFiles.length ? mountFiles : undefined,
+                    entryFileName,
+                })
                 payload = {
                     results: response.data.results || [],
                     summary: response.data.summary || {
@@ -932,7 +958,16 @@ const ProjectWork = () => {
 
         try {
             const response = await projectsAPI.aiReview(payload)
-            setAiReviewResult(response.data?.review || null)
+            if (response.data?.success === false) {
+                setAiReviewResult(null)
+                setAiReviewError(
+                    response.data?.error ||
+                        'خدمة المراجعة الذكية غير متاحة حالياً. حاول مرة أخرى لاحقاً.'
+                )
+            } else {
+                setAiReviewResult(response.data?.review || null)
+                setAiReviewError('')
+            }
         } catch {
             setAiReviewResult(null)
             setAiReviewError(

@@ -9,25 +9,12 @@ from .schemas import AIReviewResponseSchema
 
 logger = logging.getLogger(__name__)
 
-FALLBACK_REVIEW = {
-    'overall_score': 85,
-    'summary': 'Temporary review.',
-    'strengths': [
-        'Good project structure',
-    ],
-    'issues': [
-        {
-            'id': 1,
-            'category': 'Readability',
-            'severity': 'Medium',
-            'file': 'main.py',
-            'line': 10,
-            'title': 'Example Issue',
-            'explanation': 'Temporary explanation.',
-            'hint': 'Temporary hint.',
-        }
-    ],
-}
+# Shown when Ollama is down / response invalid and there are no failed tests
+# to build an educational fallback from. Never pretend this is a real review.
+SERVICE_UNAVAILABLE_MESSAGE = (
+    'خدمة المراجعة الذكية غير متاحة حالياً. '
+    'تأكد أن Ollama يعمل وأن الموديل مثبّت، ثم حاول مرة أخرى.'
+)
 
 FAILED_TESTS_EMPTY_ISSUES_FALLBACK = {
     'overall_score': 35,
@@ -80,7 +67,7 @@ class AIReviewService:
         failed_tests=None,
         test_error=None,
     ):
-        prompt = self.prompt_builder.build(
+        prompt_parts = self.prompt_builder.build(
             project=project,
             files=files,
             test_summary=test_summary,
@@ -89,7 +76,10 @@ class AIReviewService:
         )
 
         try:
-            raw_response = self.client.review(prompt)
+            raw_response = self.client.review(
+                system=prompt_parts.get('system'),
+                user=prompt_parts.get('user'),
+            )
         except OllamaClientError as exc:
             logger.warning('AI review request failed: %s', exc)
             return self._fallback_response(test_summary=test_summary, failed_tests=failed_tests)
@@ -237,6 +227,7 @@ class AIReviewService:
             }
 
         return {
-            'success': True,
-            'review': copy.deepcopy(FALLBACK_REVIEW),
+            'success': False,
+            'error': SERVICE_UNAVAILABLE_MESSAGE,
+            'review': None,
         }

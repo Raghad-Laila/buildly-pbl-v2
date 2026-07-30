@@ -15,8 +15,9 @@ class OllamaClientError(Exception):
 class OllamaClient:
     """HTTP client for Ollama chat completions.
 
-    Accepts a single final prompt string. Tries the OpenAI-compatible
-    endpoint first, then falls back to the native Ollama chat API.
+    Prefers separate system + user messages. Still accepts a single prompt
+    string for backward compatibility. Tries the OpenAI-compatible endpoint
+    first, then falls back to the native Ollama chat API.
     """
 
     def __init__(self):
@@ -24,20 +25,19 @@ class OllamaClient:
             getattr(settings, 'OLLAMA_BASE_URL', 'http://localhost:11434')
             or 'http://localhost:11434'
         ).rstrip('/')
-        self.model = getattr(settings, 'OLLAMA_MODEL', 'qwen2.5-coder:3b') or 'qwen2.5-coder:3b'
+        self.model = getattr(settings, 'OLLAMA_MODEL', 'qwen2.5-coder:7b') or 'qwen2.5-coder:7b'
         self.timeout = int(getattr(settings, 'OLLAMA_TIMEOUT', 120))
 
-    def review(self, prompt):
-        """Send one final prompt to Ollama and return the raw text response."""
-        if not prompt or not str(prompt).strip():
-            raise OllamaClientError('Prompt must not be empty')
+    def review(self, prompt=None, *, system=None, user=None):
+        """Send chat messages to Ollama and return the raw text response.
 
-        messages = [
-            {
-                'role': 'user',
-                'content': str(prompt),
-            }
-        ]
+        Preferred:
+            review(system=..., user=...)
+
+        Legacy:
+            review(prompt_string)
+        """
+        messages = self._build_messages(prompt=prompt, system=system, user=user)
 
         try:
             return self._review_openai_compatible(messages)
@@ -60,6 +60,24 @@ class OllamaClient:
             logger.warning('Unexpected Ollama client error: %s', exc)
             raise OllamaClientError(str(exc)) from exc
 
+    def _build_messages(self, prompt=None, system=None, user=None):
+        system_text = (system or '').strip()
+        user_text = (user or '').strip()
+        legacy_prompt = (prompt or '').strip() if prompt is not None else ''
+
+        if system_text or user_text:
+            if not user_text:
+                raise OllamaClientError('User prompt must not be empty')
+            messages = []
+            if system_text:
+                messages.append({'role': 'system', 'content': system_text})
+            messages.append({'role': 'user', 'content': user_text})
+            return messages
+
+        if legacy_prompt:
+            return [{'role': 'user', 'content': legacy_prompt}]
+
+        raise OllamaClientError('Prompt must not be empty')
     def _review_openai_compatible(self, messages):
         url = f'{self.base_url}/v1/chat/completions'
         payload = {

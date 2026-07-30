@@ -12,8 +12,7 @@ class CodeQualityPromptBuilder:
         files_block = self._format_files(files)
         test_results_block = self._format_test_summary(test_summary)
 
-        prompt = (
-            f'{QUALITY_SYSTEM_PROMPT}\n\n'
+        user_prompt = (
             f'=== سياق المشروع ===\n'
             f'العنوان: {title or "غير محدد"}\n\n'
             f'الوصف:\n{description or "غير محدد"}\n\n'
@@ -27,7 +26,10 @@ class CodeQualityPromptBuilder:
             f'(الكفاءة، التعقيد، النظافة، الأداء) دون تصحيح أخطاء أو إعادة كتابة الحل.\n'
         )
 
-        return prompt
+        return {
+            'system': QUALITY_SYSTEM_PROMPT,
+            'user': user_prompt.strip(),
+        }
 
     def _format_language(self, project):
         if hasattr(project, 'get_languages_display_list'):
