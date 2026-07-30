@@ -1,68 +1,78 @@
 .project-work-sidebar {
-  width: 380px;
+  width: 340px;
   flex-shrink: 0;
-  background: #2a2a40;
-  border-inline-start: 1px solid #3b3b4f;
-  color: #d5d5de;
+  background: #161b22;
+  border-inline-end: 1px solid #30363d;
+  color: #c9d1d9;
+  overflow-x: hidden;
   overflow-y: auto;
-  max-height: calc(100vh - 88px);
-  position: sticky;
-  top: 0;
+  align-self: stretch;
+  min-height: 0;
+  height: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  /* LTR on the scroller puts the scrollbar on the physical right (outer edge). */
+  direction: ltr;
 }
 
 .project-work-sidebar-inner {
-  padding: 20px 22px 28px;
+  padding: 18px 18px 24px;
   display: flex;
   flex-direction: column;
-  gap: 22px;
+  gap: 20px;
+  min-height: 100%;
+  box-sizing: border-box;
+  direction: rtl;
 }
 
 .project-work-sidebar-header {
-  padding-bottom: 16px;
-  border-bottom: 1px solid #3b3b4f;
+  padding-bottom: 14px;
+  border-bottom: 1px solid #30363d;
 }
 
 .project-work-sidebar-title {
   margin: 0;
-  font-size: 22px;
-  font-weight: 700;
+  font-size: 16px;
+  font-weight: 650;
   line-height: 1.45;
-  color: #f8fafc;
+  color: #f0f6fc;
 }
 
 .project-work-sidebar-section {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
 }
 
 .project-work-sidebar-description {
   margin: 0;
-  line-height: 1.8;
-  color: #d5d5de;
+  line-height: 1.7;
+  color: #c9d1d9;
   white-space: pre-wrap;
-  font-size: 15px;
+  font-size: 13px;
 }
 
 .project-work-sidebar-heading {
   margin: 0;
-  font-size: 17px;
-  font-weight: 700;
-  color: #f8fafc;
+  font-size: 12px;
+  font-weight: 650;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #8b949e;
 }
 
 .project-work-sidebar-note {
   margin: 0;
-  line-height: 1.7;
-  color: #b8b8c7;
-  font-size: 14px;
+  line-height: 1.65;
+  color: #8b949e;
+  font-size: 13px;
 }
 
 .project-work-sidebar-objective {
   margin: 0;
-  line-height: 1.7;
-  color: #d5d5de;
-  font-size: 14px;
+  line-height: 1.65;
+  color: #c9d1d9;
+  font-size: 13px;
 }
 
 .project-work-sidebar-list {
@@ -71,7 +81,7 @@
   list-style: none;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
 }
 
 .project-work-sidebar-list-item {
@@ -79,17 +89,17 @@
   align-items: flex-start;
   justify-content: space-between;
   gap: 10px;
-  padding-right: 16px;
+  padding-right: 14px;
   position: relative;
-  line-height: 1.7;
-  font-size: 14px;
+  line-height: 1.65;
+  font-size: 13px;
 }
 
 .project-work-sidebar-list-item::before {
   content: '•';
   position: absolute;
   right: 0;
-  color: #f1a33a;
+  color: #d29922;
   font-weight: 700;
 }
 
@@ -99,16 +109,16 @@
 
 .project-work-sidebar-stories {
   margin: 0;
-  padding: 0 20px 0 0;
+  padding: 0 16px 0 0;
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 12px;
 }
 
 .project-work-sidebar-story {
-  line-height: 1.75;
-  font-size: 14px;
-  color: #d5d5de;
+  line-height: 1.65;
+  font-size: 13px;
+  color: #c9d1d9;
 }
 
 .project-work-sidebar-story-content {
@@ -129,22 +139,23 @@
 }
 
 .project-work-sidebar-story-title {
-  color: #f8fafc;
-  font-weight: 700;
+  color: #f0f6fc;
+  font-weight: 650;
 }
 
 .project-work-sidebar-empty {
   margin: 0;
-  color: #9ca3af;
+  color: #8b949e;
   font-style: italic;
-  font-size: 14px;
+  font-size: 13px;
 }
 
 .project-work-sidebar-hints {
   gap: 0;
-  border: 1px solid #3b3b4f;
-  border-radius: 8px;
+  border: 1px solid #30363d;
+  border-radius: 6px;
   overflow: hidden;
+  background: #0d1117;
 }
 
 .project-work-sidebar-hints-toggle {
@@ -152,48 +163,48 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 12px 14px;
+  padding: 10px 12px;
   border: none;
-  background: #1b1b32;
-  color: #f8fafc;
-  font-size: 16px;
-  font-weight: 700;
+  background: #1c2128;
+  color: #f0f6fc;
+  font-size: 13px;
+  font-weight: 650;
   cursor: pointer;
 }
 
 .project-work-sidebar-hints-icon {
-  font-size: 22px;
+  font-size: 18px;
   line-height: 1;
-  color: #f1a33a;
+  color: #d29922;
 }
 
 .project-work-sidebar-hints-panel {
-  padding: 14px;
+  padding: 12px;
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  background: #1b1b32;
-  border-top: 1px solid #3b3b4f;
+  gap: 8px;
+  background: #0d1117;
+  border-top: 1px solid #30363d;
 }
 
 .project-work-sidebar-hint-card {
-  padding: 12px;
-  border-radius: 8px;
-  background: rgba(241, 163, 58, 0.08);
-  border: 1px solid rgba(241, 163, 58, 0.35);
+  padding: 10px 12px;
+  border-radius: 4px;
+  background: rgba(210, 153, 34, 0.08);
+  border: 1px solid rgba(210, 153, 34, 0.28);
 }
 
 .project-work-sidebar-hint-card h4 {
-  margin: 0 0 6px;
-  color: #f1a33a;
-  font-size: 13px;
+  margin: 0 0 4px;
+  color: #d29922;
+  font-size: 12px;
 }
 
 .project-work-sidebar-hint-card p {
   margin: 0;
-  line-height: 1.7;
-  color: #e5e7eb;
-  font-size: 14px;
+  line-height: 1.65;
+  color: #c9d1d9;
+  font-size: 13px;
   white-space: pre-wrap;
 }
 
@@ -201,37 +212,42 @@
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: 10px;
+  gap: 8px;
 }
 
 .project-work-sidebar-hint-placeholder {
   margin: 0;
-  color: #9ca3af;
-  font-size: 14px;
+  color: #8b949e;
+  font-size: 13px;
   font-style: italic;
 }
 
 .project-work-sidebar-show-hint-btn {
-  padding: 6px 12px;
-  border-radius: 6px;
-  border: 1px solid rgba(241, 163, 58, 0.55);
-  background: rgba(241, 163, 58, 0.15);
-  color: #f1a33a;
-  font-size: 13px;
+  padding: 5px 10px;
+  border-radius: 4px;
+  border: 1px solid rgba(210, 153, 34, 0.45);
+  background: rgba(210, 153, 34, 0.12);
+  color: #d29922;
+  font-size: 12px;
   font-weight: 600;
   cursor: pointer;
 }
 
 .project-work-sidebar-show-hint-btn:hover {
-  background: rgba(241, 163, 58, 0.28);
+  background: rgba(210, 153, 34, 0.22);
 }
 
 @media (max-width: 1100px) {
   .project-work-sidebar {
     width: 100%;
-    max-height: none;
-    position: static;
-    border-inline-start: none;
-    border-bottom: 1px solid #3b3b4f;
+    height: auto;
+    max-height: min(42vh, 380px);
+    min-height: 0;
+    border-inline-end: none;
+    border-bottom: 1px solid #30363d;
+  }
+
+  .project-work-sidebar-inner {
+    min-height: 0;
   }
 }

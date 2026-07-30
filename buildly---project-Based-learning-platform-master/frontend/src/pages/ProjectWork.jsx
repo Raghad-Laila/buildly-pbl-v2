@@ -48,10 +48,13 @@ import {
 } from '../utils/projectLanguages'
 import {
     DOCK_HEIGHT_DEFAULT,
-    DOCK_HEIGHT_MAX_RATIO,
+    DOCK_HEIGHT_MAX,
     DOCK_TAB_DEFAULT,
+    EDITOR_HEIGHT_DEFAULT,
+    EDITOR_HEIGHT_MAX,
     EXPLORER_WIDTH_DEFAULT,
     clampDockHeight as clampStoredDockHeight,
+    clampEditorHeight as clampStoredEditorHeight,
     clampExplorerWidth as clampStoredExplorerWidth,
     loadWorkspaceUiPrefs,
     saveWorkspaceUiPrefs,
@@ -100,11 +103,13 @@ const ProjectWork = () => {
     const resizeRafRef = useRef(null)
     const livePanelSizesRef = useRef({
         explorerWidth: EXPLORER_WIDTH_DEFAULT,
+        editorHeight: EDITOR_HEIGHT_DEFAULT,
         dockHeight: DOCK_HEIGHT_DEFAULT,
     })
     const pendingActiveFileIdRef = useRef(null)
 
     const [explorerWidth, setExplorerWidth] = useState(EXPLORER_WIDTH_DEFAULT)
+    const [editorHeight, setEditorHeight] = useState(EDITOR_HEIGHT_DEFAULT)
     const [dockHeight, setDockHeight] = useState(DOCK_HEIGHT_DEFAULT)
     const [dockActiveTab, setDockActiveTab] = useState(DOCK_TAB_DEFAULT)
     const [explorerCollapsed, setExplorerCollapsed] = useState(false)
@@ -114,20 +119,25 @@ const ProjectWork = () => {
 
     const isResizeEnabled = () => window.matchMedia(`(max-width: ${RESIZE_BREAKPOINT}px)`).matches === false
 
-    const applyPanelSizeVariables = (width, height) => {
+    const applyPanelSizeVariables = (width, nextEditorHeight, nextDockHeight) => {
         const layout = workspaceLayoutRef.current
         if (!layout) return
         layout.style.setProperty('--explorer-width', `${width}px`)
-        layout.style.setProperty('--dock-height', `${height}px`)
+        layout.style.setProperty('--editor-height', `${nextEditorHeight}px`)
+        layout.style.setProperty('--dock-height', `${nextDockHeight}px`)
     }
 
-    const getMaxDockHeight = () => {
-        const layout = workspaceLayoutRef.current
-        return layout ? layout.clientHeight * DOCK_HEIGHT_MAX_RATIO : Number.POSITIVE_INFINITY
-    }
+    const getMaxEditorHeight = () =>
+        Math.min(EDITOR_HEIGHT_MAX, Math.round(window.innerHeight * 0.75))
+
+    const getMaxDockHeight = () =>
+        Math.min(DOCK_HEIGHT_MAX, Math.round(window.innerHeight * 0.7))
 
     const clampExplorerWidth = (width) =>
         clampStoredExplorerWidth(width) ?? EXPLORER_WIDTH_DEFAULT
+
+    const clampEditorHeight = (height) =>
+        clampStoredEditorHeight(height, getMaxEditorHeight()) ?? EDITOR_HEIGHT_DEFAULT
 
     const clampDockHeight = (height) =>
         clampStoredDockHeight(height, getMaxDockHeight()) ?? DOCK_HEIGHT_DEFAULT
@@ -143,8 +153,13 @@ const ProjectWork = () => {
             resizeRafRef.current = null
             if (!resizeDragRef.current) return
 
-            const { explorerWidth: width, dockHeight: height } = livePanelSizesRef.current
-            applyPanelSizeVariables(width, height)
+            const {
+                explorerWidth: width,
+                editorHeight: nextEditorHeight,
+                dockHeight: height,
+            } = livePanelSizesRef.current
+            applyPanelSizeVariables(width, nextEditorHeight, height)
+            refreshEditorLayout()
         })
     }
 
@@ -159,13 +174,23 @@ const ProjectWork = () => {
             resizeRafRef.current = null
         }
 
-        document.body.classList.remove('workspace-resizing', 'workspace-resizing-x', 'workspace-resizing-y')
+        document.body.classList.remove(
+            'workspace-resizing',
+            'workspace-resizing-x',
+            'workspace-resizing-y',
+            'workspace-resizing-editor',
+            'workspace-resizing-dock'
+        )
 
-        const { explorerWidth: nextExplorerWidth, dockHeight: nextDockHeight } =
-            livePanelSizesRef.current
+        const {
+            explorerWidth: nextExplorerWidth,
+            editorHeight: nextEditorHeight,
+            dockHeight: nextDockHeight,
+        } = livePanelSizesRef.current
 
-        applyPanelSizeVariables(nextExplorerWidth, nextDockHeight)
+        applyPanelSizeVariables(nextExplorerWidth, nextEditorHeight, nextDockHeight)
         setExplorerWidth(nextExplorerWidth)
+        setEditorHeight(nextEditorHeight)
         setDockHeight(nextDockHeight)
         refreshEditorLayout()
 
@@ -188,6 +213,20 @@ const ProjectWork = () => {
         event.currentTarget.setPointerCapture(event.pointerId)
     }
 
+    const handleEditorResizeStart = (event) => {
+        if (!isResizeEnabled()) return
+
+        event.preventDefault()
+        resizeDragRef.current = {
+            axis: 'editor',
+            startPointer: event.clientY,
+            startSize: livePanelSizesRef.current.editorHeight,
+        }
+
+        document.body.classList.add('workspace-resizing', 'workspace-resizing-y', 'workspace-resizing-editor')
+        event.currentTarget.setPointerCapture(event.pointerId)
+    }
+
     const handleDockResizeStart = (event) => {
         if (!isResizeEnabled()) return
 
@@ -198,7 +237,7 @@ const ProjectWork = () => {
             startSize: livePanelSizesRef.current.dockHeight,
         }
 
-        document.body.classList.add('workspace-resizing', 'workspace-resizing-y')
+        document.body.classList.add('workspace-resizing', 'workspace-resizing-y', 'workspace-resizing-dock')
         event.currentTarget.setPointerCapture(event.pointerId)
     }
 
@@ -209,7 +248,12 @@ const ProjectWork = () => {
         if (drag.axis === 'explorer') {
             const delta = event.clientX - drag.startPointer
             livePanelSizesRef.current.explorerWidth = clampExplorerWidth(drag.startSize + delta)
+        } else if (drag.axis === 'editor') {
+            // Independent: drag down grows editor only; console height unchanged.
+            const delta = event.clientY - drag.startPointer
+            livePanelSizesRef.current.editorHeight = clampEditorHeight(drag.startSize + delta)
         } else {
+            // Independent: drag down grows console only; editor height unchanged.
             const delta = event.clientY - drag.startPointer
             livePanelSizesRef.current.dockHeight = clampDockHeight(drag.startSize + delta)
         }
@@ -218,19 +262,25 @@ const ProjectWork = () => {
     }
 
     useEffect(() => {
-        livePanelSizesRef.current = { explorerWidth, dockHeight }
+        livePanelSizesRef.current = { explorerWidth, editorHeight, dockHeight }
 
         if (resizeDragRef.current) return
 
-        applyPanelSizeVariables(explorerWidth, dockHeight)
-    }, [explorerWidth, dockHeight])
+        applyPanelSizeVariables(explorerWidth, editorHeight, dockHeight)
+    }, [explorerWidth, editorHeight, dockHeight])
 
     useEffect(() => {
         return () => {
             if (resizeRafRef.current != null) {
                 cancelAnimationFrame(resizeRafRef.current)
             }
-            document.body.classList.remove('workspace-resizing', 'workspace-resizing-x', 'workspace-resizing-y')
+            document.body.classList.remove(
+                'workspace-resizing',
+                'workspace-resizing-x',
+                'workspace-resizing-y',
+                'workspace-resizing-editor',
+                'workspace-resizing-dock'
+            )
         }
     }, [])
 
@@ -239,12 +289,14 @@ const ProjectWork = () => {
 
         const prefs = loadWorkspaceUiPrefs(id)
         setExplorerWidth(prefs.explorerWidth)
+        setEditorHeight(prefs.editorHeight)
         setDockHeight(prefs.dockHeight)
         setDockActiveTab(prefs.dockActiveTab)
         setExplorerCollapsed(prefs.explorerCollapsed)
         pendingActiveFileIdRef.current = prefs.activeFileId
         livePanelSizesRef.current = {
             explorerWidth: prefs.explorerWidth,
+            editorHeight: prefs.editorHeight,
             dockHeight: prefs.dockHeight,
         }
 
@@ -284,17 +336,22 @@ const ProjectWork = () => {
             id,
             {
                 explorerWidth,
+                editorHeight,
                 dockHeight,
                 dockActiveTab,
                 activeFileId,
                 explorerCollapsed,
             },
-            { maxDockHeight: getMaxDockHeight() }
+            {
+                maxEditorHeight: getMaxEditorHeight(),
+                maxDockHeight: getMaxDockHeight(),
+            }
         )
     }, [
         uiHydrated,
         id,
         explorerWidth,
+        editorHeight,
         dockHeight,
         dockActiveTab,
         explorerCollapsed,
@@ -305,12 +362,15 @@ const ProjectWork = () => {
         if (!workspace || !uiHydrated) return
 
         const frame = requestAnimationFrame(() => {
-            const clamped = clampDockHeight(dockHeight)
-            if (clamped === dockHeight) return
+            const nextEditor = clampEditorHeight(editorHeight)
+            const nextDock = clampDockHeight(dockHeight)
+            if (nextEditor === editorHeight && nextDock === dockHeight) return
 
-            livePanelSizesRef.current.dockHeight = clamped
-            setDockHeight(clamped)
-            applyPanelSizeVariables(explorerWidth, clamped)
+            livePanelSizesRef.current.editorHeight = nextEditor
+            livePanelSizesRef.current.dockHeight = nextDock
+            setEditorHeight(nextEditor)
+            setDockHeight(nextDock)
+            applyPanelSizeVariables(explorerWidth, nextEditor, nextDock)
         })
 
         return () => cancelAnimationFrame(frame)
@@ -1198,11 +1258,11 @@ const ProjectWork = () => {
                                     </div>
 
                                     <div
-                                        className="workspace-resize-handle workspace-resize-handle-horizontal"
+                                        className="workspace-resize-handle workspace-resize-handle-horizontal workspace-resize-handle-editor"
                                         role="separator"
                                         aria-orientation="horizontal"
-                                        aria-label="Resize bottom dock"
-                                        onPointerDown={handleDockResizeStart}
+                                        aria-label="Resize code editor"
+                                        onPointerDown={handleEditorResizeStart}
                                         onPointerMove={handlePanelResizeMove}
                                         onPointerUp={finishPanelResize}
                                         onPointerCancel={finishPanelResize}
@@ -1232,6 +1292,17 @@ const ProjectWork = () => {
                                             }
                                         />
                                     </div>
+
+                                    <div
+                                        className="workspace-resize-handle workspace-resize-handle-horizontal workspace-resize-handle-dock"
+                                        role="separator"
+                                        aria-orientation="horizontal"
+                                        aria-label="Resize console panel"
+                                        onPointerDown={handleDockResizeStart}
+                                        onPointerMove={handlePanelResizeMove}
+                                        onPointerUp={finishPanelResize}
+                                        onPointerCancel={finishPanelResize}
+                                    />
                                 </div>
                             )}
 

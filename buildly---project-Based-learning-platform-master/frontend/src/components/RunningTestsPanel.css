@@ -2,19 +2,19 @@
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 16px;
-  border-radius: 8px;
-  background: rgba(245, 158, 11, 0.1);
-  border: 1px solid rgba(245, 158, 11, 0.25);
-  color: #fbbf24;
+  padding: 14px;
+  border-radius: 6px;
+  background: rgba(210, 153, 34, 0.1);
+  border: 1px solid rgba(210, 153, 34, 0.25);
+  color: #e3b341;
 }
 
 .running-tests-global-error {
-  padding: 14px 16px;
-  border-radius: 8px;
-  background: rgba(239, 68, 68, 0.12);
-  border: 1px solid rgba(239, 68, 68, 0.3);
-  color: #fca5a5;
+  padding: 12px 14px;
+  border-radius: 6px;
+  background: rgba(248, 81, 73, 0.12);
+  border: 1px solid rgba(248, 81, 73, 0.3);
+  color: #ffa198;
 }
 
 .running-tests-empty {
@@ -25,60 +25,61 @@
   gap: 8px;
   min-height: 140px;
   padding: 24px;
-  border: 1px dashed #3b3b4f;
-  border-radius: 8px;
-  background: #0a0a23;
+  border: 1px dashed #30363d;
+  border-radius: 6px;
+  background: #0d1117;
   text-align: center;
 }
 
 .running-tests-empty-icon {
-  font-size: 28px;
-  color: #6b7280;
+  font-size: 24px;
+  color: #8b949e;
 }
 
 .running-tests-empty p {
   margin: 0;
-  color: #d5d5de;
+  color: #c9d1d9;
   font-weight: 600;
+  font-size: 13px;
 }
 
 .running-tests-results {
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 12px;
 }
 
 .running-tests-summary {
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;
+  gap: 8px;
 }
 
 .running-tests-summary span {
-  padding: 6px 12px;
-  border-radius: 999px;
-  font-size: 13px;
+  padding: 4px 10px;
+  border-radius: 4px;
+  font-size: 12px;
   font-weight: 600;
 }
 
 .running-tests-summary-total {
-  background: #1f2937;
-  color: #e5e7eb;
+  background: #21262d;
+  color: #c9d1d9;
 }
 
 .running-tests-summary-passed {
-  background: rgba(34, 197, 94, 0.15);
-  color: #4ade80;
+  background: rgba(63, 185, 80, 0.15);
+  color: #7ee787;
 }
 
 .running-tests-summary-failed {
-  background: rgba(239, 68, 68, 0.15);
-  color: #f87171;
+  background: rgba(248, 81, 73, 0.15);
+  color: #ffa198;
 }
 
 .running-tests-no-items {
   margin: 0;
-  color: #9ca3af;
+  color: #8b949e;
 }
 
 .running-tests-list {
@@ -87,22 +88,22 @@
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
 }
 
 .running-tests-item {
-  padding: 14px 16px;
-  border-radius: 8px;
-  border: 1px solid #3b3b4f;
-  background: #0a0a23;
+  padding: 12px 14px;
+  border-radius: 6px;
+  border: 1px solid #30363d;
+  background: #0d1117;
 }
 
 .running-tests-item.is-passed {
-  border-color: rgba(34, 197, 94, 0.35);
+  border-color: rgba(63, 185, 80, 0.35);
 }
 
 .running-tests-item.is-failed {
-  border-color: rgba(239, 68, 68, 0.35);
+  border-color: rgba(248, 81, 73, 0.35);
 }
 
 .running-tests-item-header {
@@ -115,48 +116,48 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 28px;
-  height: 28px;
+  width: 24px;
+  height: 24px;
   border-radius: 50%;
-  font-size: 15px;
+  font-size: 13px;
   font-weight: 700;
   flex-shrink: 0;
 }
 
 .running-tests-item.is-passed .running-tests-item-icon {
-  background: rgba(34, 197, 94, 0.2);
-  color: #4ade80;
+  background: rgba(63, 185, 80, 0.2);
+  color: #7ee787;
 }
 
 .running-tests-item.is-failed .running-tests-item-icon {
-  background: rgba(239, 68, 68, 0.2);
-  color: #f87171;
+  background: rgba(248, 81, 73, 0.2);
+  color: #ffa198;
 }
 
 .running-tests-item-name {
-  font-size: 15px;
+  font-size: 13px;
   font-weight: 600;
-  color: #f8fafc;
+  color: #f0f6fc;
 }
 
 .running-tests-item-message {
-  margin: 10px 0 0 38px;
-  color: #d5d5de;
+  margin: 8px 0 0 34px;
+  color: #c9d1d9;
   line-height: 1.5;
-  font-size: 14px;
+  font-size: 13px;
 }
 
 .running-tests-item.is-passed .running-tests-item-message {
-  color: #86efac;
+  color: #aff5b4;
 }
 
 .running-tests-item-error {
-  margin: 8px 0 0 38px;
-  padding: 10px 12px;
-  border-radius: 6px;
-  background: rgba(239, 68, 68, 0.1);
-  border: 1px solid rgba(239, 68, 68, 0.25);
-  color: #fca5a5;
+  margin: 8px 0 0 34px;
+  padding: 8px 10px;
+  border-radius: 4px;
+  background: rgba(248, 81, 73, 0.1);
+  border: 1px solid rgba(248, 81, 73, 0.25);
+  color: #ffa198;
   font-family: 'Consolas', 'Monaco', monospace;
   font-size: 12px;
   line-height: 1.5;

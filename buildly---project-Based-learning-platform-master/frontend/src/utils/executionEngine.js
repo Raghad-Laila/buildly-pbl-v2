@@ -9,6 +9,7 @@ import {
   runWorkspace,
 } from './frontendCodeRunner'
 import { runJsKernel } from './jsKernel'
+import { getLanguageMismatchResult } from './languageMismatch'
 import {
   isPythonKernelLoading,
   isPythonKernelReady,
@@ -89,6 +90,12 @@ function findWorkspaceFileByName(workspace, fileName) {
 
 export async function executeWorkspace(workspace, projectLanguage, options = {}) {
   const { onStream, runServerPython, entryFileName } = options
+
+  const mismatch = getLanguageMismatchResult(workspace, projectLanguage)
+  if (mismatch) {
+    return mismatch
+  }
+
   const workspaceType = detectWorkspaceType(workspace, projectLanguage)
   const projectEntryFile = getMainExecutableFile(workspace, projectLanguage)
   // Optional Run Code override; missing/unknown name → project entry (getMainExecutableFile).

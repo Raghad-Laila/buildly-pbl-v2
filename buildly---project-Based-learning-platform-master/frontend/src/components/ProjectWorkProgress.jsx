@@ -1,5 +1,7 @@
-import React from 'react'
+import React, { useEffect, useState } from 'react'
 import './ProjectWorkProgress.css'
+
+const CELEBRATION_RIBBONS = 48
 
 const ProjectWorkProgress = ({
   progress,
@@ -8,13 +10,49 @@ const ProjectWorkProgress = ({
   showImproveCode = false,
 }) => {
   const { percentage, passed, total, allPassed, hasTests } = progress
+  const [celebrationKey, setCelebrationKey] = useState(0)
+
+  useEffect(() => {
+    if (!allPassed) return
+    setCelebrationKey((key) => key + 1)
+  }, [allPassed])
 
   if (!hasTests) {
     return null
   }
 
   return (
-    <div className="project-work-progress">
+    <div className={`project-work-progress${allPassed ? ' is-complete' : ''}`}>
+      {allPassed && (
+        <div
+          key={celebrationKey}
+          className="project-progress-celebration"
+          aria-hidden="true"
+        >
+          <span className="project-progress-burst-flash" />
+          {Array.from({ length: CELEBRATION_RIBBONS }, (_, index) => {
+            const angle = (index / CELEBRATION_RIBBONS) * Math.PI * 2
+            const distance = 160 + (index % 6) * 55
+            const dx = Math.cos(angle) * distance
+            const dy = Math.sin(angle) * distance - 40
+            const spin = 180 + (index % 8) * 90
+
+            return (
+              <span
+                key={index}
+                className={`project-progress-ribbon tone-${index % 6}`}
+                style={{
+                  '--ribbon-i': index,
+                  '--dx': `${dx.toFixed(1)}px`,
+                  '--dy': `${dy.toFixed(1)}px`,
+                  '--spin': `${spin}deg`,
+                }}
+              />
+            )
+          })}
+        </div>
+      )}
+
       {allPassed && (
         <div className="project-completed-banner" role="status">
           <span className="project-completed-icon" aria-hidden="true">

@@ -6,8 +6,14 @@ export const EXPLORER_WIDTH_DEFAULT = 220
 export const EXPLORER_WIDTH_MIN = 180
 export const EXPLORER_WIDTH_MAX = 450
 
+export const EDITOR_HEIGHT_DEFAULT = 380
+export const EDITOR_HEIGHT_MIN = 200
+export const EDITOR_HEIGHT_MAX = 900
+
 export const DOCK_HEIGHT_DEFAULT = 260
-export const DOCK_HEIGHT_MIN = 180
+export const DOCK_HEIGHT_MIN = 160
+export const DOCK_HEIGHT_MAX = 700
+/** @deprecated kept for callers; independent panels use DOCK_HEIGHT_MAX */
 export const DOCK_HEIGHT_MAX_RATIO = 0.6
 
 export const DOCK_TAB_DEFAULT = 'output'
@@ -21,6 +27,7 @@ export function getDefaultWorkspaceUiPrefs() {
   return {
     version: WORKSPACE_UI_VERSION,
     explorerWidth: EXPLORER_WIDTH_DEFAULT,
+    editorHeight: EDITOR_HEIGHT_DEFAULT,
     dockHeight: DOCK_HEIGHT_DEFAULT,
     dockActiveTab: DOCK_TAB_DEFAULT,
     activeFileId: null,
@@ -36,12 +43,21 @@ export function clampExplorerWidth(width) {
   return Math.min(EXPLORER_WIDTH_MAX, Math.max(EXPLORER_WIDTH_MIN, Math.round(width)))
 }
 
-export function clampDockHeight(height, maxHeight = Number.POSITIVE_INFINITY) {
+export function clampEditorHeight(height, maxHeight = EDITOR_HEIGHT_MAX) {
   if (typeof height !== 'number' || !Number.isFinite(height)) {
     return null
   }
 
-  const upper = Number.isFinite(maxHeight) ? maxHeight : Number.POSITIVE_INFINITY
+  const upper = Number.isFinite(maxHeight) ? maxHeight : EDITOR_HEIGHT_MAX
+  return Math.min(upper, Math.max(EDITOR_HEIGHT_MIN, Math.round(height)))
+}
+
+export function clampDockHeight(height, maxHeight = DOCK_HEIGHT_MAX) {
+  if (typeof height !== 'number' || !Number.isFinite(height)) {
+    return null
+  }
+
+  const upper = Number.isFinite(maxHeight) ? maxHeight : DOCK_HEIGHT_MAX
   return Math.min(upper, Math.max(DOCK_HEIGHT_MIN, Math.round(height)))
 }
 
@@ -65,6 +81,7 @@ export function normalizeWorkspaceUiPrefs(raw, options = {}) {
   }
 
   const explorerWidth = clampExplorerWidth(raw.explorerWidth)
+  const editorHeight = clampEditorHeight(raw.editorHeight, options.maxEditorHeight)
   const dockHeight = clampDockHeight(raw.dockHeight, options.maxDockHeight)
   const dockActiveTab = normalizeDockActiveTab(raw.dockActiveTab)
   const activeFileId = normalizeActiveFileId(raw.activeFileId)
@@ -76,6 +93,7 @@ export function normalizeWorkspaceUiPrefs(raw, options = {}) {
   return {
     version: WORKSPACE_UI_VERSION,
     explorerWidth: explorerWidth ?? defaults.explorerWidth,
+    editorHeight: editorHeight ?? defaults.editorHeight,
     dockHeight: dockHeight ?? defaults.dockHeight,
     dockActiveTab: dockActiveTab ?? defaults.dockActiveTab,
     activeFileId,
