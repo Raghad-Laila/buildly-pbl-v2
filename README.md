@@ -2,17 +2,17 @@
 
 Buildly is an interactive educational platform designed to teach programming through real-world, project-based learning paths. It bridges the gap between theoretical knowledge and practical application by guiding learners through structured, hands-on projects.
 
-## 🚀 Project Overview
+## Project folder
 
-Traditional programming education often lacks practical depth. Buildly addresses this by offering:
+After cloning, enter the nested app folder:
 
-- Progressive learning paths: From beginner to expert, organized by topic (e.g., Web Development, AI).
-- Real-world projects: Each project includes clear objectives, requirements, and estimated completion time.
-- Integrated code editor: Learners can write and run code directly within the platform.
-- Smart feedback: Instant evaluation and guidance to improve coding skills.
-- User roles: Separate interfaces and permissions for learners and instructors.
+```bash
+cd buildly---project-Based-learning-platform-master
+```
 
-## 🚀 Tech Stack
+All commands below are relative to that folder.
+
+## Tech Stack
 
 | Layer      | Technology              |
 | ---------- | ----------------------- |
@@ -21,53 +21,55 @@ Traditional programming education often lacks practical depth. Buildly addresses
 | Database   | SQLite (via Django ORM) |
 | Versioning | Git & GitHub            |
 
-## 🚀 How to Run Locally
+## How to Run Locally
 
-### 1. Docker build
-
-- cd docker\python-runner
-- docker build -t python-runner-image .
-
-### 2. Run Backend (Django)
-
-- cd backendPBL\projectBPL
-- python -m venv venv
-- source venv/bin/activate # or venv\Scripts\activate on Windows
-- pip install -r requirements.txt
-- python manage.py migrate
-
-**Windows (recommended):** use the helper script so only one server runs on port 8000:
-
-```powershell
-.\scripts\start-server.ps1
-```
-
-To stop all servers on port 8000:
-
-```powershell
-.\scripts\stop-server.ps1
-```
-
-**Manual start:**
+### 1. Docker (Python code runner)
 
 ```bash
+cd docker\python-runner
+docker build -t python-runner-image .
+cd ..\..
+```
+
+### 2. Backend (Django)
+
+```bash
+cd backendPBL\projectBPL
+python -m venv venv
+venv\Scripts\activate
+pip install -r requirements.txt
+copy .env.example .env
+python manage.py migrate
 python manage.py runserver
 ```
 
-> Avoid running multiple `runserver` instances at the same time, and do not use `--noreload` during development.
+> `db.sqlite3` and `media/` are included in this repo so demo projects and images work after clone.
+> Edit `.env` for email / Ollama / Gemini keys as needed.
 
-### 3. Run Frontend (React)
+**Optional AI (Ollama):**
 
-- cd frontend
-- npm install
-- npm run dev
+```bash
+ollama pull qwen2.5-coder:7b
+```
 
-## 👥 Team Members
+Keep Ollama running while using Ask AI / Improve Code.
+
+### 3. Frontend (React)
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+Open the URL shown by Vite (usually http://localhost:5173).
+
+## Team Members
 
 - Raghad Laila – Frontend Developer
 - Malkeh Herhe – backend Developer
 - Supervised by: Eng. Anas Abdelaziz
 
-## 📄 License
+## License
 
 This project is part of a graduation requirement at the Syrian Private University – Faculty of Artificial Intelligence Engineering. For academic use only.
