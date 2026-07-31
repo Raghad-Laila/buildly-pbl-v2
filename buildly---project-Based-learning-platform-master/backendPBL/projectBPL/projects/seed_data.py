@@ -417,62 +417,6 @@ FRONTEND_PROJECTS = [
             },
         ],
     },
-    {
-        'title': f'{SEED_PREFIX}Portfolio Navigation System',
-        'legacy_titles': (f'{SEED_PREFIX}نظام تنقل Portfolio',),
-        'level': 'expert',
-        'languages': ['html', 'css', 'javascript', 'react'],
-        'estimated_time': 6,
-        'description': (
-            'مشروع خبير لبناء نظام تنقل Portfolio متعدد الصفحات. '
-            'ستكتب دوال تُرجع HTML لكل قسم.'
-        ),
-        'objectives': [
-            'بناء شريط تنقل',
-            'إنشاء صفحات متعددة كنص',
-            'ربط الأقسام بشكل منطقي',
-        ],
-        'stories': [
-            {
-                'title': 'شريط التنقل',
-                'description': 'اكتب buildNav() تُرجع nav فيه روابط: الرئيسية، المشاريع، التواصل',
-                'hint': 'استخدم <nav><a> لكل رابط</a></nav>',
-            },
-            {
-                'title': 'الصفحة الرئيسية',
-                'description': 'اكتب buildHome() تُرجع section فيه h1 باسمك',
-                'hint': 'return "<section><h1>أحمد</h1></section>";',
-            },
-            {
-                'title': 'صفحة المشاريع',
-                'description': 'اكتب buildProjects() تُرجع قائمة ul بمشروعين',
-                'hint': 'أضف <ul><li>مشروع 1</li><li>مشروع 2</li></ul>',
-            },
-        ],
-        'tests': [
-            {
-                'name': 'شريط التنقل',
-                'description': 'يتحقق من nav',
-                'test_code': 'const nav=buildNav();\nif(!nav.includes("المشاريع")||!nav.includes("التواصل")) throw new Error("nav");',
-                'success_message': 'التنقل جاهز!',
-                'failure_message': 'أضف روابط التنقل الثلاثة',
-            },
-            {
-                'name': 'الصفحة الرئيسية',
-                'description': 'يتحقق من home',
-                'test_code': 'const home=buildHome();\nif(!home.includes("<h1")) throw new Error("home");',
-                'success_message': 'الصفحة الرئيسية جاهزة!',
-                'failure_message': 'أضف h1 في buildHome',
-            },
-            {
-                'name': 'صفحة المشاريع',
-                'description': 'يتحقق من projects',
-                'test_code': 'const p=buildProjects();\nif(!p.includes("<ul")||(p.match(/<li/g)||[]).length<2) throw new Error("projects");',
-                'success_message': 'قائمة المشاريع جاهزة!',
-                'failure_message': 'أضف قائمة بمشروعين',
-            },
-        ],
-    },
 ]
 
 PYTHON_PROJECTS = [

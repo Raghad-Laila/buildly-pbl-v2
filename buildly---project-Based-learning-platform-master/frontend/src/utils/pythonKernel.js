@@ -76,13 +76,59 @@ function toWorkspaceRelativePath(fileName) {
     .join('/')
 }
 
+/**
+ * Pyodide `batched` strips the trailing newline from complete lines.
+ * Restore it so console output matches real Python (and JS kernel).
+ */
+function restoreBatchedChunk(text) {
+  const chunk = String(text ?? '')
+  if (!chunk) return ''
+  return chunk.endsWith('\n') ? chunk : `${chunk}\n`
+}
+
+function destroyPyProxy(value) {
+  if (value && typeof value.destroy === 'function') {
+    try {
+      value.destroy()
+    } catch {
+      // Proxy may already be destroyed.
+    }
+  }
+}
+
+/**
+ * Wipe and remount /workspace for a clean run.
+ * Must leave the directory before rmtree — cwd pins the inode and causes
+ * OSError: [Errno 10] Resource busy: '/workspace' on the 2nd+ Run.
+ */
 function resetAndPrepareWorkspace(pyodide) {
+  // Leave via Emscripten FS first so Python rmtree cannot hit EBUSY.
+  try {
+    pyodide.FS.chdir('/')
+  } catch {
+    // FS may not have /workspace yet on the first run.
+  }
+
   pyodide.runPython(`
 import os
 import shutil
 import sys
 
 workspace = ${JSON.stringify(WORKSPACE_DIR)}
+
+# Drop cached imports from previous runs so edited siblings reload.
+for module_name, module in list(sys.modules.items()):
+    module_file = getattr(module, "__file__", None) or ""
+    if isinstance(module_file, str) and module_file.startswith(workspace):
+        del sys.modules[module_name]
+
+# Leave /workspace before deleting it (cwd keeps the dir busy).
+try:
+    cwd = os.getcwd()
+except OSError:
+    cwd = "/"
+if cwd == workspace or cwd.startswith(workspace + "/"):
+    os.chdir("/")
 
 if os.path.exists(workspace):
     shutil.rmtree(workspace)
@@ -93,12 +139,6 @@ os.chdir(workspace)
 if workspace in sys.path:
     sys.path.remove(workspace)
 sys.path.insert(0, workspace)
-
-# Drop cached imports from previous runs so edited siblings reload.
-for module_name, module in list(sys.modules.items()):
-    module_file = getattr(module, "__file__", None) or ""
-    if isinstance(module_file, str) and module_file.startswith(workspace):
-        del sys.modules[module_name]
 `)
 }
 
@@ -169,15 +209,17 @@ export async function runPythonKernel({
 
   pyodide.setStdout({
     batched: (text) => {
-      stdout += text
-      onStream?.('stdout', text)
+      const chunk = restoreBatchedChunk(text)
+      stdout += chunk
+      onStream?.('stdout', chunk)
     },
   })
 
   pyodide.setStderr({
     batched: (text) => {
-      stderr += text
-      onStream?.('stderr', text)
+      const chunk = restoreBatchedChunk(text)
+      stderr += chunk
+      onStream?.('stderr', chunk)
     },
   })
 
@@ -203,20 +245,19 @@ export async function runPythonKernel({
 
     onStream?.('status', 'Executing workspace...')
 
+    // Trailing `None` discards runpy's module dict so it never becomes a
+    // junk "result" block in the console.
     const result = await pyodide.runPythonAsync(`
 import runpy
 runpy.run_path(${JSON.stringify(entryAbsolutePath)}, run_name="__main__")
+None
 `)
-
-    let returnValue = ''
-    if (result !== undefined && result !== null) {
-      returnValue = String(result)
-    }
+    destroyPyProxy(result)
 
     return {
       stdout,
       stderr,
-      returnValue,
+      returnValue: '',
       status: 'success',
       kernelMessage: 'Python Kernel: Ready',
       previewHtml: null,
@@ -224,11 +265,15 @@ runpy.run_path(${JSON.stringify(entryAbsolutePath)}, run_name="__main__")
     }
   } catch (error) {
     const message = error.message || String(error)
-    onStream?.('stderr', message)
+    const chunk = restoreBatchedChunk(message)
+    if (!stderr.includes(message)) {
+      stderr += chunk
+      onStream?.('stderr', chunk)
+    }
 
     return {
       stdout,
-      stderr: message,
+      stderr,
       returnValue: '',
       status: 'error',
       kernelMessage: 'Python Kernel',

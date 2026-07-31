@@ -4,6 +4,7 @@ from django.db import transaction
 from projects.book_inventory_project import BOOK_INVENTORY_TESTS, BOOK_INVENTORY_TITLE
 from projects.models import Project, ProjectTask, Tests
 from projects.playing_cards_project import PLAYING_CARDS_TESTS, PLAYING_CARDS_TITLE
+from projects.portfolio_navigation_project import PORTFOLIO_TESTS, PORTFOLIO_TITLE
 from projects.product_catalog_project import PRODUCT_CATALOG_TESTS, PRODUCT_CATALOG_TITLE
 from projects.seed_data import FRONTEND_PROJECTS, PYTHON_PROJECTS
 from projects.survey_form_project import SURVEY_FORM_TESTS, SURVEY_FORM_TITLE
@@ -14,6 +15,7 @@ LAB_DEFINITIONS = {
     BOOK_INVENTORY_TITLE: BOOK_INVENTORY_TESTS,
     TASK_BOARD_TITLE: TASK_BOARD_TESTS,
     PRODUCT_CATALOG_TITLE: PRODUCT_CATALOG_TESTS,
+    PORTFOLIO_TITLE: PORTFOLIO_TESTS,
     SURVEY_FORM_TITLE: SURVEY_FORM_TESTS,
 }
 

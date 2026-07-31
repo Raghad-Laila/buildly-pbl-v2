@@ -645,26 +645,76 @@ const ProjectWork = () => {
                         .filter((file) => /\.(py|json|txt)$/i.test(file?.name || ''))
                         .map((file) => ({
                             name: file.name,
-                            content: file.content || '',
+                            content: file.content ?? '',
                         }))
 
-                    const res = await projectsAPI.executeCode({
-                        code,
-                        files: mountableFiles.length ? mountableFiles : undefined,
-                        entryFileName: entryFileName || 'main.py',
-                        language: projectLanguage,
-                    })
-                    const stderr = res.data.stderr || res.data.error || ''
-                    const stdout = res.data.stdout || ''
+                    const requestedEntry = String(entryFileName || 'main.py').toLowerCase()
+                    const entryFile =
+                        mountableFiles.find(
+                            (file) => String(file.name || '').toLowerCase() === requestedEntry
+                        ) ||
+                        mountableFiles.find((file) =>
+                            String(file.name || '').toLowerCase().endsWith('.py')
+                        )
 
-                    return {
-                        stdout,
-                        stderr,
-                        returnValue: '',
-                        status: res.data.returncode === 0 && !stderr ? 'success' : 'error',
-                        kernelMessage: 'Docker Python',
-                        previewHtml: null,
-                        hasPreview: false,
+                    const codeToSend =
+                        (code != null && String(code)) ||
+                        entryFile?.content ||
+                        ''
+
+                    if (!mountableFiles.length && !String(codeToSend).trim()) {
+                        return {
+                            stdout: '',
+                            stderr: 'No code provided',
+                            returnValue: '',
+                            status: 'error',
+                            kernelMessage: 'Docker Python',
+                            previewHtml: null,
+                            hasPreview: false,
+                        }
+                    }
+
+                    onStream?.('status', 'Running on Docker Python...')
+
+                    try {
+                        const res = await projectsAPI.executeCode({
+                            code: String(codeToSend),
+                            files: mountableFiles.length ? mountableFiles : undefined,
+                            entryFileName:
+                                entryFileName || entryFile?.name || 'main.py',
+                            language: 'python',
+                        })
+                        const stderr = res.data.stderr || res.data.error || ''
+                        const stdout = res.data.stdout || ''
+
+                        return {
+                            stdout,
+                            stderr,
+                            returnValue: '',
+                            status:
+                                res.data.returncode === 0 && !stderr
+                                    ? 'success'
+                                    : 'error',
+                            kernelMessage: 'Docker Python',
+                            previewHtml: null,
+                            hasPreview: false,
+                        }
+                    } catch (err) {
+                        const message =
+                            err.response?.data?.error ||
+                            err.response?.data?.detail ||
+                            err.message ||
+                            'Error running code on Docker'
+
+                        return {
+                            stdout: '',
+                            stderr: String(message),
+                            returnValue: '',
+                            status: 'error',
+                            kernelMessage: 'Docker Python',
+                            previewHtml: null,
+                            hasPreview: false,
+                        }
                     }
                 },
             }
@@ -1116,8 +1166,7 @@ const ProjectWork = () => {
         }
     }
 
-    const showKernelReset =
-        projectLanguage === 'python' || projectLanguage === 'javascript'
+    const showKernelReset = projectLanguage === 'javascript'
 
     const objective = project?.objectives?.trim() || ''
     const userStories = tasks.length

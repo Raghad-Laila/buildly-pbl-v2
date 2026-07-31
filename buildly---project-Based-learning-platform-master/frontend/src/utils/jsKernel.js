@@ -8,7 +8,7 @@ function ensureJsSandbox() {
   }
 
   sandboxFrame = document.createElement('iframe')
-  sandboxFrame.setAttribute('sandbox', 'allow-scripts')
+  sandboxFrame.setAttribute('sandbox', 'allow-scripts allow-same-origin')
   sandboxFrame.style.display = 'none'
   sandboxFrame.title = 'js-kernel'
   document.body.appendChild(sandboxFrame)

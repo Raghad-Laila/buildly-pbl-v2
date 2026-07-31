@@ -309,9 +309,11 @@ export const projectsAPI = {
 
   executeCode: ({ code, files, entryFileName, language } = {}) =>
     api.post('/projects/code/execute/', {
-      ...(code != null && code !== '' ? { code } : {}),
-      ...(Array.isArray(files) && files.length ? { files, entryFileName } : {}),
-      language,
+      ...(code != null ? { code: String(code) } : {}),
+      ...(Array.isArray(files) && files.length
+        ? { files, entryFileName: entryFileName || 'main.py' }
+        : {}),
+      language: language || 'python',
     }),
 
   aiReview: ({ project_id, files, test_summary, failed_tests, test_error } = {}) =>

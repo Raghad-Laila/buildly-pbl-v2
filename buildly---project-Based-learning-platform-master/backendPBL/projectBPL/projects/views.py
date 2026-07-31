@@ -925,9 +925,10 @@ class ExecuteCodeView(APIView):
                 outcome = run_python_in_docker(
                     files=files,
                     entry_file_name=entry_file_name,
+                    timeout=30,
                 )
             else:
-                outcome = run_python_in_docker(code)
+                outcome = run_python_in_docker(code, timeout=30)
 
             return Response({
                 "stdout": outcome["stdout"],
@@ -942,7 +943,7 @@ class ExecuteCodeView(APIView):
 
         except subprocess.TimeoutExpired:
             return Response({
-                "error": "Execution timeout"
+                "error": "Execution timeout — تأكد أن Docker Desktop شغال، أو أعد المحاولة (تشغيل الحاوية قد يحتاج وقتاً على Windows)."
             }, status=400)
 
         except Exception as e:

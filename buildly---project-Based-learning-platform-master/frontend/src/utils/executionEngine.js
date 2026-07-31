@@ -10,11 +10,30 @@ import {
 } from './frontendCodeRunner'
 import { runJsKernel } from './jsKernel'
 import { getLanguageMismatchResult } from './languageMismatch'
-import {
-  isPythonKernelLoading,
-  isPythonKernelReady,
-  runPythonKernel,
-} from './pythonKernel'
+
+function runPythonOnDocker(workspace, pythonEntryFile, runServerPython, onStream) {
+  const entryName = pythonEntryFile?.name || 'main.py'
+  const entryContent = pythonEntryFile?.content || ''
+
+  if (!runServerPython) {
+    return {
+      stdout: '',
+      stderr: 'تنفيذ Python يتطلب خادم Docker.',
+      returnValue: '',
+      status: 'error',
+      previewHtml: null,
+      hasPreview: false,
+      kernelMessage: 'Docker Python',
+    }
+  }
+
+  onStream?.('status', 'Running on Docker Python...')
+  return runServerPython({
+    files: workspace?.files || [],
+    entryFileName: entryName,
+    code: entryContent,
+  })
+}
 
 /**
  * Detect execution strategy from file extensions (+ project language hint).
@@ -44,7 +63,7 @@ export function detectWorkspaceType(workspace, projectLanguage = null) {
     return 'web'
   }
 
-  // Python sources without HTML stay on the Python kernel.
+  // Python sources without HTML → Docker Python.
   if (hasPy) {
     return 'python'
   }
@@ -106,26 +125,12 @@ export async function executeWorkspace(workspace, projectLanguage, options = {})
   onStream?.('status', 'Executing workspace...')
 
   if (workspaceType === 'python') {
-    const entryName = pythonEntryFile?.name || 'main.py'
-    const entryContent = pythonEntryFile?.content || ''
-    try {
-      return await runPythonKernel({
-        files: workspace.files || [],
-        entryFileName: entryName,
-        onStream,
-      })
-    } catch (kernelError) {
-      if (runServerPython) {
-        onStream?.('status', 'Falling back to server Python...')
-        return runServerPython({
-          files: workspace.files || [],
-          entryFileName: entryName,
-          code: entryContent,
-        })
-      }
-
-      throw kernelError
-    }
+    return runPythonOnDocker(
+      workspace,
+      pythonEntryFile,
+      runServerPython,
+      onStream
+    )
   }
 
   if (workspaceType === 'web') {
@@ -156,26 +161,12 @@ export async function executeWorkspace(workspace, projectLanguage, options = {})
   }
 
   if (projectLanguage === 'python' || executionLanguage === 'python') {
-    const entryName = pythonEntryFile?.name || 'main.py'
-    const entryContent = pythonEntryFile?.content || ''
-    try {
-      return await runPythonKernel({
-        files: workspace.files || [],
-        entryFileName: entryName,
-        onStream,
-      })
-    } catch (kernelError) {
-      if (runServerPython) {
-        onStream?.('status', 'Falling back to server Python...')
-        return runServerPython({
-          files: workspace.files || [],
-          entryFileName: entryName,
-          code: entryContent,
-        })
-      }
-
-      throw kernelError
-    }
+    return runPythonOnDocker(
+      workspace,
+      pythonEntryFile,
+      runServerPython,
+      onStream
+    )
   }
 
   if (runServerPython) {
@@ -201,13 +192,7 @@ export function getKernelLabel(projectLanguage, workspace) {
   const workspaceType = detectWorkspaceType(workspace, projectLanguage)
 
   if (workspaceType === 'python') {
-    if (isPythonKernelReady()) {
-      return 'Python Kernel: Ready'
-    }
-    if (isPythonKernelLoading()) {
-      return 'Python Kernel: Loading…'
-    }
-    return 'Python Kernel'
+    return 'Docker Python'
   }
 
   if (workspaceType === 'web') {
@@ -222,7 +207,7 @@ export function getKernelLabel(projectLanguage, workspace) {
   const language = detectLanguageFromFile(mainFile, projectLanguage)
 
   if (language === 'python' || projectLanguage === 'python') {
-    return 'Python Kernel'
+    return 'Docker Python'
   }
 
   if (isFrontendLanguage(language)) {

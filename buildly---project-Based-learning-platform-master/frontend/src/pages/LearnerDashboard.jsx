@@ -50,22 +50,6 @@ const LearnerDashboard = () => {
         progress_percentage: computeCourseProgress(course.id, projects, progressMap),
       }))
 
-      const progressEntries = Object.values(progressMap)
-      const completedProjects = progressEntries.filter(
-        (item) => item?.status === 'completed'
-      ).length
-      const inProgressProjects = progressEntries.filter(
-        (item) => item?.status && item.status !== 'completed' && item.status !== 'not_started'
-      ).length
-
-      const hoursSpent = projects.reduce((sum, project) => {
-        const progress =
-          progressMap[project.project_id] || progressMap[String(project.project_id)]
-        if (!progress?.status) return sum
-        if (progress.status !== 'completed' && progress.status !== 'in_progress') return sum
-        return sum + (Number(project.estimated_time) || 0)
-      }, 0)
-
       const overallFromCourses =
         coursesWithProgress.length > 0
           ? Math.round(
@@ -80,9 +64,6 @@ const LearnerDashboard = () => {
       setDashboardData({
         ...dashboardRes.data,
         _overallProgress: overallFromCourses,
-        _completedProjects: completedProjects,
-        _inProgressProjects: inProgressProjects,
-        _hoursSpent: hoursSpent,
       })
     } catch (err) {
       setError('فشل تحميل بيانات لوحة التحكم')
@@ -133,12 +114,11 @@ const LearnerDashboard = () => {
   const inProgressCourses = myCourses.filter(
     (course) => course.progress_percentage > 0 && course.progress_percentage < 100
   ).length
-  const completedProjects =
-    dashboardData._completedProjects ?? dashboard_stats?.completed_projects ?? 0
-  const inProgressProjects =
-    dashboardData._inProgressProjects ?? dashboard_stats?.in_progress_projects ?? 0
-  const hoursSpent =
-    dashboardData._hoursSpent ?? dashboard_stats?.total_hours_spent ?? 0
+  const enrolledCoursesCount =
+    dashboard_stats?.total_enrolled_projects ?? myCourses.length ?? 0
+  const completedProjects = dashboard_stats?.completed_projects ?? 0
+  const inProgressProjects = dashboard_stats?.in_progress_projects ?? 0
+  const hoursSpent = dashboard_stats?.total_hours_spent ?? 0
 
   return (
     <div className="learner-dashboard">
@@ -166,7 +146,7 @@ const LearnerDashboard = () => {
               <span>📚</span>
             </div>
             <div className="learner-stat-content">
-              <h3>{myCourses.length || dashboard_stats?.total_enrolled_projects || 0}</h3>
+              <h3>{enrolledCoursesCount}</h3>
               <p>المسارات المنضم إليها</p>
             </div>
           </div>

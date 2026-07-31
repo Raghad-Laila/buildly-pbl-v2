@@ -4,6 +4,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from django.utils.translation import gettext_lazy as _
 from django.utils import timezone
+from django.db.models import Count, F, Q, Sum
 from datetime import timedelta
 from .models import CustomUser, UserFavorite, Notification
 from .notifications import serialize_notification
@@ -57,16 +58,59 @@ class LearnerDashboardView(APIView):
         })
     
     def get_learner_stats(self, user):
-        """إحصائيات حقيقية من تقدم المشاريع والمسارات"""
-        enrolled_courses = user.get_enrolled_courses_list() or []
-        progress_qs = ProjectProgress.objects.filter(user=user).select_related('project')
+        """إحصائيات حقيقية من تقدم المشاريع ضمن المسارات النشطة المنضم إليها"""
+        enrolled_courses_count = Course.objects.filter(
+            enrolled_learners=user,
+            is_active=True,
+            is_archived=False,
+        ).count()
+
+        accessible_projects_qs = Project.objects.filter(
+            course__enrolled_learners=user,
+            course__is_active=True,
+            course__is_archived=False,
+            is_active=True,
+        )
+        accessible_project_ids = accessible_projects_qs.values_list('id', flat=True)
+
+        progress_qs = ProjectProgress.objects.filter(
+            user=user,
+            project_id__in=accessible_project_ids,
+        ).select_related('project')
 
         completed_projects = progress_qs.filter(status='completed').count()
         in_progress_projects = progress_qs.filter(status='in_progress').count()
 
-        hours_qs = progress_qs.filter(status__in=['completed', 'in_progress'])
-        total_hours_spent = sum(
-            (item.project.estimated_time or 0) for item in hours_qs
+        # ساعات التعلم = مجموع مدة المسارات المنضم إليها التي أكمل المتعلم كل مشاريعها النشطة
+        completed_courses = Course.objects.filter(
+            enrolled_learners=user,
+            is_active=True,
+            is_archived=False,
+        ).annotate(
+            active_projects_count=Count(
+                'projects',
+                filter=Q(projects__is_active=True),
+                distinct=True,
+            ),
+            completed_projects_count=Count(
+                'projects',
+                filter=Q(
+                    projects__is_active=True,
+                    projects__projectprogress__user=user,
+                    projects__projectprogress__status='completed',
+                ),
+                distinct=True,
+            ),
+        ).filter(
+            active_projects_count__gt=0,
+            active_projects_count=F('completed_projects_count'),
+        )
+
+        total_hours_spent = (
+            completed_courses.aggregate(
+                total=Sum('estimated_duration')
+            )['total']
+            or 0
         )
 
         graded = list(
@@ -75,12 +119,7 @@ class LearnerDashboardView(APIView):
         )
         avg_score = round(sum(graded) / len(graded), 1) if graded else 0
 
-        accessible_projects = Project.objects.filter(
-            course__enrolled_learners=user,
-            course__is_active=True,
-            course__is_archived=False,
-            is_active=True,
-        ).count()
+        accessible_projects = accessible_projects_qs.count()
         completion_rate = (
             int(round((completed_projects / accessible_projects) * 100))
             if accessible_projects
@@ -88,7 +127,7 @@ class LearnerDashboardView(APIView):
         )
 
         return {
-            'total_enrolled_projects': len(enrolled_courses),
+            'total_enrolled_projects': enrolled_courses_count,
             'completed_projects': completed_projects,
             'in_progress_projects': in_progress_projects,
             'total_hours_spent': total_hours_spent,

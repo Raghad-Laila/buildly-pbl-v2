@@ -58,7 +58,7 @@ def _write_workspace_files(tmpdir, files, entry_file_name):
     return entry
 
 
-def run_python_in_docker(code=None, timeout=5, files=None, entry_file_name='main.py'):
+def run_python_in_docker(code=None, timeout=30, files=None, entry_file_name='main.py'):
     """
     Run Python in Docker.
 
@@ -67,6 +67,9 @@ def run_python_in_docker(code=None, timeout=5, files=None, entry_file_name='main
 
     Multi-file:
         run_python_in_docker(files=[...], entry_file_name='main.py')
+
+    timeout covers container startup + code. Docker Desktop on Windows often
+    needs well above a few seconds just to start --rm containers.
     """
     with tempfile.TemporaryDirectory() as tmpdir:
         if files is not None:
