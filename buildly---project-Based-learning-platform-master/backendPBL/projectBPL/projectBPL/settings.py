@@ -267,7 +267,7 @@ PLACEMENT_AI_ENABLED = os.environ.get('PLACEMENT_AI_ENABLED', 'true').lower() ==
 
 # Project AI code review (Ollama)
 OLLAMA_BASE_URL = os.environ.get('OLLAMA_BASE_URL', 'http://localhost:11434')
-OLLAMA_MODEL = os.environ.get('OLLAMA_MODEL', 'qwen2.5-coder:7b')
+OLLAMA_MODEL = os.environ.get('OLLAMA_MODEL', 'qwen2.5-coder:3b')
 OLLAMA_TIMEOUT = int(os.environ.get('OLLAMA_TIMEOUT', '120'))
 
 # Security Settings (للإنتاج)

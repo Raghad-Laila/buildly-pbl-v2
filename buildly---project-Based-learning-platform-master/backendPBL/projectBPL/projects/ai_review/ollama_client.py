@@ -25,7 +25,7 @@ class OllamaClient:
             getattr(settings, 'OLLAMA_BASE_URL', 'http://localhost:11434')
             or 'http://localhost:11434'
         ).rstrip('/')
-        self.model = getattr(settings, 'OLLAMA_MODEL', 'qwen2.5-coder:7b') or 'qwen2.5-coder:7b'
+        self.model = getattr(settings, 'OLLAMA_MODEL', 'qwen2.5-coder:3b') or 'qwen2.5-coder:3b'
         self.timeout = int(getattr(settings, 'OLLAMA_TIMEOUT', 120))
 
     def review(self, prompt=None, *, system=None, user=None):
