@@ -78,3 +78,7 @@ SYSTEM_PROMPT = """
 - لا كود.
 - لا حلول جاهزة.
 """.strip()
+#TODO do pydantic and propmt editing 
+
+
+#TODO replace local ollama with openrouter or grok for free tier ai providers
